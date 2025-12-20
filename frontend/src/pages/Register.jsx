@@ -78,13 +78,10 @@ export default function Register() {
                     Sign up with Google
                 </button>
 
-                <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-white/20"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                        <span className="px-3 bg-transparent text-slate-400">Or continue with email</span>
-                    </div>
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="flex-1 h-px bg-white/20"></div>
+                    <span className="text-sm text-slate-400">Or continue with email</span>
+                    <div className="flex-1 h-px bg-white/20"></div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
