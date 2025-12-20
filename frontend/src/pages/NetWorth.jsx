@@ -50,18 +50,17 @@ export default function NetWorth() {
             queryClient.invalidateQueries(['netWorthHistory']);
             queryClient.invalidateQueries(['investmentHistory']);
             queryClient.invalidateQueries(['holdings']);
-
-            if (data.updated_count > 0) {
-                alert(`Updated ${data.updated_count} holdings.`);
-            } else {
-                alert("No holdings to update or all up to date.");
-            }
+            console.log(`Updated ${data.updated_count} holdings.`);
         },
         onError: (err) => {
-            alert("Failed to refresh prices. check console.");
-            console.error(err);
+            console.error("Failed to refresh prices:", err);
         }
     });
+
+    // --- Auto-Refresh on Load ---
+    React.useEffect(() => {
+        refreshPricesMutation.mutate();
+    }, []);
 
     // --- Derived State ---
     const latestSnapshot = history.length > 0 ? history[history.length - 1] : null;
@@ -73,14 +72,16 @@ export default function NetWorth() {
     // --- Add Account Form (Inline) ---
     const [newAccountName, setNewAccountName] = useState("");
     const [newAccountType, setNewAccountType] = useState("Asset");
-    const [newAccountCategory, setNewAccountCategory] = useState("Cash");
+    // Category state is removed as per previous refactor, but we need the handle function
 
     const handleAddAccount = (e) => {
         e.preventDefault();
+        // Auto-assign category based on type for simplicity
+        const defaultCategory = newAccountType === 'Asset' ? 'Cash' : 'Loan';
         createAccountMutation.mutate({
             name: newAccountName,
             type: newAccountType,
-            category: newAccountCategory
+            category: defaultCategory
         });
         setNewAccountName("");
     };
@@ -116,14 +117,6 @@ export default function NetWorth() {
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Track your assets and liabilities over time.</p>
                 </div>
                 <div>
-                    <button
-                        onClick={() => refreshPricesMutation.mutate()}
-                        disabled={refreshPricesMutation.isPending}
-                        className="mr-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition disabled:opacity-50"
-                    >
-                        <RefreshCw size={20} className={refreshPricesMutation.isPending ? "animate-spin" : ""} />
-                        {refreshPricesMutation.isPending ? "Updating..." : "Refresh Values"}
-                    </button>
                     <button
                         onClick={() => setIsCheckInOpen(true)}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition"
@@ -168,8 +161,8 @@ export default function NetWorth() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Col: Chart & History */}
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-96">
-                        <div className="flex justify-between items-center mb-6">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-96 flex flex-col">
+                        <div className="flex justify-between items-center mb-6 shrink-0">
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <LineChart size={20} className="text-indigo-500" />
                                 History
@@ -189,74 +182,76 @@ export default function NetWorth() {
                                 </button>
                             </div>
                         </div>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorNw" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                <XAxis
-                                    dataKey="date"
-                                    tickFormatter={(str) => new Date(str).toLocaleDateString('en-AU', { month: 'short', year: '2-digit' })}
-                                    stroke="#94A3B8"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    stroke="#94A3B8"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(val) => `$${val / 1000}k`}
-                                />
-                                <Tooltip
-                                    content={({ active, payload, label }) => {
-                                        if (active && payload && payload.length) {
-                                            const data = payload[0].payload;
-                                            return (
-                                                <div className="bg-white dark:bg-slate-800 p-4 border border-slate-100 dark:border-slate-700 shadow-xl rounded-xl">
-                                                    <p className="text-sm font-medium text-slate-500 mb-2">{new Date(label).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</p>
-                                                    <div className="space-y-1">
-                                                        <p className="text-lg font-bold text-indigo-600 flex justify-between gap-8">
-                                                            <span>{chartMode === 'net_worth' ? 'Net Worth' : 'Value'}</span>
-                                                            <span>${data[chartDataKey].toLocaleString()}</span>
-                                                        </p>
-                                                        {chartMode === 'net_worth' && (
-                                                            <>
-                                                                <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
-                                                                <p className="text-sm text-emerald-600 flex justify-between gap-8">
-                                                                    <span>Assets</span>
-                                                                    <span>+${data.total_assets.toLocaleString()}</span>
-                                                                </p>
-                                                                <p className="text-sm text-red-500 flex justify-between gap-8">
-                                                                    <span>Liabilities</span>
-                                                                    <span>-${data.total_liabilities.toLocaleString()}</span>
-                                                                </p>
-                                                            </>
-                                                        )}
+                        <div className="flex-1 min-h-0 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorNw" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} />
+                                            <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(str) => new Date(str).toLocaleDateString('en-AU', { month: 'short', year: '2-digit' })}
+                                        stroke="#94A3B8"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        stroke="#94A3B8"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(val) => `$${val / 1000}k`}
+                                    />
+                                    <Tooltip
+                                        content={({ active, payload, label }) => {
+                                            if (active && payload && payload.length) {
+                                                const data = payload[0].payload;
+                                                return (
+                                                    <div className="bg-white dark:bg-slate-800 p-4 border border-slate-100 dark:border-slate-700 shadow-xl rounded-xl">
+                                                        <p className="text-sm font-medium text-slate-500 mb-2">{new Date(label).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</p>
+                                                        <div className="space-y-1">
+                                                            <p className="text-lg font-bold text-indigo-600 flex justify-between gap-8">
+                                                                <span>{chartMode === 'net_worth' ? 'Net Worth' : 'Value'}</span>
+                                                                <span>${data[chartDataKey].toLocaleString()}</span>
+                                                            </p>
+                                                            {chartMode === 'net_worth' && (
+                                                                <>
+                                                                    <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
+                                                                    <p className="text-sm text-emerald-600 flex justify-between gap-8">
+                                                                        <span>Assets</span>
+                                                                        <span>+${data.total_assets.toLocaleString()}</span>
+                                                                    </p>
+                                                                    <p className="text-sm text-red-500 flex justify-between gap-8">
+                                                                        <span>Liabilities</span>
+                                                                        <span>-${data.total_liabilities.toLocaleString()}</span>
+                                                                    </p>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    }}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey={chartDataKey}
-                                    stroke={chartColor}
-                                    strokeWidth={3}
-                                    fillOpacity={1}
-                                    fill="url(#colorNw)"
-                                    activeDot={{ r: 6, fill: chartColor, stroke: "#fff", strokeWidth: 2 }}
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                                                );
+                                            }
+                                            return null;
+                                        }}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey={chartDataKey}
+                                        stroke={chartColor}
+                                        strokeWidth={3}
+                                        fillOpacity={1}
+                                        fill="url(#colorNw)"
+                                        activeDot={{ r: 6, fill: chartColor, stroke: "#fff", strokeWidth: 2 }}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div >
 
