@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Listbox, Transition } from '@headlessui/react';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check } from 'lucide-react';
 import axios from 'axios';
+import ConnectBank from '../components/ConnectBank';
 
 
 const uploadFile = async ({ file, spender }) => {
@@ -175,9 +176,12 @@ export default function Ingest() {
     return (
         <div className="max-w-6xl mx-auto p-8 space-y-8">
             {/* Headers and Upload Area (Unchanged) */}
-            <header>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Import Data</h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-2">Upload your bank statements (PDF) to automatically extract and categorize transactions.</p>
+            <header className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Import Data</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2">Upload your bank statements (PDF) to automatically extract and categorize transactions.</p>
+                </div>
+                <ConnectBank />
             </header>
 
             {/* Tabs */}

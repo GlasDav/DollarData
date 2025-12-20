@@ -73,23 +73,30 @@ const SankeyChart = ({ data }) => {
         );
     };
 
+    // Dynamic Height Calculation
+    // Estimate height based on number of nodes to prevent crowding/overflow
+    // Base height 400px, add 40px per node if there are many nodes.
+    const dynamicHeight = Math.max(400, (data?.nodes?.length || 0) * 40);
+
     return (
-        <div className="w-full h-[400px] bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Cash Flow</h3>
-            <ResponsiveContainer width="100%" height="100%">
-                <Sankey
-                    data={data}
-                    link={{ stroke: '#818cf8' }}
-                    nodePadding={50}
-                    margin={{ left: 100, right: 100, top: 20, bottom: 20 }} // Increased margins for labels
-                    node={renderNode}
-                >
-                    <Tooltip
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                        formatter={(value) => formatCurrency(value)}
-                    />
-                </Sankey>
-            </ResponsiveContainer>
+        <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 transition-all duration-300 flex flex-col" style={{ height: `${dynamicHeight}px` }}>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 shrink-0">Cash Flow</h3>
+            <div className="flex-1 min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                    <Sankey
+                        data={data}
+                        link={{ stroke: '#818cf8' }}
+                        nodePadding={50}
+                        margin={{ left: 150, right: 150, top: 10, bottom: 10 }}
+                        node={renderNode}
+                    >
+                        <Tooltip
+                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            formatter={(value) => formatCurrency(value)}
+                        />
+                    </Sankey>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 };

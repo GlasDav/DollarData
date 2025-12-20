@@ -659,20 +659,16 @@ def get_sankey_data(
     
     # Root Nodes
     idx_income = get_node("Income")
-    idx_budget = get_node("Budget")
+    # idx_budget removed
     
-    # Link: Income -> Budget
-    if total_income > 0:
-        links.append({"source": idx_income, "target": idx_budget, "value": total_income})
-        
-    # Groups
-    idx_needs = get_node("Needs")
-    idx_wants = get_node("Wants")
+    # Groups (User requested "Discretionary" vs "Non-Discretionary")
+    idx_non_disc = get_node("Non-Discretionary") # Formerly Needs
+    idx_disc = get_node("Discretionary")         # Formerly Wants
     idx_savings = get_node("Savings")
     idx_uncat = get_node("Uncategorized")
     
-    needs_total = 0.0
-    wants_total = 0.0
+    non_disc_total = 0.0
+    disc_total = 0.0
     
     # Buckets Logic
     for bid, amount in bucket_spend.items():
@@ -682,31 +678,50 @@ def get_sankey_data(
         idx_b = get_node(bucket.name)
         
         if bucket.group == "Non-Discretionary":
-            links.append({"source": idx_needs, "target": idx_b, "value": amount})
-            needs_total += amount
+            links.append({"source": idx_non_disc, "target": idx_b, "value": amount})
+            non_disc_total += amount
         else:
-            links.append({"source": idx_wants, "target": idx_b, "value": amount})
-            wants_total += amount
+            links.append({"source": idx_disc, "target": idx_b, "value": amount})
+            disc_total += amount
             
     # Uncategorized Logic
     if unallocated_spend > 0:
+        links.append({"source": idx_income, "target": idx_uncat, "value": unallocated_spend})
+        # Layer 3 for Uncategorized
         links.append({"source": idx_uncat, "target": get_node("Misc"), "value": unallocated_spend})
-        # Determine if uncat flows from Needs or Wants? Default to Wants or direct from Budget?
-        # Let's link Budget -> Uncategorized
-        links.append({"source": idx_budget, "target": idx_uncat, "value": unallocated_spend})
 
-    # High Level Links
-    if needs_total > 0:
-        links.append({"source": idx_budget, "target": idx_needs, "value": needs_total})
+    # High Level Links (Income -> Groups)
+    if non_disc_total > 0:
+        links.append({"source": idx_income, "target": idx_non_disc, "value": non_disc_total})
     
-    if wants_total > 0:
-        links.append({"source": idx_budget, "target": idx_wants, "value": wants_total})
+    if disc_total > 0:
+        links.append({"source": idx_income, "target": idx_disc, "value": disc_total})
         
     # Savings Logic
-    # Savings = Income - Expenses
-    # Only if Income > Expenses
     net_savings = total_income - total_expenses
     if net_savings > 0:
-        links.append({"source": idx_budget, "target": idx_savings, "value": net_savings})
+        links.append({"source": idx_income, "target": idx_savings, "value": net_savings})
         
-    return {"nodes": nodes, "links": links}
+    # Filter out unused nodes
+    used_indices = set()
+    for link in links:
+        used_indices.add(link["source"])
+        used_indices.add(link["target"])
+    
+    old_to_new = {}
+    new_nodes = []
+    
+    for i, node in enumerate(nodes):
+        if i in used_indices:
+            old_to_new[i] = len(new_nodes)
+            new_nodes.append(node)
+            
+    new_links = []
+    for link in links:
+        new_links.append({
+            "source": old_to_new[link["source"]],
+            "target": old_to_new[link["target"]],
+            "value": link["value"]
+        })
+
+    return {"nodes": new_nodes, "links": new_links}

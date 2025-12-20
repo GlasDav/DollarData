@@ -8,7 +8,6 @@ import {
 import { AreaChart, Area, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import CheckInModal from '../components/CheckInModal';
 import AccountDetailsModal from '../components/AccountDetailsModal';
-import ConnectBank from '../components/ConnectBank';
 
 export default function NetWorth() {
     const queryClient = useQueryClient();
@@ -125,7 +124,6 @@ export default function NetWorth() {
                         <RefreshCw size={20} className={refreshPricesMutation.isPending ? "animate-spin" : ""} />
                         {refreshPricesMutation.isPending ? "Updating..." : "Refresh Values"}
                     </button>
-                    <ConnectBank />
                     <button
                         onClick={() => setIsCheckInOpen(true)}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition"
