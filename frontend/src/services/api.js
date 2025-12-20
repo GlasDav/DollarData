@@ -7,13 +7,47 @@ const api = axios.create({
 // Response Interceptor for Global Error Handling
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
+        const originalRequest = error.config;
+
         // Handle 401 Unauthorized (Token Expired)
-        if (error.response && error.response.status === 401) {
+        if (error.response && error.response.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            try {
+                const refreshToken = localStorage.getItem('refreshToken');
+                if (refreshToken) {
+                    // Attempt refresh
+                    const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/refresh`, {
+                        refresh_token: refreshToken
+                    });
+
+                    if (res.data.access_token) {
+                        // Success - Update tokens
+                        localStorage.setItem('token', res.data.access_token);
+                        // If refresh token rotated, update it too (though backend currently returns same)
+                        if (res.data.refresh_token) {
+                            localStorage.setItem('refreshToken', res.data.refresh_token);
+                        }
+
+                        // Update headers for retry
+                        api.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
+                        originalRequest.headers['Authorization'] = `Bearer ${res.data.access_token}`;
+
+                        // Retry original request
+                        return api(originalRequest);
+                    }
+                }
+            } catch (refreshError) {
+                console.error("Refresh token failed", refreshError);
+                // Fallthrough to redirect
+            }
+
             // Only redirect if not already on auth pages
             if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
                 console.warn("Session expired. Redirecting to login.");
-                // Clear any local storage/cookies if necessary (AuthContext usually handles this via state, but a hard redirect is a safety net)
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
                 window.location.href = '/login';
             }
         }

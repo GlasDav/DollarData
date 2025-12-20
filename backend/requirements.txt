@@ -14,3 +14,4 @@ pytest
 httpx
 yfinance
 argon2-cffi
+python-dotenv

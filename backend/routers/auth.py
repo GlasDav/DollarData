@@ -60,7 +60,41 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = auth.create_refresh_token(
+        data={"sub": user.email}
+    )
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+@router.post("/refresh", response_model=schemas.Token)
+def refresh_token(refresh_token: str = Body(..., embed=True), db: Session = Depends(database.get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = auth.jwt.decode(refresh_token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        email: str = payload.get("sub")
+        token_type: str = payload.get("type")
+        if email is None or token_type != "refresh":
+            raise credentials_exception
+    except auth.JWTError:
+        raise credentials_exception
+    
+    # Ideally check if user exists / is active
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise credentials_exception
+
+    # Issue new access token
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": email}, expires_delta=access_token_expires
+    )
+    
+    # Optional: Rotate refresh token? For now, just return new access token and same refresh token
+    # Changing refresh token here would require client properly updating it every time
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 @router.post("/google", response_model=schemas.Token)
 def google_login(token: str = Body(..., embed=True), db: Session = Depends(database.get_db)):
@@ -68,15 +102,7 @@ def google_login(token: str = Body(..., embed=True), db: Session = Depends(datab
     Verifies Google ID Token and returns JWT.
     Requires GOOGLE_CLIENT_ID env var.
     """
-    # TODO: Verify token with google-auth
-    # For now, we simulate success for demo
-    # In prod: idinfo = id_token.verify_oauth2_token(token, requests.Request(), CLIENT_ID)
-    
-    # Mocking behavior:
-    # 1. Decode token (in prod, verify signature)
-    # 2. Extract email
-    # 3. Find or Create User
-    # 4. Return JWT
+    # ... existing ...
     
     # Placeholder implementation
     fake_email = "test@gmail.com" # We can't decode real token without lib here easily
@@ -94,12 +120,15 @@ def google_login(token: str = Body(..., embed=True), db: Session = Depends(datab
         db.add(user)
         db.commit()
         db.refresh(user)
-
+    
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = auth.create_refresh_token(
+        data={"sub": user.email}
+    )
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
 @router.get("/users/me", response_model=schemas.User) # Endpoint was missing!

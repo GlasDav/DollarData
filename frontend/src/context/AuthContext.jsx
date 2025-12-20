@@ -7,6 +7,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem("token"));
+    const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken")); // New
     const [loading, setLoading] = useState(true);
 
     // Set axios default header whenever token changes
@@ -22,6 +23,15 @@ export const AuthProvider = ({ children }) => {
         }
     }, [token]);
 
+    // Persist refresh token
+    useEffect(() => {
+        if (refreshToken) {
+            localStorage.setItem("refreshToken", refreshToken);
+        } else {
+            localStorage.removeItem("refreshToken");
+        }
+    }, [refreshToken]);
+
     // Check if user is logged in (fetch profile)
     useEffect(() => {
         const fetchUser = async () => {
@@ -35,7 +45,10 @@ export const AuthProvider = ({ children }) => {
                 setUser(res.data);
             } catch (error) {
                 console.error("Failed to fetch user profile", error);
-                logout(); // invalid token
+                // Don't auto-logout yet if we have refresh logic elsewhere? 
+                // Actually, if fetching profile fails 401, the interceptor should handle refresh.
+                // If that fails, then we logout.
+                // For now, let's leave this safe catch.
             } finally {
                 setLoading(false);
             }
@@ -50,6 +63,7 @@ export const AuthProvider = ({ children }) => {
 
         const res = await axios.post("http://localhost:8000/auth/token", formData);
         setToken(res.data.access_token);
+        setRefreshToken(res.data.refresh_token); // New
         // Could fetch user details here and setUser
         setUser({ username }); // Simple state
     };
@@ -67,16 +81,18 @@ export const AuthProvider = ({ children }) => {
         // Mock or Real call
         const res = await axios.post("http://localhost:8000/auth/google", { token });
         setToken(res.data.access_token);
+        setRefreshToken(res.data.refresh_token); // New
         // setUser handled by useEffect
     };
 
     const logout = () => {
         setToken(null);
+        setRefreshToken(null);
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, register, googleLogin, loading }}>
+        <AuthContext.Provider value={{ user, token, refreshToken, login, logout, register, googleLogin, loading }}>
             {children}
         </AuthContext.Provider>
     );
