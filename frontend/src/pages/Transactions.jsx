@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { getBuckets, getSettings, getGoals } from '../services/api';
+import api, { getBuckets, getSettings, getGoals, deleteAllTransactions } from '../services/api';
 import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2 } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
 import SplitTransactionModal from '../components/SplitTransactionModal';
@@ -74,7 +74,7 @@ export default function Transactions() {
     // Batch Delete
     const deleteBatchMutation = useMutation({
         mutationFn: async (ids) => {
-            // Updated to use shared api client - implicitly sends Auth headers
+            // Backend expects a raw array in the body: [1, 2, 3]
             await api.post('/transactions/batch-delete', ids);
         },
         onSuccess: () => {
@@ -82,7 +82,21 @@ export default function Transactions() {
             queryClient.invalidateQueries(['transactions']);
         },
         onError: (err) => {
-            alert(`Failed to delete: ${err.message}`);
+            console.error('Delete failed:', err);
+            alert(`Failed to delete: ${err.response?.data?.detail || err.message}`);
+        }
+    });
+
+    // Delete ALL Transactions
+    const deleteAllMutation = useMutation({
+        mutationFn: deleteAllTransactions,
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['transactions']);
+            alert(`Successfully deleted ${data.count} transactions.`);
+        },
+        onError: (err) => {
+            console.error('Delete all failed:', err);
+            alert(`Failed to delete all: ${err.response?.data?.detail || err.message}`);
         }
     });
 
@@ -120,6 +134,22 @@ export default function Transactions() {
                     <p className="text-slate-500 dark:text-slate-400 mt-2">Manage your complete transaction history.</p>
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* Delete All Button - only show when transactions exist */}
+                    {transactions.length > 0 && selectedIds.size === 0 && (
+                        <button
+                            onClick={() => {
+                                if (window.confirm(`⚠️ DELETE ALL TRANSACTIONS?\n\nThis will permanently delete ALL transactions in your database.\n\nThis action cannot be undone!`)) {
+                                    deleteAllMutation.mutate();
+                                }
+                            }}
+                            disabled={deleteAllMutation.isPending}
+                            className="bg-red-50 text-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-100 transition flex items-center gap-2 disabled:opacity-50"
+                        >
+                            <Trash2 size={16} />
+                            {deleteAllMutation.isPending ? 'Deleting...' : 'Delete All'}
+                        </button>
+                    )}
+                    {/* Delete Selected Button */}
                     {selectedIds.size > 0 && (
                         <button
                             onClick={() => {

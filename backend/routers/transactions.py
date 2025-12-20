@@ -66,6 +66,20 @@ def update_transaction(
     txn = db.query(models.Transaction).options(joinedload(models.Transaction.bucket)).filter(models.Transaction.id == txn.id).first()
     return txn
 
+@router.delete("/all")
+def delete_all_transactions(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Delete ALL transactions for the current user.
+    """
+    count = db.query(models.Transaction).filter(
+        models.Transaction.user_id == current_user.id
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"message": f"Deleted {count} transactions", "count": count}
+
 @router.delete("/{transaction_id}")
 def delete_transaction(transaction_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     """Delete a transaction by ID."""

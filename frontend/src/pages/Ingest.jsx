@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Listbox, Transition } from '@headlessui/react';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import ConnectBank from '../components/ConnectBank';
 
 
@@ -10,7 +10,7 @@ const uploadFile = async ({ file, spender }) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("spender", spender);
-    const res = await axios.post("http://localhost:8000/ingest/upload", formData, {
+    const res = await api.post("/ingest/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" }
     });
     return res.data;
@@ -28,7 +28,7 @@ export default function Ingest() {
     // Fetch User Settings for Names
     const { data: userSettings } = useQuery({
         queryKey: ['userSettings'],
-        queryFn: async () => (await axios.get('http://localhost:8000/settings/user')).data
+        queryFn: async () => (await api.get('/settings/user')).data
     });
 
     // ... (fetch and mutations) ...
@@ -62,7 +62,7 @@ export default function Ingest() {
     const { data: buckets = [] } = useQuery({
         queryKey: ['buckets'],
         queryFn: async () => {
-            const res = await axios.get('http://localhost:8000/settings/buckets');
+            const res = await api.get('/settings/buckets');
             return res.data;
         }
     });
@@ -90,7 +90,7 @@ export default function Ingest() {
         mutationFn: async (file) => {
             const formData = new FormData();
             formData.append("file", file);
-            const res = await axios.post("http://localhost:8000/ingest/csv/preview", formData);
+            const res = await api.post("/ingest/csv/preview", formData);
             return res.data;
         },
         onSuccess: (data) => {
@@ -128,7 +128,7 @@ export default function Ingest() {
                 formData.append("map_amount", mapping.amount);
             }
 
-            const res = await axios.post("http://localhost:8000/ingest/csv", formData);
+            const res = await api.post("/ingest/csv", formData);
             return res.data;
         },
         onSuccess: (data) => {
@@ -149,7 +149,7 @@ export default function Ingest() {
                 is_verified: true,
                 spender: t.spender
             }));
-            const res = await axios.post('http://localhost:8000/ingest/confirm', payload);
+            const res = await api.post('/ingest/confirm', payload);
             return res.data;
         },
         onSuccess: () => {
