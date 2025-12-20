@@ -9,9 +9,10 @@ The dashboard serves as the central hub for financial oversight.
     -   **3-Layer Hierarchy**: Income → Groups (Discretionary/Non-Discretionary) → Buckets.
     -   **Dynamic Sizing**: Automatically adjusts height based on the number of categories to prevent overflow.
     -   **Empty State Handling**: Gracefully handles periods with no data.
+    -   **Transfer Exclusion**: Transfers between accounts are automatically excluded from spending analytics.
 -   **Summary Cards**: High-level metrics for the selected period.
     -   Total Income
-    -   Total Expenses
+    -   Total Expenses (excludes transfers)
     -   Net Savings
     -   Net Worth (Real-time snapshot)
 -   **Spending Trends**: Bar chart visualizing spending over time, with filters for specific budget categories.
@@ -28,6 +29,29 @@ The dashboard serves as the central hub for financial oversight.
 -   **File Import**: Support for manual file uploads.
     -   **PDF Statements**: Extract transactions from bank PDFs.
     -   **CSV Import**: Map and import CSV data from other sources.
+-   **AI-Powered Categorization** *(New)*:
+    -   Uses Google Gemini 3 Flash to intelligently categorize transactions.
+    -   Works as a fallback when rule-based matching fails.
+    -   Only suggests from user-defined bucket categories.
+    -   Visual badges distinguish categorization sources:
+        -   ✓ **Matched** (green): Rule/keyword match, high confidence
+        -   ✨ **AI** (purple): AI predicted category, needs review
+        -   ⚠ **Review** (yellow): No match found, user should categorize
+-   **Duplicate Detection** *(New)*:
+    -   Hash-based fingerprinting detects previously imported transactions.
+    -   Automatically skips duplicates when re-importing overlapping statements.
+    -   "Skip duplicate transactions" checkbox (enabled by default).
+-   **Import Progress Indicator** *(New)*:
+    -   Loading spinner and time estimate during AI categorization.
+    -   "⏳ AI is categorizing transactions... This may take 1-2 minutes."
+
+### Transfer Handling *(New)*
+-   **Transfer Buckets**: Mark any budget bucket as a "transfer" category.
+-   **Analytics Exclusion**: Transfer buckets are automatically excluded from:
+    -   Dashboard spending totals
+    -   Spending history charts
+    -   Sankey diagram flows
+-   **Common Keywords**: AI and rule-based categorization recognize transfer patterns ("internal transfer", "credit card payment", "payment to", etc.)
 
 ## 3. Wealth Management
 ### Net Worth
@@ -68,6 +92,7 @@ The dashboard serves as the central hub for financial oversight.
 ### Budget Configuration
 -   **Categories & Groups**: Manage high-level groups (Income, Discretionary, Non-Discretionary).
 -   **Buckets**: Create and edit specific spending buckets (e.g., Groceries, Rent) within groups.
+-   **Transfer Flag** *(New)*: Mark buckets as "transfer" to exclude from spending analytics.
 
 ### Applications Settings
 -   **Couple Mode**: Toggle to enable features for shared finances (Partner A / Partner B distinction).
@@ -81,3 +106,13 @@ The dashboard serves as the central hub for financial oversight.
     -   **Refresh Tokens**: Long-lived refresh tokens (7 days) allow seamless sessions while maintaining high rotate frequency for access keys.
     -   **Automatic Token Rotation**: The frontend automatically detects expired sessions and refreshes them in the background.
 -   **Environment Configuration**: Sensitive data like `SECRET_KEY` and API credentials are managed via `.env` files and never hardcoded.
+
+## 7. AI & Machine Learning *(New Section)*
+-   **Gemini 3 Flash Integration**: Transaction categorization powered by Google's latest Gemini model.
+-   **Batch Processing**: AI processes transactions in batches of 50 for efficiency.
+-   **Confidence Scoring**: AI predictions capped at 0.85 confidence to encourage user review.
+-   **Fallback Strategy**: AI only activated when rule-based methods fail, preserving deterministic behavior.
+
+---
+
+*Last Updated: December 2025*
