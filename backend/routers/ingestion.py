@@ -1,14 +1,23 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
-from sqlalchemy.orm import Session, joinedload
-from typing import List
+import logging
 import shutil
 import os
 import tempfile
+
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
+from sqlalchemy.orm import Session, joinedload
+from typing import List
+
 from ..database import get_db
 from .. import models, schemas, auth
 from ..services.pdf_parser import parse_pdf
 from ..services.categorizer import Categorizer
 from ..services.csv_service import parse_preview, process_csv
+
+logger = logging.getLogger(__name__)
+
+# File upload limits
+MAX_FILE_SIZE_MB = 10
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024  # 10MB
 
 router = APIRouter(
     prefix="/ingest",
@@ -16,6 +25,17 @@ router = APIRouter(
 )
 
 categorizer = Categorizer()
+
+
+async def validate_file_size(file: UploadFile) -> bytes:
+    """Read and validate file size. Returns file content if valid."""
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE_MB}MB."
+        )
+    return content
 
 def process_and_save_transactions(extracted_data, user, db, spender):
     """
@@ -94,13 +114,19 @@ def process_and_save_transactions(extracted_data, user, db, spender):
 
 @router.post("/csv/preview")
 async def preview_csv(file: UploadFile = File(...)):
+    """Preview CSV file structure before import."""
     if not file.filename.lower().endswith('.csv'):
         raise HTTPException(status_code=400, detail="Only CSV files are supported")
-    content = await file.read()
+    
+    content = await validate_file_size(file)
+    
     try:
         return parse_preview(content)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("CSV preview failed")
+        raise HTTPException(status_code=500, detail="Failed to parse CSV file")
 
 @router.post("/csv", response_model=List[schemas.Transaction])
 async def ingest_csv(
@@ -135,40 +161,38 @@ async def ingest_csv(
 
 
 @router.post("/upload", response_model=List[schemas.Transaction])
-def upload_statement(
+async def upload_statement(
     file: UploadFile = File(...), 
     spender: str = Form("Joint"),
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    """Upload and parse a PDF bank statement."""
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
     
+    # Validate file size
+    content = await validate_file_size(file)
+    
     # Save to temp file for processing
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        shutil.copyfileobj(file.file, tmp)
+        tmp.write(content)
         tmp_path = tmp.name
         
     try:
-        # Parse PDF
         extracted_data = parse_pdf(tmp_path)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Parsing failed: {str(e)}")
+    except Exception:
+        logger.exception("PDF parsing failed")
+        raise HTTPException(status_code=500, detail="Failed to parse PDF file")
     finally:
-        # Cleanup
+        # Cleanup temp file
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
             
     if not extracted_data:
         return []
 
-    if not extracted_data:
-        return []
-
-    # Get user
-    user = current_user
-
-    return process_and_save_transactions(extracted_data, user, db, spender)
+    return process_and_save_transactions(extracted_data, current_user, db, spender)
 
 
 @router.post("/confirm", response_model=List[schemas.Transaction])

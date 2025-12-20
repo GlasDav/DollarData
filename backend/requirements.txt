@@ -15,3 +15,5 @@ httpx
 yfinance
 argon2-cffi
 python-dotenv
+slowapi
+email-validator

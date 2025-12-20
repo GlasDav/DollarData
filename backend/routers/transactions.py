@@ -68,12 +68,12 @@ def update_transaction(
 
 @router.delete("/{transaction_id}")
 def delete_transaction(transaction_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """Delete a transaction by ID."""
     txn = db.query(models.Transaction).filter(models.Transaction.id == transaction_id, models.Transaction.user_id == current_user.id).first()
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
         
     db.delete(txn)
-    db.commit()
     db.commit()
     return {"message": "Transaction deleted"}
 

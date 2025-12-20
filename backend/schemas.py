@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import List, Optional
 from datetime import datetime, date
+import re
 
 # Tags
 class TagBase(BaseModel):
@@ -60,8 +61,6 @@ class TransactionBase(BaseModel):
     description: str
     amount: float
     bucket_id: Optional[int] = None
-    amount: float
-    bucket_id: Optional[int] = None
     goal_id: Optional[int] = None
     spender: str = "Joint"
     external_id: Optional[str] = None
@@ -103,17 +102,28 @@ class Transaction(TransactionBase):
         from_attributes = True
 
 # User
-# User
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     is_couple_mode: bool = False
     name_a: str = "You"
     name_b: str = "Partner"
     currency_symbol: str = "$"
 
-class UserCreate(BaseModel): # Simplified for Register
-    email: str
+class UserCreate(BaseModel):
+    """Schema for user registration with validation."""
+    email: EmailStr
     password: str
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if not re.search(r'[A-Za-z]', v):
+            raise ValueError('Password must contain at least one letter')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Password must contain at least one number')
+        return v
 
 class UserSettingsUpdate(BaseModel):
     is_couple_mode: Optional[bool] = None
@@ -122,7 +132,7 @@ class UserSettingsUpdate(BaseModel):
     currency_symbol: Optional[str] = None
     
 class UserLogin(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class Token(BaseModel):

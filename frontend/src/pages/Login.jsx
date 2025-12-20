@@ -15,23 +15,27 @@ export default function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(""); // Clear previous errors
         try {
             await login(email, password);
             navigate(from, { replace: true });
         } catch (err) {
-            setError("Invalid credentials");
+            const detail = err.response?.data?.detail;
+            if (typeof detail === 'string') {
+                setError(detail);
+            } else {
+                setError("Invalid credentials. Please check your email and password.");
+            }
         }
     };
 
     const handleGoogleLogin = async () => {
-        // Mock Google Login for visual demo
         try {
-            // In real app: useGoogleLogin hook from @react-oauth/google
             const mockToken = "mock_google_token";
             await googleLogin(mockToken);
             navigate(from, { replace: true });
         } catch (err) {
-            setError("Google login failed");
+            setError("Google login is not yet available. Please use email login.");
         }
     }
 

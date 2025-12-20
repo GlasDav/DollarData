@@ -1,25 +1,42 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import logging
+import os
+
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
+
 from .database import get_db
 from . import models, schemas
 
-import os
-from dotenv import load_dotenv
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# CONSTANTS
-SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkeychangeinproduction")
+# CONSTANTS - Environment Configuration
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    # In development, allow a default but warn loudly
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        raise RuntimeError("SECRET_KEY environment variable is required in production")
+    else:
+        SECRET_KEY = "dev-only-insecure-key-do-not-use-in-production"
+        logger.warning("⚠️  Using insecure default SECRET_KEY - set SECRET_KEY env var for production!")
+
 ALGORITHM = "HS256"
 # Short lived access token (e.g. 60 mins)
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 # Long lived refresh token (e.g. 7 days)
-REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")

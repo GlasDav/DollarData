@@ -1,11 +1,44 @@
+# Python
 venv/
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+
+# Node
 node_modules/
+
+# Environment
 .env
+.env.local
+.env.production
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Build
 dist/
 build/
 coverage/
+
+# Logs
 *.log
-principal_v5.db.bak
+debug_log.txt
+
+# Database - IMPORTANT: Never commit database files
+*.db
+*.db.bak
+*.sqlite
+*.sqlite3
+principal*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test artifacts
+.pytest_cache/
+htmlcov/

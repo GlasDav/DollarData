@@ -12,23 +12,32 @@ export default function Register() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(""); // Clear previous errors
         try {
             await register(email, password);
-            // Navigation handled in context or auto-login
             navigate("/");
         } catch (err) {
-            setError(err.response?.data?.detail || "Registration failed. Email might be taken.");
+            // Handle different error formats from the API
+            const detail = err.response?.data?.detail;
+            if (Array.isArray(detail)) {
+                // Pydantic validation errors come as an array
+                const messages = detail.map(d => d.msg.replace('Value error, ', '')).join('. ');
+                setError(messages);
+            } else if (typeof detail === 'string') {
+                setError(detail);
+            } else {
+                setError("Registration failed. Please try again.");
+            }
         }
     };
 
     const handleGoogleLogin = async () => {
-        // Mock Google Login for visual demo
         try {
             const mockToken = "mock_google_token";
             await googleLogin(mockToken);
             navigate("/");
         } catch (err) {
-            setError("Google sign-up failed");
+            setError("Google sign-up is not yet available. Please use email registration.");
         }
     }
 
@@ -92,10 +101,13 @@ export default function Register() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                minLength={8}
                             />
                         </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            At least 8 characters, including a letter and a number
+                        </p>
                     </div>
-                    {/* Names removed, moved to Settings */}
 
                     <button
                         type="submit"

@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -7,17 +6,15 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem("token"));
-    const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken")); // New
+    const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken"));
     const [loading, setLoading] = useState(true);
 
-    // Set axios default header whenever token changes
+    // Set api default header whenever token changes
     useEffect(() => {
         if (token) {
-            axios.defaults.headers.common["Authorization"] = `Bearer ${token}`; // Keep global for safety
-            api.defaults.headers.common["Authorization"] = `Bearer ${token}`; // Set on shared instance
+            api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
             localStorage.setItem("token", token);
         } else {
-            delete axios.defaults.headers.common["Authorization"];
             delete api.defaults.headers.common["Authorization"];
             localStorage.removeItem("token");
         }
@@ -40,15 +37,12 @@ export const AuthProvider = ({ children }) => {
                 return;
             }
             try {
-                // Fetch user profile from backend
-                const res = await axios.get("http://localhost:8000/auth/users/me");
+                // Fetch user profile from backend using shared api instance
+                const res = await api.get("/auth/users/me");
                 setUser(res.data);
             } catch (error) {
                 console.error("Failed to fetch user profile", error);
-                // Don't auto-logout yet if we have refresh logic elsewhere? 
-                // Actually, if fetching profile fails 401, the interceptor should handle refresh.
-                // If that fails, then we logout.
-                // For now, let's leave this safe catch.
+                // If 401, the api interceptor will handle refresh/redirect
             } finally {
                 setLoading(false);
             }
@@ -61,15 +55,14 @@ export const AuthProvider = ({ children }) => {
         formData.append("username", username);
         formData.append("password", password);
 
-        const res = await axios.post("http://localhost:8000/auth/token", formData);
+        const res = await api.post("/auth/token", formData);
         setToken(res.data.access_token);
-        setRefreshToken(res.data.refresh_token); // New
-        // Could fetch user details here and setUser
-        setUser({ username }); // Simple state
+        setRefreshToken(res.data.refresh_token);
+        setUser({ username });
     };
 
     const register = async (email, password) => {
-        await axios.post("http://localhost:8000/auth/register", {
+        await api.post("/auth/register", {
             email,
             password
         });
@@ -77,12 +70,10 @@ export const AuthProvider = ({ children }) => {
         await login(email, password);
     };
 
-    const googleLogin = async (token) => {
-        // Mock or Real call
-        const res = await axios.post("http://localhost:8000/auth/google", { token });
+    const googleLogin = async (googleToken) => {
+        const res = await api.post("/auth/google", { token: googleToken });
         setToken(res.data.access_token);
-        setRefreshToken(res.data.refresh_token); // New
-        // setUser handled by useEffect
+        setRefreshToken(res.data.refresh_token);
     };
 
     const logout = () => {
