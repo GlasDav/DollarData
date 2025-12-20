@@ -62,13 +62,16 @@ The dashboard serves as the central hub for financial oversight.
     -   **Liabilities**: Credit Cards, Loans, Mortgages.
 -   **Manual Accounts**: Ability to manually add and update account balances (via Check-In).
 
-### Debt Payoff Visualizer
--   **Projections**: Visualizes debt payoff timelines based on current payments.
--   **Simulations**: Estimates interest and time saved by increasing monthly repayments.
-
-### Investments
--   **Performance Tracking**: Historical view of investment portfolio value.
--   **Ticker Search**: Functionality to look up and add investment holdings (stocks/ETFs).
+### Tools & Calculators *(New)*
+-   **Combined Hub**: Centralized "Tools" page for financial planning utilities.
+-   **Debt Payoff Visualizer**:
+    -   **Projections**: Visualizes debt payoff timelines based on current payments.
+    -   **Simulations**: Estimates interest and time saved by increasing monthly repayments.
+-   **Tax Planner**:
+    -   **Estimations**: Calculates estimated tax obligations based on income settings.
+    -   **Deductions**: Configurable tax deductions for accurate net income projections.
+-   **Investment Search**: Ticker lookup functionality to add holdings (now integrated into Net Worth page).
+-   **Optimized Navigation**: Tools are accessible via a tabbed interface to reduce sidebar clutter.
 
 ## 4. Planning & Budgeting
 ### Financial Calendar
