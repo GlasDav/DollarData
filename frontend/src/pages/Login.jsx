@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Lock, Mail, TrendingUp } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const { login, googleLogin } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -33,15 +35,33 @@ export default function Login() {
         }
     };
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleSuccess = async (tokenResponse) => {
+        setIsGoogleLoading(true);
+        setError("");
         try {
-            const mockToken = "mock_google_token";
-            await googleLogin(mockToken);
+            // tokenResponse.access_token is the OAuth access token
+            await googleLogin(tokenResponse.access_token);
             navigate(from, { replace: true });
         } catch (err) {
-            setError("Google login is not yet available. Please use email login.");
+            console.error('Google login error:', err);
+            const detail = err.response?.data?.detail;
+            if (typeof detail === 'string') {
+                setError(detail);
+            } else {
+                setError("Failed to sign in with Google. Please try again.");
+            }
+        } finally {
+            setIsGoogleLoading(false);
         }
-    }
+    };
+
+    const googleLoginHook = useGoogleLogin({
+        onSuccess: handleGoogleSuccess,
+        onError: (error) => {
+            console.error('Google OAuth error:', error);
+            setError("Google sign-in was cancelled or failed.");
+        },
+    });
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">
@@ -71,11 +91,24 @@ export default function Login() {
                 {/* Google Login Button */}
                 <button
                     type="button"
-                    onClick={handleGoogleLogin}
-                    className="w-full bg-white/10 backdrop-blur border border-white/20 text-white font-medium py-3 rounded-xl transition-all hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-6"
+                    onClick={() => googleLoginHook()}
+                    disabled={isGoogleLoading}
+                    className="w-full bg-white/10 backdrop-blur border border-white/20 text-white font-medium py-3 rounded-xl transition-all hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
-                    Sign in with Google
+                    {isGoogleLoading ? (
+                        <>
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Signing in...
+                        </>
+                    ) : (
+                        <>
+                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+                            Sign in with Google
+                        </>
+                    )}
                 </button>
 
                 <div className="flex items-center gap-4 mb-6">
