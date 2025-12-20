@@ -664,7 +664,6 @@ def get_sankey_data(
     # Groups (User requested "Discretionary" vs "Non-Discretionary")
     idx_non_disc = get_node("Non-Discretionary") # Formerly Needs
     idx_disc = get_node("Discretionary")         # Formerly Wants
-    idx_savings = get_node("Savings")
     idx_uncat = get_node("Uncategorized")
     
     non_disc_total = 0.0
@@ -700,7 +699,13 @@ def get_sankey_data(
     # Savings Logic
     net_savings = total_income - total_expenses
     if net_savings > 0:
-        links.append({"source": idx_income, "target": idx_savings, "value": net_savings})
+        # Create a 3-layer path for Savings to match other groups:
+        # Income -> "Savings" (Group) -> "Net Savings" (Bucket)
+        idx_savings_group = get_node("Savings") 
+        idx_savings_bucket = get_node("Net Savings")
+        
+        links.append({"source": idx_income, "target": idx_savings_group, "value": net_savings})
+        links.append({"source": idx_savings_group, "target": idx_savings_bucket, "value": net_savings})
         
     # Filter out unused nodes
     used_indices = set()

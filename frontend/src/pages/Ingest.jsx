@@ -208,62 +208,65 @@ export default function Ingest() {
                 `}>
                     <div className="flex flex-col items-center justify-center space-y-4">
                         {/* Spender Selection */}
-                        <div className="mb-4 relative z-10">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Who does this statement belong to?</label>
-                            <Listbox value={spender} onChange={setSpender} disabled={file !== null}>
-                                <div className="relative mt-1">
-                                    <Listbox.Button className="relative w-full cursor-default rounded-lg bg-slate-50 dark:bg-slate-700 py-2 pl-10 pr-10 text-center border border-slate-200 dark:border-slate-600 focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-300 sm:text-sm text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <span className="block truncate">
-                                            {spender === 'Joint' ? 'Joint Account' :
-                                                spender === 'User A' ? (userSettings?.name_a || 'User A') :
-                                                    (userSettings?.name_b || 'User B')}
-                                        </span>
-                                        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                                            <ChevronDown
-                                                className="h-5 w-5 text-slate-400"
-                                                aria-hidden="true"
-                                            />
-                                        </span>
-                                    </Listbox.Button>
-                                    <Transition
-                                        as={React.Fragment}
-                                        leave="transition ease-in duration-100"
-                                        leaveFrom="opacity-100"
-                                        leaveTo="opacity-0"
-                                    >
-                                        <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50 text-center">
-                                            {[
-                                                { id: 'Joint', name: 'Joint Account' },
-                                                { id: 'User A', name: userSettings?.name_a || 'User A' },
-                                                { id: 'User B', name: userSettings?.name_b || 'User B' }
-                                            ].map((person, personIdx) => (
-                                                <Listbox.Option
-                                                    key={personIdx}
-                                                    className={({ active }) =>
-                                                        `relative cursor-default select-none py-2 pl-10 pr-10 ${active ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-100' : 'text-slate-900 dark:text-slate-100'
-                                                        }`
-                                                    }
-                                                    value={person.id}
-                                                >
-                                                    {({ selected }) => (
-                                                        <>
-                                                            <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                                {person.name}
-                                                            </span>
-                                                            {selected ? (
-                                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
-                                                                    <Check className="h-5 w-5" aria-hidden="true" />
+                        {/* Spender Selection - Only show if in Couple Mode */}
+                        {userSettings?.is_couple_mode && (
+                            <div className="mb-4 relative z-10">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Who does this statement belong to?</label>
+                                <Listbox value={spender} onChange={setSpender} disabled={file !== null}>
+                                    <div className="relative mt-1">
+                                        <Listbox.Button className="relative w-full cursor-default rounded-lg bg-slate-50 dark:bg-slate-700 py-2 pl-10 pr-10 text-center border border-slate-200 dark:border-slate-600 focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-300 sm:text-sm text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <span className="block truncate">
+                                                {spender === 'Joint' ? 'Joint Account' :
+                                                    spender === 'User A' ? (userSettings?.name_a || 'User A') :
+                                                        (userSettings?.name_b || 'User B')}
+                                            </span>
+                                            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                                <ChevronDown
+                                                    className="h-5 w-5 text-slate-400"
+                                                    aria-hidden="true"
+                                                />
+                                            </span>
+                                        </Listbox.Button>
+                                        <Transition
+                                            as={React.Fragment}
+                                            leave="transition ease-in duration-100"
+                                            leaveFrom="opacity-100"
+                                            leaveTo="opacity-0"
+                                        >
+                                            <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50 text-center">
+                                                {[
+                                                    { id: 'Joint', name: 'Joint Account' },
+                                                    { id: 'User A', name: userSettings?.name_a || 'User A' },
+                                                    { id: 'User B', name: userSettings?.name_b || 'User B' }
+                                                ].map((person, personIdx) => (
+                                                    <Listbox.Option
+                                                        key={personIdx}
+                                                        className={({ active }) =>
+                                                            `relative cursor-default select-none py-2 pl-10 pr-10 ${active ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-100' : 'text-slate-900 dark:text-slate-100'
+                                                            }`
+                                                        }
+                                                        value={person.id}
+                                                    >
+                                                        {({ selected }) => (
+                                                            <>
+                                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                                    {person.name}
                                                                 </span>
-                                                            ) : null}
-                                                        </>
-                                                    )}
-                                                </Listbox.Option>
-                                            ))}
-                                        </Listbox.Options>
-                                    </Transition>
-                                </div>
-                            </Listbox>
-                        </div>
+                                                                {selected ? (
+                                                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                                                        <Check className="h-5 w-5" aria-hidden="true" />
+                                                                    </span>
+                                                                ) : null}
+                                                            </>
+                                                        )}
+                                                    </Listbox.Option>
+                                                ))}
+                                            </Listbox.Options>
+                                        </Transition>
+                                    </div>
+                                </Listbox>
+                            </div>
+                        )}
 
                         <div className="p-4 bg-indigo-50 dark:bg-slate-700 rounded-full text-indigo-600 dark:text-indigo-400">
                             {(uploadMutation.isPending || analyzeCsvMutation.isPending) ?

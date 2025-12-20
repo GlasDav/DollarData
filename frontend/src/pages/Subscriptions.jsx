@@ -295,7 +295,7 @@ export default function Subscriptions() {
                             <input
                                 type="text"
                                 placeholder="Netflix"
-                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900"
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2"
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
                                 required
@@ -304,11 +304,11 @@ export default function Subscriptions() {
                         <div className="w-full md:w-32">
                             <label className="block text-xs font-medium text-slate-500 mb-1">Amount</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-2 text-slate-400">$</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
                                 <input
                                     type="number"
                                     step="0.01"
-                                    className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 pl-7"
+                                    className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white pl-8 pr-3 py-2"
                                     value={newAmount}
                                     onChange={(e) => setNewAmount(e.target.value)}
                                     required
@@ -318,7 +318,7 @@ export default function Subscriptions() {
                         <div className="w-full md:w-40">
                             <label className="block text-xs font-medium text-slate-500 mb-1">Frequency</label>
                             <select
-                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900"
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2"
                                 value={newFreq}
                                 onChange={(e) => setNewFreq(e.target.value)}
                             >
@@ -331,7 +331,7 @@ export default function Subscriptions() {
                             <label className="block text-xs font-medium text-slate-500 mb-1">Next Due</label>
                             <input
                                 type="date"
-                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900"
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2"
                                 value={newDate}
                                 onChange={(e) => setNewDate(e.target.value)}
                                 required

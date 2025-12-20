@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { refreshHoldingPrices, getInvestmentHistory } from '../services/api'; // Use standardized API
 import {
     TrendingUp, TrendingDown, Plus, DollarSign,
-    Landmark, CreditCard, Wallet, LineChart, RefreshCw
+    Landmark, CreditCard, Wallet, LineChart, RefreshCw, X
 } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import CheckInModal from '../components/CheckInModal';
@@ -315,38 +315,52 @@ export default function NetWorth() {
 
                 {
                     isAddAccountOpen && (
-                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
-                            <form onSubmit={handleAddAccount} className="space-y-3">
-                                <input
-                                    type="text"
-                                    placeholder="Account Name (e.g. Chase)"
-                                    required
-                                    className="w-full rounded-lg border-0 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500"
-                                    value={newAccountName}
-                                    onChange={(e) => setNewAccountName(e.target.value)}
-                                />
-                                <div className="flex gap-2">
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">New Account</h3>
+                                <button onClick={() => setIsAddAccountOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                    <X size={18} />
+                                </button>
+                            </div>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                // Auto-assign category based on type for simplicity
+                                const defaultCategory = newAccountType === 'Asset' ? 'Cash' : 'Loan';
+                                createAccountMutation.mutate({
+                                    name: newAccountName,
+                                    type: newAccountType,
+                                    category: defaultCategory
+                                });
+                                setNewAccountName("");
+                            }} className="flex flex-col md:flex-row gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-medium text-slate-500 mb-1">Account Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Chase Checkings"
+                                        required
+                                        className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                                        value={newAccountName}
+                                        onChange={(e) => setNewAccountName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="w-full md:w-48">
+                                    <label className="block text-xs font-medium text-slate-500 mb-1">Type</label>
                                     <select
-                                        className="flex-1 rounded-lg border-0 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
                                         value={newAccountType}
                                         onChange={(e) => setNewAccountType(e.target.value)}
                                     >
                                         <option value="Asset">Asset</option>
                                         <option value="Liability">Liability</option>
                                     </select>
-                                    <select
-                                        className="flex-1 rounded-lg border-0 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500"
-                                        value={newAccountCategory}
-                                        onChange={(e) => setNewAccountCategory(e.target.value)}
-                                    >
-                                        <option value="Cash">Cash</option>
-                                        <option value="Investment">Investment</option>
-                                        <option value="Real Estate">Real Estate</option>
-                                        <option value="Credit Card">Credit Card</option>
-                                        <option value="Loan">Loan</option>
-                                    </select>
                                 </div>
-                                <button type="submit" className="w-full bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700">Save Account</button>
+                                <div className="flex items-end">
+                                    <button type="submit" className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 py-2 text-sm font-medium transition flex items-center gap-2 justify-center">
+                                        <Plus size={18} />
+                                        Create
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     )
