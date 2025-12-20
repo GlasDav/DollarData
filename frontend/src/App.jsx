@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, TrendingDown, Zap, Target, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench } from 'lucide-react';
 import Settings from './pages/Settings';
 import Ingest from './pages/Ingest';
 import Transactions from './pages/Transactions';
@@ -9,10 +9,9 @@ import Dashboard from './pages/Dashboard';
 import NetWorth from './pages/NetWorth';
 import FinancialCalendar from './pages/FinancialCalendar';
 import Subscriptions from './pages/Subscriptions';
-import DebtVisualizer from './pages/DebtVisualizer';
+import Tools from './pages/Tools';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
-import TaxCalculator from './pages/TaxCalculator';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 
@@ -23,7 +22,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
-import { LogOut, Calculator } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -34,7 +33,7 @@ function NavItem({ to, icon: Icon, children, end = false }) {
       to={to}
       end={end}
       className={({ isActive }) => `
-        relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+        relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200
         ${isActive
           ? 'bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/30 dark:to-transparent text-indigo-600 dark:text-indigo-400 font-medium'
           : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-700 dark:hover:text-slate-300'
@@ -44,8 +43,8 @@ function NavItem({ to, icon: Icon, children, end = false }) {
       {({ isActive }) => (
         <>
           {/* Left accent indicator */}
-          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full transition-all duration-200 ${isActive ? 'h-6 bg-gradient-to-b from-indigo-500 to-violet-500' : 'h-0 bg-transparent'}`}></div>
-          <Icon size={20} className={isActive ? 'text-indigo-500' : ''} />
+          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full transition-all duration-200 ${isActive ? 'h-5 bg-gradient-to-b from-indigo-500 to-violet-500' : 'h-0 bg-transparent'}`}></div>
+          <Icon size={18} className={isActive ? 'text-indigo-500' : ''} />
           {children}
         </>
       )}
@@ -62,8 +61,8 @@ function Layout() {
       {/* Sidebar */}
       <div className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
         {/* Logo */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-700">
-          <div className="flex items-center gap-3">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700">
+          <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <TrendingUp className="text-white" size={20} />
             </div>
@@ -71,7 +70,7 @@ function Layout() {
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
           <NavItem to="/" icon={LayoutDashboard} end>Dashboard</NavItem>
           <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
           <NavItem to="/transactions" icon={List}>Transactions</NavItem>
@@ -79,18 +78,17 @@ function Layout() {
           <NavItem to="/calendar" icon={Calendar}>Calendar</NavItem>
           <NavItem to="/subscriptions" icon={CreditCard}>Subscriptions</NavItem>
           <NavItem to="/goals" icon={Target}>Goals</NavItem>
-          <NavItem to="/debt" icon={TrendingDown}>Debt Visualizer</NavItem>
+          <NavItem to="/tools" icon={Wrench}>Tools</NavItem>
           <NavItem to="/insights" icon={Zap}>Insights</NavItem>
           <NavItem to="/settings" icon={SettingsIcon}>Settings</NavItem>
-          <NavItem to="/taxes" icon={Calculator}>Taxes</NavItem>
         </nav>
 
-        <div className="p-4 border-t border-slate-100 dark:border-slate-700">
+        <div className="p-3 border-t border-slate-100 dark:border-slate-700">
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-all duration-200"
           >
-            <LogOut size={20} />
+            <LogOut size={18} />
             Sign Out
           </button>
         </div>
@@ -126,10 +124,9 @@ function App() {
                 <Route path="/calendar" element={<FinancialCalendar />} />
                 <Route path="/subscriptions" element={<Subscriptions />} />
                 <Route path="/goals" element={<Goals />} />
-                <Route path="/debt" element={<DebtVisualizer />} />
+                <Route path="/tools" element={<Tools />} />
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/ingest" element={<Ingest />} />
-                <Route path="/taxes" element={<TaxCalculator />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             </Routes>
