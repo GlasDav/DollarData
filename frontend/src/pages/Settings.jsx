@@ -115,7 +115,7 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
     const suggestions = allTags.filter(t => !currentTagNames.includes(t.toLowerCase()));
 
     return (
-        <tr className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
+        <tr className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''}`}>
             {/* Icon */}
             <td className="p-2 w-12">
                 <Menu as="div" className="relative">
@@ -212,6 +212,19 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
                         }`}
                 >
                     {bucket.is_rollover && <span className="text-xs">✓</span>}
+                </button>
+            </td>
+
+            {/* Transfer (exclude from analytics) */}
+            <td className="p-2 w-20 text-center">
+                <button
+                    onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_transfer: !bucket.is_transfer } })}
+                    className={`mx-auto w-5 h-5 rounded border-2 flex items-center justify-center transition ${bucket.is_transfer
+                        ? 'bg-orange-500 border-orange-500 text-white'
+                        : 'border-slate-300 dark:border-slate-600 hover:border-orange-400'
+                        }`}
+                >
+                    {bucket.is_transfer && <span className="text-xs">✓</span>}
                 </button>
             </td>
 
@@ -396,6 +409,7 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
                                 <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-16 text-center">Shared</th>
                             )}
                             <SortHeader field="rollover" className="w-20 text-center">Rollover</SortHeader>
+                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-20 text-center">Transfer</th>
                             <SortHeader field="tags" className="w-32">Tags</SortHeader>
                             <th className="p-2 w-10"></th>
                         </tr>
