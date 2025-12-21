@@ -32,8 +32,8 @@ class AICategorizer:
         if api_key:
             try:
                 genai.configure(api_key=api_key)
-                # Use Gemini 1.5 Flash for fast, efficient categorization
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                # Use the latest Gemini 3 Flash
+                self.model = genai.GenerativeModel('gemini-3-flash-preview')
                 self.enabled = True
                 logger.info("AI Categorizer initialized successfully with Gemini API")
             except Exception as e:
