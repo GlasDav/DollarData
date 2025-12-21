@@ -90,25 +90,26 @@ const SankeyChart = ({ data }) => {
             <div className="overflow-auto" style={{ maxHeight: '500px' }}>
                 <div style={{ height: `${chartHeight}px`, minHeight: '400px' }}>
                     <Sankey
-                        width={800}
+                        width={1000}
                         height={chartHeight}
                         data={data}
                         node={<CustomNode />}
                         link={<CustomLink />}
                         nodePadding={nodePadding}
                         nodeWidth={8}
-                        margin={{ left: 120, right: 120, top: 20, bottom: 20 }}
+                        margin={{ left: 100, right: 180, top: 20, bottom: 20 }}
                     >
                         <Tooltip
                             contentStyle={{
                                 borderRadius: '8px',
-                                border: '1px solid #475569',
-                                boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.3)',
-                                backgroundColor: '#0f172a',
-                                color: '#f1f5f9',
-                                padding: '8px 12px'
+                                border: '1px solid #e2e8f0',
+                                boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.2)',
+                                backgroundColor: '#ffffff',
+                                color: '#1e293b',
+                                padding: '10px 14px',
+                                fontSize: '13px'
                             }}
-                            labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
+                            labelStyle={{ color: '#64748b', fontWeight: 600, marginBottom: '4px' }}
                             formatter={(value, name) => [formatCurrency(value), name]}
                         />
                     </Sankey>
