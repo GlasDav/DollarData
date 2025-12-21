@@ -28,13 +28,11 @@ const cleanKeywords = (str) => {
 };
 
 // Bucket Table Row Component - compact inline editing
-const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation, isNew = false, onCancelNew }) => {
+const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation }) => {
     const Icon = ICON_MAP[bucket.icon_name] || Wallet;
     const [localName, setLocalName] = useState(bucket.name || '');
     const [localLimitA, setLocalLimitA] = useState(bucket.monthly_limit_a || 0);
     const [localLimitB, setLocalLimitB] = useState(bucket.monthly_limit_b || 0);
-    const [showTags, setShowTags] = useState(false);
-    const [newTag, setNewTag] = useState('');
     const currencySymbol = CURRENCY_MAP[userSettings?.currency_symbol] || userSettings?.currency_symbol || '$';
 
     useEffect(() => {
@@ -62,25 +60,6 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
             updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, monthly_limit_b: val } });
         }
     };
-
-    const handleAddTag = (e) => {
-        if (e.key === 'Enter' && newTag.trim()) {
-            const currentTags = bucket.tags || [];
-            if (!currentTags.some(t => t.name.toLowerCase() === newTag.toLowerCase())) {
-                updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: [...currentTags, { name: newTag.trim() }] } });
-            }
-            setNewTag('');
-        }
-    };
-
-    const handleRemoveTag = (tagName) => {
-        const newTags = (bucket.tags || []).filter(t => t.name !== tagName);
-        updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTags } });
-    };
-
-    const tags = bucket.tags || [];
-    const visibleTags = tags.slice(0, 2);
-    const hiddenCount = tags.length - visibleTags.length;
 
     return (
         <tr className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
@@ -183,57 +162,6 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
                 </button>
             </td>
 
-            {/* Tags */}
-            <td className="p-2 relative">
-                <div className="flex flex-wrap gap-1 items-center">
-                    {visibleTags.map((tag, idx) => (
-                        <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                            {tag.name}
-                            {showTags && (
-                                <button onClick={() => handleRemoveTag(tag.name)} className="ml-1 hover:text-red-500">×</button>
-                            )}
-                        </span>
-                    ))}
-                    {hiddenCount > 0 && (
-                        <button
-                            onClick={() => setShowTags(!showTags)}
-                            className="text-[10px] text-indigo-500 hover:text-indigo-700 font-medium"
-                        >
-                            +{hiddenCount} more
-                        </button>
-                    )}
-                    <button
-                        onClick={() => setShowTags(!showTags)}
-                        className="text-slate-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition"
-                    >
-                        <Plus size={12} />
-                    </button>
-                </div>
-
-                {/* Expanded Tags Dropdown */}
-                {showTags && (
-                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-20 min-w-[200px]">
-                        <div className="flex flex-wrap gap-1 mb-2">
-                            {tags.map((tag, idx) => (
-                                <span key={idx} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                    {tag.name}
-                                    <button onClick={() => handleRemoveTag(tag.name)} className="ml-1.5 hover:text-red-500">×</button>
-                                </span>
-                            ))}
-                        </div>
-                        <input
-                            type="text"
-                            className="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white outline-none focus:border-indigo-500"
-                            placeholder="Add tag and press Enter"
-                            value={newTag}
-                            onChange={(e) => setNewTag(e.target.value)}
-                            onKeyDown={handleAddTag}
-                            autoFocus
-                        />
-                    </div>
-                )}
-            </td>
-
             {/* Delete */}
             <td className="p-2 w-10">
                 <button
@@ -285,7 +213,6 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
                                 <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-16 text-center">Shared</th>
                             )}
                             <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-20 text-center">Rollover</th>
-                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Tags</th>
                             <th className="p-2 w-10"></th>
                         </tr>
                     </thead>
@@ -303,7 +230,7 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
 
                         {buckets.length === 0 && (
                             <tr>
-                                <td colSpan={userSettings?.is_couple_mode ? 8 : 6} className="p-6 text-center text-slate-400 text-sm">
+                                <td colSpan={userSettings?.is_couple_mode ? 7 : 5} className="p-6 text-center text-slate-400 text-sm">
                                     No categories yet
                                 </td>
                             </tr>
@@ -311,7 +238,7 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
 
                         {/* Add New Row - at bottom */}
                         <tr className="border-t border-slate-100 dark:border-slate-700 bg-slate-25 dark:bg-slate-800/30">
-                            <td colSpan={userSettings?.is_couple_mode ? 8 : 6} className="p-2">
+                            <td colSpan={userSettings?.is_couple_mode ? 7 : 5} className="p-2">
                                 <button
                                     onClick={handleAddNew}
                                     className="w-full py-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center justify-center gap-2 text-sm font-medium"

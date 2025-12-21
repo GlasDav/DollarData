@@ -105,21 +105,15 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
     if not non_duplicate_data:
         return [], duplicate_count
     
-    # Fetch Buckets with Tags for Mapping
-    buckets = db.query(models.BudgetBucket).options(joinedload(models.BudgetBucket.tags)).filter(models.BudgetBucket.user_id == user.id).all()
+    # Fetch Buckets for Mapping (no longer loading tags)
+    buckets = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).all()
     bucket_by_id = {b.id: b for b in buckets}
     
-    # 1. Build Bucket Map (Name -> ID)
+    # Build Bucket Map (Name -> ID)
     bucket_map = {b.name.lower(): b.id for b in buckets}
     bucket_names = [b.name for b in buckets]  # Keep original casing for AI
-    
-    # 2. Build Legacy Rules Map (Tag/Keyword -> Bucket Name)
-    rules_map = {}
-    for bucket in buckets:
-        for tag in bucket.tags:
-            rules_map[tag.name.lower()] = bucket.name
             
-    # 3. Fetch Smart Rules (Prioritized)
+    # Fetch Smart Rules (Prioritized) - this is now the primary categorization method
     smart_rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user.id).order_by(models.CategorizationRule.priority.desc()).all()
 
     # First pass: Apply rule-based categorization
@@ -141,17 +135,11 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
             confidence = 1.0
             is_verified = True  # Explicit rule match = Verified
         else:
-            # B. Legacy Tag Prediction
-            predicted_category, conf = categorizer.predict(clean_desc, rules_map)
-            if predicted_category:
-                bucket_id = bucket_map.get(predicted_category.lower())
-                confidence = conf
-            else:
-                # C. Best Guess (Global Keywords)
-                guessed_bucket_id, guess_conf = categorizer.guess_category(clean_desc, bucket_map)
-                if guessed_bucket_id:
-                    bucket_id = guessed_bucket_id
-                    confidence = guess_conf
+            # B. Best Guess (Global Keywords)
+            guessed_bucket_id, guess_conf = categorizer.guess_category(clean_desc, bucket_map)
+            if guessed_bucket_id:
+                bucket_id = guessed_bucket_id
+                confidence = guess_conf
         
         # Track result (include hash for later)
         categorization_results.append({

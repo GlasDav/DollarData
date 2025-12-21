@@ -102,15 +102,22 @@ The dashboard serves as the central hub for financial oversight.
     -   Categories displayed in grouped tables instead of large cards.
     -   Three sections: Income, Non-Discretionary, Discretionary.
     -   Inline editing for all fields (click to edit).
-    -   Expandable tags showing "keyword1, +N more".
 -   **Categories & Groups**: Manage high-level groups (Income, Discretionary, Non-Discretionary).
 -   **Buckets**: Create and edit specific spending buckets (e.g., Groceries, Rent) within groups.
 -   **Couple Mode Features**:
     -   Separate limit columns for each partner.
     -   Shared toggle to combine limits for joint expenses.
 -   **Rollover Toggle**: Enable/disable budget rollover per category.
--   **Tags (Keywords)**: Auto-categorize transactions matching tag keywords.
 -   **Transfer Flag**: Mark buckets as "transfer" to exclude from spending analytics.
+
+### Smart Rules (Auto-Learning)
+-   **Automatic Rule Creation**: When you manually categorize a transaction, a Smart Rule is auto-created.
+-   **Keyword Matching**: Rules match transaction descriptions to categories.
+-   **Priority-Based**: Higher priority rules take precedence.
+-   **Categorization Order**:
+    1. Smart Rules (user-created, highest priority)
+    2. Global Keywords (common merchant patterns)
+    3. AI Prediction (Google Gemini fallback)
 
 ### Applications Settings
 -   **Couple Mode**: Toggle to enable features for shared finances (Partner A / Partner B distinction).
