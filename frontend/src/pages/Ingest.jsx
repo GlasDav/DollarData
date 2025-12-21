@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Listbox, Transition } from '@headlessui/react';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2 } from 'lucide-react';
@@ -25,6 +25,7 @@ export default function Ingest() {
     const [error, setError] = useState(null);
     const [skipDuplicates, setSkipDuplicates] = useState(true);
     const [importProgress, setImportProgress] = useState(null);  // { jobId, progress, total, message, status }
+    const cancelImportRef = useRef(false);  // Used to cancel polling loop
     const queryClient = useQueryClient();
 
     // Fetch User Settings for Names
@@ -143,6 +144,11 @@ export default function Ingest() {
             const maxAttempts = 300; // 5 minutes max (300 * 1000ms)
 
             while (attempts < maxAttempts) {
+                // Check if cancelled
+                if (cancelImportRef.current) {
+                    cancelImportRef.current = false;  // Reset for next import
+                    throw new Error('Import cancelled');
+                }
                 await new Promise(resolve => setTimeout(resolve, 1000)); // Poll every 1 second
                 const statusRes = await api.get(`/ingest/csv/status/${job_id}`);
                 const status = statusRes.data;
@@ -492,10 +498,11 @@ export default function Ingest() {
                                             style={{ width: `${importProgress.total > 0 ? (importProgress.progress / importProgress.total * 100) : 0}%` }}
                                         />
                                     </div>
-                                    <div className="text-xs text-slate-400 mt-1">
-                                        {importProgress.progress} / {importProgress.total} transactions
-                                        {importProgress.duplicateCount > 0 && ` (${importProgress.duplicateCount} duplicates skipped)`}
-                                    </div>
+                                    {importProgress.duplicateCount > 0 && (
+                                        <div className="text-xs text-slate-400 mt-1">
+                                            {importProgress.duplicateCount} duplicates skipped
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             {ingestCsvMutation.isPending && !importProgress && (
@@ -504,9 +511,15 @@ export default function Ingest() {
                                 </span>
                             )}
                             <button
-                                onClick={() => { setFile(null); setPreviewData(null); setImportProgress(null); }}
+                                onClick={() => {
+                                    if (ingestCsvMutation.isPending) {
+                                        cancelImportRef.current = true;  // Signal the polling loop to stop
+                                    }
+                                    setFile(null);
+                                    setPreviewData(null);
+                                    setImportProgress(null);
+                                }}
                                 className="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 font-medium"
-                                disabled={ingestCsvMutation.isPending}
                             >
                                 Cancel
                             </button>
