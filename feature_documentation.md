@@ -29,7 +29,12 @@ The dashboard serves as the central hub for financial oversight.
 -   **File Import**: Support for manual file uploads.
     -   **PDF Statements**: Extract transactions from bank PDFs.
     -   **CSV Import**: Map and import CSV data from other sources.
--   **AI-Powered Categorization** *(New)*:
+-   **Review Before Save** *(New)*:
+    -   Transactions are categorized and shown for review but NOT saved to database.
+    -   Users can edit categories, descriptions, and spender before confirming.
+    -   Only "Confirm & Save" button persists transactions to database.
+    -   Prevents accidental imports of incomplete or miscategorized data.
+-   **AI-Powered Categorization**:
     -   Uses Google Gemini 3 Flash to intelligently categorize transactions.
     -   Works as a fallback when rule-based matching fails.
     -   Only suggests from user-defined bucket categories.
@@ -37,11 +42,11 @@ The dashboard serves as the central hub for financial oversight.
         -   ✓ **Matched** (green): Rule/keyword match, high confidence
         -   ✨ **AI** (purple): AI predicted category, needs review
         -   ⚠ **Review** (yellow): No match found, user should categorize
--   **Duplicate Detection** *(New)*:
+-   **Duplicate Detection**:
     -   Hash-based fingerprinting detects previously imported transactions.
     -   Automatically skips duplicates when re-importing overlapping statements.
     -   "Skip duplicate transactions" checkbox (enabled by default).
--   **Import Progress Indicator** *(New)*:
+-   **Import Progress Indicator**:
     -   Loading spinner and time estimate during AI categorization.
     -   "⏳ AI is categorizing transactions... This may take 1-2 minutes."
 
@@ -93,9 +98,19 @@ The dashboard serves as the central hub for financial oversight.
 
 ## 5. System & Settings
 ### Budget Configuration
+-   **Compact Table Layout** *(New)*:
+    -   Categories displayed in grouped tables instead of large cards.
+    -   Three sections: Income, Non-Discretionary, Discretionary.
+    -   Inline editing for all fields (click to edit).
+    -   Expandable tags showing "keyword1, +N more".
 -   **Categories & Groups**: Manage high-level groups (Income, Discretionary, Non-Discretionary).
 -   **Buckets**: Create and edit specific spending buckets (e.g., Groceries, Rent) within groups.
--   **Transfer Flag** *(New)*: Mark buckets as "transfer" to exclude from spending analytics.
+-   **Couple Mode Features**:
+    -   Separate limit columns for each partner.
+    -   Shared toggle to combine limits for joint expenses.
+-   **Rollover Toggle**: Enable/disable budget rollover per category.
+-   **Tags (Keywords)**: Auto-categorize transactions matching tag keywords.
+-   **Transfer Flag**: Mark buckets as "transfer" to exclude from spending analytics.
 
 ### Applications Settings
 -   **Couple Mode**: Toggle to enable features for shared finances (Partner A / Partner B distinction).
@@ -104,6 +119,10 @@ The dashboard serves as the central hub for financial oversight.
 
 ## 6. Authentication & Security
 -   **User Accounts**: Secure Login and Registration flows using Argon2 password hashing.
+-   **Password Reset** *(New)*:
+    -   Forgot password flow with secure token-based reset.
+    -   Email verification flow for new accounts.
+-   **Account Deletion** *(New)*: Users can permanently delete their account from Settings.
 -   **Session Management**:
     -   **Short-lived Access Tokens**: Access tokens expire after 60 minutes for enhanced security.
     -   **Refresh Tokens**: Long-lived refresh tokens (7 days) allow seamless sessions while maintaining high rotate frequency for access keys.
