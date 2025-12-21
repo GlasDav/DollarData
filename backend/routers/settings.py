@@ -189,6 +189,13 @@ def delete_bucket(bucket_id: int, db: Session = Depends(get_db), current_user: m
     if not db_bucket:
         raise HTTPException(status_code=404, detail="Bucket not found")
     
+    # Protect Transfer and Investment buckets from deletion
+    if db_bucket.is_transfer:
+        raise HTTPException(status_code=400, detail="The Transfers bucket cannot be deleted - it is required for internal transfers.")
+    if db_bucket.is_investment:
+        raise HTTPException(status_code=400, detail="The Investments bucket cannot be deleted - it is required for investment tracking.")
+    
     db.delete(db_bucket)
     db.commit()
     return {"ok": True}
+

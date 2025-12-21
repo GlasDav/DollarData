@@ -115,7 +115,7 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
     const suggestions = allTags.filter(t => !currentTagNames.includes(t.toLowerCase()));
 
     return (
-        <tr className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''}`}>
+        <tr className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${bucket.is_investment ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
             {/* Icon */}
             <td className="p-2 w-12">
                 <Menu as="div" className="relative">
@@ -286,18 +286,20 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
                 )}
             </td>
 
-            {/* Delete */}
+            {/* Delete - hidden for Transfer and Investment buckets */}
             <td className="p-2 w-10">
-                <button
-                    onClick={() => {
-                        if (confirm(`Delete "${bucket.name}"?`)) {
-                            deleteBucketMutation.mutate(bucket.id);
-                        }
-                    }}
-                    className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
-                >
-                    <Trash2 size={14} />
-                </button>
+                {!bucket.is_transfer && !bucket.is_investment && (
+                    <button
+                        onClick={() => {
+                            if (confirm(`Delete "${bucket.name}"?`)) {
+                                deleteBucketMutation.mutate(bucket.id);
+                            }
+                        }}
+                        className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                )}
             </td>
         </tr>
     );

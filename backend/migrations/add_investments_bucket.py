@@ -1,33 +1,53 @@
-import sys
+import sqlite3
+import tempfile
 import os
-import time
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker
-from backend import models
+db_path = os.path.join(tempfile.gettempdir(), "principal_v5_temp.db")
+print(f"Database: {db_path}")
 
-# Create a new engine with timeout
-engine = create_engine("sqlite:///principal_v5.db", connect_args={"timeout": 30})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
 
-db = SessionLocal()
-users = db.query(models.User).all()
-print(f"Found {len(users)} users")
-for user in users:
-    try:
-        existing = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id, models.BudgetBucket.name == "Investments").first()
-        if existing:
-            existing.is_investment = True
-            print(f"  Marked existing for {user.email}")
-        else:
-            b = models.BudgetBucket(user_id=user.id, name="Investments", icon_name="TrendingUp", group="Non-Discretionary", is_investment=True, monthly_limit_a=0.0, monthly_limit_b=0.0)
-            db.add(b)
-            print(f"  Created for {user.email}")
-        db.commit()
-    except Exception as e:
-        print(f"  Error for {user.email}: {e}")
-        db.rollback()
-db.close()
-print("Done!")
+# Check columns
+print("\nBudget_buckets columns:")
+cursor.execute("PRAGMA table_info(budget_buckets)")
+columns = []
+for row in cursor.fetchall():
+    columns.append(row[1])
+    print(f"  {row[1]}: {row[2]}")
+
+# Add column if missing
+if 'is_investment' not in columns:
+    print("\nAdding is_investment column...")
+    cursor.execute("ALTER TABLE budget_buckets ADD COLUMN is_investment BOOLEAN DEFAULT 0")
+    conn.commit()
+    print("Column added!")
+else:
+    print("\nis_investment column already exists!")
+
+# Get all users
+cursor.execute("SELECT id, email FROM users")
+users = cursor.fetchall()
+print(f"\nFound {len(users)} users")
+
+# Add Investments bucket for each
+for user_id, email in users:
+    # Check if bucket exists
+    cursor.execute("SELECT id FROM budget_buckets WHERE user_id = ? AND name = 'Investments'", (user_id,))
+    existing = cursor.fetchone()
+    
+    if existing:
+        cursor.execute("UPDATE budget_buckets SET is_investment = 1 WHERE id = ?", (existing[0],))
+        print(f"  [OK] Marked existing for {email}")
+    else:
+        cursor.execute("""
+            INSERT INTO budget_buckets 
+            (name, icon_name, user_id, monthly_limit_a, monthly_limit_b, is_shared, is_rollover, is_transfer, is_investment, [group])
+            VALUES ('Investments', 'TrendingUp', ?, 0.0, 0.0, 0, 0, 0, 1, 'Non-Discretionary')
+        """, (user_id,))
+        print(f"  [OK] Created for {email}")
+
+conn.commit()
+conn.close()
+print("\nMigration complete on temp database!")
+print(f"\nNow copy back: Copy-Item '{db_path}' principal_v5.db -Force")
