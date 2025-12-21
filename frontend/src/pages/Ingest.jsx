@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Listbox, Transition } from '@headlessui/react';
-import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import ConnectBank from '../components/ConnectBank';
 
@@ -21,9 +21,10 @@ export default function Ingest() {
     const [spender, setSpender] = useState("Joint");
     const [file, setFile] = useState(null);
     const [transactions, setTransactions] = useState([]);
-    const [editingId, setEditingId] = useState(null); // Track which row is being edited
+    const [editingId, setEditingId] = useState(null);
     const [error, setError] = useState(null);
-    const [skipDuplicates, setSkipDuplicates] = useState(true);  // NEW: duplicate detection
+    const [skipDuplicates, setSkipDuplicates] = useState(true);
+    const [importProgress, setImportProgress] = useState(null);  // { jobId, progress, total, message, status }
     const queryClient = useQueryClient();
 
     // Fetch User Settings for Names
@@ -112,7 +113,7 @@ export default function Ingest() {
         onError: (err) => setError(err.response?.data?.detail || "CSV Analysis failed")
     });
 
-    // CSV Ingest Mutation
+    // CSV Ingest Mutation - Async with progress tracking
     const ingestCsvMutation = useMutation({
         mutationFn: async () => {
             if (!file) throw new Error("No file selected");
@@ -129,18 +130,53 @@ export default function Ingest() {
                 formData.append("map_amount", mapping.amount);
             }
 
-            // Add skip duplicates flag
             formData.append("skip_duplicates", skipDuplicates);
 
-            const res = await api.post("/ingest/csv", formData);
-            return res.data;
+            // Start async job
+            const startRes = await api.post("/ingest/csv/start", formData);
+            const { job_id, total } = startRes.data;
+
+            setImportProgress({ jobId: job_id, progress: 0, total, message: 'Starting...', status: 'processing' });
+
+            // Poll for status until complete
+            let attempts = 0;
+            const maxAttempts = 300; // 5 minutes max (300 * 1000ms)
+
+            while (attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Poll every 1 second
+                const statusRes = await api.get(`/ingest/csv/status/${job_id}`);
+                const status = statusRes.data;
+
+                setImportProgress({
+                    jobId: job_id,
+                    progress: status.progress,
+                    total: status.total,
+                    message: status.message,
+                    status: status.status,
+                    duplicateCount: status.duplicate_count
+                });
+
+                if (status.status === 'complete') {
+                    return status.result;
+                } else if (status.status === 'failed') {
+                    throw new Error(status.error || 'Import failed');
+                }
+
+                attempts++;
+            }
+
+            throw new Error('Import timed out');
         },
         onSuccess: (data) => {
             setTransactions(data);
-            setPreviewData(null); // Clear preview to show results
+            setPreviewData(null);
             setError(null);
+            setImportProgress(null);
         },
-        onError: (err) => setError(err.response?.data?.detail || "CSV Import failed")
+        onError: (err) => {
+            setError(err.response?.data?.detail || err.message || "CSV Import failed");
+            setImportProgress(null);
+        }
     });
 
     // Confirm mutation - saves preview transactions to DB
@@ -441,13 +477,34 @@ export default function Ingest() {
                         </label>
 
                         <div className="flex gap-3 items-center">
-                            {ingestCsvMutation.isPending && (
+                            {/* Progress Bar */}
+                            {importProgress && (
+                                <div className="flex-1 mr-4">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Loader2 size={14} className="animate-spin text-indigo-600" />
+                                        <span className="text-sm text-slate-600 dark:text-slate-300">
+                                            {importProgress.message}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                                        <div
+                                            className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                                            style={{ width: `${importProgress.total > 0 ? (importProgress.progress / importProgress.total * 100) : 0}%` }}
+                                        />
+                                    </div>
+                                    <div className="text-xs text-slate-400 mt-1">
+                                        {importProgress.progress} / {importProgress.total} transactions
+                                        {importProgress.duplicateCount > 0 && ` (${importProgress.duplicateCount} duplicates skipped)`}
+                                    </div>
+                                </div>
+                            )}
+                            {ingestCsvMutation.isPending && !importProgress && (
                                 <span className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">
-                                    ⏳ AI is categorizing transactions... This may take 1-2 minutes.
+                                    ⏳ Starting import...
                                 </span>
                             )}
                             <button
-                                onClick={() => { setFile(null); setPreviewData(null); }}
+                                onClick={() => { setFile(null); setPreviewData(null); setImportProgress(null); }}
                                 className="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 font-medium"
                                 disabled={ingestCsvMutation.isPending}
                             >
@@ -460,7 +517,7 @@ export default function Ingest() {
                             >
                                 {ingestCsvMutation.isPending ? (
                                     <>
-                                        <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent" />
+                                        <Loader2 size={16} className="animate-spin" />
                                         Importing...
                                     </>
                                 ) : "Run Import"}

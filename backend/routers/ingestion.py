@@ -3,12 +3,17 @@ import shutil
 import os
 import tempfile
 import hashlib
+import uuid
+import threading
+import time
+from datetime import datetime
+from typing import Dict, Any
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form, BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
 from typing import List
 
-from ..database import get_db
+from ..database import get_db, SessionLocal
 from .. import models, schemas, auth
 from ..services.pdf_parser import parse_pdf
 from ..services.categorizer import Categorizer
@@ -26,6 +31,89 @@ router = APIRouter(
 )
 
 categorizer = Categorizer()
+
+# ============== JOB STORE FOR BACKGROUND PROCESSING ==============
+# In-memory store for tracking job progress (user_id -> {job_id: job_data})
+_job_store: Dict[int, Dict[str, Dict[str, Any]]] = {}
+_job_lock = threading.Lock()
+
+def create_job(user_id: int, total_transactions: int) -> str:
+    """Create a new processing job and return its ID."""
+    job_id = str(uuid.uuid4())[:8]
+    with _job_lock:
+        if user_id not in _job_store:
+            _job_store[user_id] = {}
+        _job_store[user_id][job_id] = {
+            'status': 'processing',
+            'progress': 0,
+            'total': total_transactions,
+            'message': 'Starting...',
+            'result': None,
+            'error': None,
+            'created_at': datetime.utcnow(),
+            'duplicate_count': 0
+        }
+    return job_id
+
+def update_job_progress(user_id: int, job_id: str, progress: int, message: str = None):
+    """Update job progress."""
+    with _job_lock:
+        if user_id in _job_store and job_id in _job_store[user_id]:
+            _job_store[user_id][job_id]['progress'] = progress
+            if message:
+                _job_store[user_id][job_id]['message'] = message
+
+def complete_job(user_id: int, job_id: str, result: list, duplicate_count: int = 0):
+    """Mark job as complete with results."""
+    with _job_lock:
+        if user_id in _job_store and job_id in _job_store[user_id]:
+            _job_store[user_id][job_id]['status'] = 'complete'
+            _job_store[user_id][job_id]['progress'] = _job_store[user_id][job_id]['total']
+            _job_store[user_id][job_id]['message'] = 'Complete'
+            _job_store[user_id][job_id]['result'] = result
+            _job_store[user_id][job_id]['duplicate_count'] = duplicate_count
+
+def fail_job(user_id: int, job_id: str, error: str):
+    """Mark job as failed."""
+    with _job_lock:
+        if user_id in _job_store and job_id in _job_store[user_id]:
+            _job_store[user_id][job_id]['status'] = 'failed'
+            _job_store[user_id][job_id]['error'] = error
+            _job_store[user_id][job_id]['message'] = f'Failed: {error}'
+
+def get_job_status(user_id: int, job_id: str) -> dict:
+    """Get current job status."""
+    with _job_lock:
+        if user_id in _job_store and job_id in _job_store[user_id]:
+            job = _job_store[user_id][job_id]
+            return {
+                'job_id': job_id,
+                'status': job['status'],
+                'progress': job['progress'],
+                'total': job['total'],
+                'message': job['message'],
+                'error': job['error'],
+                'duplicate_count': job['duplicate_count'],
+                # Only include result if complete (can be large)
+                'result': job['result'] if job['status'] == 'complete' else None
+            }
+    return None
+
+def cleanup_old_jobs(user_id: int, max_age_hours: int = 1):
+    """Remove jobs older than max_age_hours."""
+    with _job_lock:
+        if user_id not in _job_store:
+            return
+        cutoff = datetime.utcnow()
+        to_remove = []
+        for job_id, job in _job_store[user_id].items():
+            age = (cutoff - job['created_at']).total_seconds() / 3600
+            if age > max_age_hours and job['status'] in ('complete', 'failed'):
+                to_remove.append(job_id)
+        for job_id in to_remove:
+            del _job_store[user_id][job_id]
+
+# ============================================================
 
 
 def generate_transaction_hash(user_id: int, date, raw_description: str, amount: float) -> str:
@@ -209,6 +297,164 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
     
     return preview_transactions, duplicate_count
 
+
+def process_transactions_preview_with_progress(
+    extracted_data, user, db, spender, skip_duplicates=True, progress_callback=None
+):
+    """
+    Same as process_transactions_preview but with progress callback for async jobs.
+    progress_callback(progress: int, message: str) is called periodically.
+    """
+    from ..services.ai_categorizer import get_ai_categorizer
+    
+    def report_progress(progress: int, message: str):
+        if progress_callback:
+            progress_callback(progress, message)
+    
+    # === DUPLICATE DETECTION ===
+    duplicate_count = 0
+    non_duplicate_data = []
+    
+    report_progress(0, "Checking for duplicates...")
+    
+    if skip_duplicates and extracted_data:
+        incoming_hashes = {}
+        for i, data in enumerate(extracted_data):
+            txn_hash = generate_transaction_hash(
+                user.id, data["date"], data["description"], data["amount"]
+            )
+            incoming_hashes[i] = txn_hash
+        
+        existing_hashes = set(
+            h[0] for h in db.query(models.Transaction.transaction_hash)
+            .filter(
+                models.Transaction.user_id == user.id,
+                models.Transaction.transaction_hash.isnot(None)
+            ).all()
+        )
+        
+        for i, data in enumerate(extracted_data):
+            if incoming_hashes[i] not in existing_hashes:
+                non_duplicate_data.append((data, incoming_hashes[i]))
+            else:
+                duplicate_count += 1
+    else:
+        for data in extracted_data:
+            txn_hash = generate_transaction_hash(user.id, data["date"], data["description"], data["amount"])
+            non_duplicate_data.append((data, txn_hash))
+    
+    total = len(non_duplicate_data)
+    report_progress(0, f"Found {total} new transactions ({duplicate_count} duplicates skipped)")
+    
+    if not non_duplicate_data:
+        return [], duplicate_count
+    
+    # Fetch Buckets
+    buckets = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).all()
+    bucket_by_id = {b.id: b for b in buckets}
+    bucket_map = {b.name.lower(): b.id for b in buckets}
+    bucket_names = [b.name for b in buckets]
+    
+    # Fetch Smart Rules
+    smart_rules = db.query(models.CategorizationRule).filter(
+        models.CategorizationRule.user_id == user.id
+    ).order_by(models.CategorizationRule.priority.desc()).all()
+    
+    report_progress(0, "Applying Smart Rules...")
+    
+    # First pass: Rule-based categorization
+    pending_transactions = []
+    categorization_results = []
+    
+    for i, (data, txn_hash) in enumerate(non_duplicate_data):
+        clean_desc = categorizer.clean_description(data["description"])
+        bucket_id = None
+        confidence = 0.0
+        is_verified = False
+        
+        # Smart Rules first
+        rule_bucket_id = categorizer.apply_rules(clean_desc, smart_rules)
+        if rule_bucket_id:
+            bucket_id = rule_bucket_id
+            confidence = 1.0
+            is_verified = True
+        else:
+            # Global Keywords
+            guessed_bucket_id, guess_conf = categorizer.guess_category(clean_desc, bucket_map)
+            if guessed_bucket_id:
+                bucket_id = guessed_bucket_id
+                confidence = guess_conf
+        
+        categorization_results.append({
+            'bucket_id': bucket_id,
+            'confidence': confidence,
+            'is_verified': is_verified,
+            'clean_desc': clean_desc,
+            'txn_hash': txn_hash,
+            'raw_data': data
+        })
+        
+        if bucket_id is None:
+            pending_transactions.append({
+                'index': i,
+                'description': clean_desc,
+                'raw_description': data["description"],
+                'amount': data["amount"]
+            })
+        
+        # Progress update every 50 transactions
+        if (i + 1) % 50 == 0 or i == total - 1:
+            categorized = total - len(pending_transactions)
+            report_progress(i + 1, f"Rule processing: {i + 1}/{total} ({categorized} categorized)")
+    
+    # AI categorization for uncategorized
+    if pending_transactions and bucket_names:
+        report_progress(total, f"AI categorizing {len(pending_transactions)} transactions...")
+        ai_categorizer = get_ai_categorizer()
+        try:
+            ai_predictions = ai_categorizer.categorize_batch_sync(pending_transactions, bucket_names)
+            
+            for txn_data in pending_transactions:
+                idx = txn_data['index']
+                local_idx = pending_transactions.index(txn_data)
+                if local_idx in ai_predictions:
+                    predicted_bucket, ai_confidence = ai_predictions[local_idx]
+                    matched_bucket_id = bucket_map.get(predicted_bucket.lower())
+                    if matched_bucket_id:
+                        categorization_results[idx]['bucket_id'] = matched_bucket_id
+                        categorization_results[idx]['confidence'] = ai_confidence
+                        categorization_results[idx]['is_verified'] = False
+                        
+            logger.info(f"AI categorized {len(ai_predictions)}/{len(pending_transactions)} transactions")
+        except Exception as e:
+            logger.warning(f"AI categorization failed: {e}")
+            report_progress(total, f"AI failed, {len(pending_transactions)} uncategorized")
+    
+    # Build preview transactions
+    preview_transactions = []
+    for i, result in enumerate(categorization_results):
+        data = result['raw_data']
+        bucket = bucket_by_id.get(result['bucket_id']) if result['bucket_id'] else None
+        
+        preview_txn = {
+            'id': -(i + 1),
+            'date': data["date"].isoformat() if hasattr(data["date"], 'isoformat') else str(data["date"]),
+            'description': result['clean_desc'],
+            'raw_description': data["description"],
+            'amount': data["amount"],
+            'bucket_id': result['bucket_id'],
+            'bucket': {'id': bucket.id, 'name': bucket.name, 'icon_name': bucket.icon_name} if bucket else None,
+            'category_confidence': result['confidence'],
+            'is_verified': result['is_verified'],
+            'spender': spender,
+            'transaction_hash': result['txn_hash']
+        }
+        preview_transactions.append(preview_txn)
+    
+    report_progress(total, "Complete")
+    return preview_transactions, duplicate_count
+
+
 @router.post("/csv/preview")
 async def preview_csv(file: UploadFile = File(...)):
     """Preview CSV file structure before import."""
@@ -266,6 +512,127 @@ async def ingest_csv(
     
     return preview_txns
 
+
+# ============== ASYNC PROCESSING ENDPOINTS ==============
+
+def process_csv_background(
+    job_id: str, 
+    user_id: int, 
+    content: bytes, 
+    mapping: dict, 
+    spender: str, 
+    skip_duplicates: bool
+):
+    """Background worker for processing CSV files."""
+    try:
+        # Create a new database session for this thread
+        db = SessionLocal()
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        
+        if not user:
+            fail_job(user_id, job_id, "User not found")
+            return
+        
+        update_job_progress(user_id, job_id, 0, "Parsing CSV...")
+        
+        # Parse CSV
+        try:
+            extracted_data = process_csv(content, mapping)
+        except Exception as e:
+            fail_job(user_id, job_id, f"CSV parsing error: {str(e)}")
+            return
+        
+        if not extracted_data:
+            complete_job(user_id, job_id, [], 0)
+            return
+        
+        update_job_progress(user_id, job_id, 0, f"Processing {len(extracted_data)} transactions...")
+        
+        # Process with progress updates
+        preview_txns, duplicate_count = process_transactions_preview_with_progress(
+            extracted_data, user, db, spender, skip_duplicates,
+            progress_callback=lambda p, m: update_job_progress(user_id, job_id, p, m)
+        )
+        
+        complete_job(user_id, job_id, preview_txns, duplicate_count)
+        logger.info(f"Job {job_id} completed: {len(preview_txns)} transactions, {duplicate_count} duplicates skipped")
+        
+    except Exception as e:
+        logger.exception(f"Job {job_id} failed with error")
+        fail_job(user_id, job_id, str(e))
+    finally:
+        if 'db' in locals():
+            db.close()
+
+
+@router.post("/csv/start")
+async def start_csv_import(
+    file: UploadFile = File(...),
+    map_date: str = Form(...),
+    map_desc: str = Form(...),
+    map_amount: str = Form(None),
+    map_debit: str = Form(None),
+    map_credit: str = Form(None),
+    spender: str = Form("Joint"),
+    skip_duplicates: bool = Form(True),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Start async CSV import - returns immediately with job_id."""
+    if not file.filename.lower().endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported")
+    
+    content = await validate_file_size(file)
+    mapping = {
+        "date": map_date, 
+        "description": map_desc, 
+        "amount": map_amount,
+        "debit": map_debit,
+        "credit": map_credit
+    }
+    
+    # Quick parse to get transaction count for progress tracking
+    try:
+        preview = parse_preview(content)
+        total_rows = preview.get('row_count', 100)  # Estimate if not available
+    except:
+        total_rows = 100  # Default estimate
+    
+    # Clean up old jobs for this user
+    cleanup_old_jobs(current_user.id)
+    
+    # Create job
+    job_id = create_job(current_user.id, total_rows)
+    
+    # Start background processing
+    thread = threading.Thread(
+        target=process_csv_background,
+        args=(job_id, current_user.id, content, mapping, spender, skip_duplicates)
+    )
+    thread.daemon = True
+    thread.start()
+    
+    return {
+        "job_id": job_id,
+        "status": "processing",
+        "message": "Import started",
+        "total": total_rows
+    }
+
+
+@router.get("/csv/status/{job_id}")
+async def get_csv_import_status(
+    job_id: str,
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Get status of an async CSV import job."""
+    status = get_job_status(current_user.id, job_id)
+    
+    if status is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    return status
+
+# ============================================================
 
 @router.post("/upload", response_model=List[schemas.Transaction])
 async def upload_statement(
