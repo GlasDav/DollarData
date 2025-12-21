@@ -99,38 +99,52 @@ class AICategorizer:
         completed_batches = [0]  # Use list to allow mutation in nested function
         
         def process_single_batch(batch_start: int) -> Dict[int, Tuple[str, float]]:
-            """Process a single batch and return results with global indices."""
+            """Process a single batch and return results with global indices. Retry once on failure."""
             batch = transactions[batch_start:batch_start + batch_size]
             batch_num = batch_start // batch_size + 1
             prompt = self._build_prompt(batch, bucket_names)
             batch_results = {}
+            max_retries = 1
             
-            try:
-                response = self.model.generate_content(
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        max_output_tokens=4096,
-                        temperature=0.1,
-                    ),
-                    request_options={"timeout": 45}
-                )
-                parsed = self._parse_response(response.text, len(batch), bucket_names)
-                
-                # Map local indices to global indices
-                for local_idx, (bucket, conf) in parsed.items():
-                    batch_results[batch_start + local_idx] = (bucket, conf)
-                
-                with results_lock:
-                    with open("ai_debug.log", "a") as f:
-                        f.write(f"Batch {batch_num}/{num_batches}: {len(parsed)}/{len(batch)} matched\n")
+            for attempt in range(max_retries + 1):
+                try:
+                    response = self.model.generate_content(
+                        prompt,
+                        generation_config=genai.types.GenerationConfig(
+                            max_output_tokens=4096,
+                            temperature=0.1,
+                        ),
+                        request_options={"timeout": 45}
+                    )
+                    parsed = self._parse_response(response.text, len(batch), bucket_names)
+                    
+                    # If parsing returned results, we're done
+                    if parsed:
+                        for local_idx, (bucket, conf) in parsed.items():
+                            batch_results[batch_start + local_idx] = (bucket, conf)
                         
-                logger.info(f"Batch {batch_num}/{num_batches}: {len(parsed)}/{len(batch)} matched")
-                
-            except Exception as e:
-                with results_lock:
-                    with open("ai_debug.log", "a") as f:
-                        f.write(f"Batch {batch_num}/{num_batches} FAILED: {e}\n")
-                logger.error(f"AI batch {batch_num}/{num_batches} failed: {e}")
+                        with results_lock:
+                            with open("ai_debug.log", "a") as f:
+                                retry_note = f" (retry {attempt})" if attempt > 0 else ""
+                                f.write(f"Batch {batch_num}/{num_batches}: {len(parsed)}/{len(batch)} matched{retry_note}\n")
+                        logger.info(f"Batch {batch_num}/{num_batches}: {len(parsed)}/{len(batch)} matched")
+                        break
+                    
+                    # If parsing failed but we have retries left, try again
+                    if attempt < max_retries:
+                        logger.info(f"Batch {batch_num}/{num_batches}: JSON parse failed, retrying...")
+                        continue
+                    else:
+                        with results_lock:
+                            with open("ai_debug.log", "a") as f:
+                                f.write(f"Batch {batch_num}/{num_batches}: 0/{len(batch)} after retry\n")
+                        
+                except Exception as e:
+                    if attempt >= max_retries:
+                        with results_lock:
+                            with open("ai_debug.log", "a") as f:
+                                f.write(f"Batch {batch_num}/{num_batches} FAILED: {e}\n")
+                        logger.error(f"AI batch {batch_num}/{num_batches} failed: {e}")
             
             return batch_results
         
@@ -176,29 +190,16 @@ class AICategorizer:
         # Format buckets as a numbered list for clarity
         buckets_list = "\n".join([f"- {name}" for name in bucket_names])
         
-        prompt = f"""You are a financial transaction categorizer. 
-
-## CRITICAL: You MUST use ONLY these exact category names:
+        prompt = f"""Categorize these transactions using ONLY these categories:
 {buckets_list}
 
-## Rules:
-1. For each transaction, choose the BEST MATCHING category from the list above
-2. You MUST use the EXACT category name as written above - copy it exactly
-3. DO NOT create new categories or modify the names
-4. If nothing fits, use "Uncategorized" (but try to find a match first)
-
-## Transactions to categorize:
+Transactions:
 {txn_text}
 
-## Response format (JSON array only, no other text):
-[
-  {{"index": 0, "category": "EXACT_CATEGORY_NAME", "confidence": 0.9}},
-  {{"index": 1, "category": "EXACT_CATEGORY_NAME", "confidence": 0.8}}
-]
+Reply with ONLY a compact JSON array (no newlines, no indentation):
+[{{"index":0,"category":"EXACT_NAME","confidence":0.9}},{{"index":1,"category":"EXACT_NAME","confidence":0.8}}]
 
-IMPORTANT: The category field MUST be copied exactly from the list above. Do not paraphrase.
-
-JSON:"""
+Rules: Use exact category names from list. If unsure, use "Misc/Other"."""
         
         return prompt
     
