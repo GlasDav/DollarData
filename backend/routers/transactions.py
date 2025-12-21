@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import extract
+from sqlalchemy import extract, or_, func
 from typing import List, Optional
 from ..database import get_db
 from .. import models, schemas, auth
@@ -10,7 +10,7 @@ router = APIRouter(
     tags=["transactions"],
 )
 
-@router.get("/", response_model=List[schemas.Transaction])
+@router.get("/")
 def get_transactions(
     skip: int = 0,
     limit: int = 100,
@@ -18,16 +18,41 @@ def get_transactions(
     verified: Optional[bool] = None,
     month: Optional[int] = None,
     year: Optional[int] = None,
+    search: Optional[str] = None,
+    spender: Optional[str] = None,
+    min_amount: Optional[float] = None,
+    max_amount: Optional[float] = None,
+    sort_by: Optional[str] = Query(None, regex="^(date|amount|description)$"),
+    sort_dir: Optional[str] = Query(None, regex="^(asc|desc)$"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
     query = db.query(models.Transaction).options(joinedload(models.Transaction.bucket)).filter(models.Transaction.user_id == current_user.id)
     
+    # Search filter (description or raw_description)
+    if search:
+        search_term = f"%{search.lower()}%"
+        query = query.filter(
+            or_(
+                func.lower(models.Transaction.description).like(search_term),
+                func.lower(models.Transaction.raw_description).like(search_term)
+            )
+        )
+    
     if bucket_id is not None:
         query = query.filter(models.Transaction.bucket_id == bucket_id)
+    
+    if spender:
+        query = query.filter(models.Transaction.spender == spender)
         
     if verified is not None:
         query = query.filter(models.Transaction.is_verified == verified)
+    
+    # Amount range filters
+    if min_amount is not None:
+        query = query.filter(models.Transaction.amount >= min_amount)
+    if max_amount is not None:
+        query = query.filter(models.Transaction.amount <= max_amount)
         
     # Date filtering
     if month is not None:
@@ -36,8 +61,29 @@ def get_transactions(
     if year is not None:
         query = query.filter(extract('year', models.Transaction.date) == year)
     
-    query = query.order_by(models.Transaction.date.desc())
-    return query.offset(skip).limit(limit).all()
+    # Get total count before pagination
+    total = query.count()
+    
+    # Sorting
+    if sort_by:
+        sort_column = getattr(models.Transaction, sort_by)
+        if sort_dir == "asc":
+            query = query.order_by(sort_column.asc())
+        else:
+            query = query.order_by(sort_column.desc())
+    else:
+        # Default sort by date descending
+        query = query.order_by(models.Transaction.date.desc())
+    
+    transactions = query.offset(skip).limit(limit).all()
+    
+    # Return with metadata
+    return {
+        "items": transactions,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
 
 @router.put("/{transaction_id}", response_model=schemas.Transaction)
 def update_transaction(

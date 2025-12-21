@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getBuckets, getSettings, getGoals, deleteAllTransactions } from '../services/api';
-import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2 } from 'lucide-react';
+import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
 import SplitTransactionModal from '../components/SplitTransactionModal';
 import EmptyState from '../components/EmptyState';
+
+// Debounce hook
+function useDebounce(value, delay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(handler);
+    }, [value, delay]);
+    return debouncedValue;
+}
 
 export default function Transactions() {
     const queryClient = useQueryClient();
@@ -15,26 +25,46 @@ export default function Transactions() {
     const monthParam = searchParams.get("month");
     const yearParam = searchParams.get("year");
 
+    // Local state
     const [search, setSearch] = useState("");
     const [editingId, setEditingId] = useState(null);
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [splitModalOpen, setSplitModalOpen] = useState(false);
     const [transactionToSplit, setTransactionToSplit] = useState(null);
 
-    // Fetch Transactions
-    const { data: transactions = [], isLoading } = useQuery({
-        queryKey: ['transactions', bucketIdParam, monthParam, yearParam],
+    // Filters
+    const [categoryFilter, setCategoryFilter] = useState(bucketIdParam ? parseInt(bucketIdParam) : null);
+    const [spenderFilter, setSpenderFilter] = useState(null);
+    const [sortBy, setSortBy] = useState("date");
+    const [sortDir, setSortDir] = useState("desc");
+
+    // Dropdown visibility
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    const [showSpenderDropdown, setShowSpenderDropdown] = useState(false);
+
+    // Debounced search for API calls
+    const debouncedSearch = useDebounce(search, 300);
+
+    // Fetch Transactions with filters
+    const { data: transactionData, isLoading } = useQuery({
+        queryKey: ['transactions', debouncedSearch, categoryFilter, spenderFilter, monthParam, yearParam, sortBy, sortDir],
         queryFn: async () => {
-            const params = {};
-            if (bucketIdParam) params.bucket_id = bucketIdParam;
+            const params = { limit: 500 }; // Increase limit for better search coverage
+            if (debouncedSearch) params.search = debouncedSearch;
+            if (categoryFilter) params.bucket_id = categoryFilter;
+            if (spenderFilter) params.spender = spenderFilter;
             if (monthParam) params.month = monthParam;
             if (yearParam) params.year = yearParam;
+            if (sortBy) params.sort_by = sortBy;
+            if (sortDir) params.sort_dir = sortDir;
 
-            // Updated to use shared api client
             const res = await api.get('/transactions/', { params });
             return res.data;
         }
     });
+
+    const transactions = transactionData?.items || [];
+    const totalCount = transactionData?.total || 0;
 
     // Fetch Buckets
     const { data: buckets = [] } = useQuery({
@@ -100,14 +130,12 @@ export default function Transactions() {
         }
     });
 
-
-
     // Selection Handlers
     const toggleSelectAll = () => {
-        if (selectedIds.size === filteredTxns.length) {
+        if (selectedIds.size === transactions.length) {
             setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(filteredTxns.map(t => t.id)));
+            setSelectedIds(new Set(transactions.map(t => t.id)));
         }
     };
 
@@ -121,9 +149,40 @@ export default function Transactions() {
         setSelectedIds(newSet);
     };
 
-    const filteredTxns = transactions.filter(t =>
-        t.description.toLowerCase().includes(search.toLowerCase()) ||
-        (t.bucket?.name || "").toLowerCase().includes(search.toLowerCase())
+    // Sort handler
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            setSortDir(sortDir === "asc" ? "desc" : "asc");
+        } else {
+            setSortBy(column);
+            setSortDir("desc");
+        }
+    };
+
+    // Active filters count
+    const activeFiltersCount = [categoryFilter, spenderFilter, debouncedSearch].filter(Boolean).length;
+
+    // Clear all filters
+    const clearAllFilters = () => {
+        setSearch("");
+        setCategoryFilter(null);
+        setSpenderFilter(null);
+        setSearchParams({});
+    };
+
+    // Sort Header Component
+    const SortHeader = ({ column, children, className = "" }) => (
+        <th
+            className={`p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600 transition select-none ${className}`}
+            onClick={() => handleSort(column)}
+        >
+            <div className="flex items-center gap-1">
+                {children}
+                {sortBy === column && (
+                    sortDir === "asc" ? <ArrowUp size={14} className="text-indigo-500" /> : <ArrowDown size={14} className="text-indigo-500" />
+                )}
+            </div>
+        </th>
     );
 
     return (
@@ -131,7 +190,9 @@ export default function Transactions() {
             <header className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Transactions</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-2">Manage your complete transaction history.</p>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2">
+                        {totalCount > 0 ? `${totalCount.toLocaleString()} transactions` : 'Manage your complete transaction history.'}
+                    </p>
                 </div>
                 <div className="flex items-center gap-4">
                     {/* Delete All Button - only show when transactions exist */}
@@ -175,14 +236,25 @@ export default function Transactions() {
                             </button>
                         </div>
                     )}
+                    {/* Active Filters Badge */}
+                    {activeFiltersCount > 0 && (
+                        <button
+                            onClick={clearAllFilters}
+                            className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
+                        >
+                            <Filter size={14} />
+                            <span>{activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''} active</span>
+                            <X size={14} className="hover:text-red-500" />
+                        </button>
+                    )}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
-                            placeholder="Search..."
+                            placeholder="Search all transactions..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                            className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 w-64"
                         />
                     </div>
                 </div>
@@ -219,16 +291,72 @@ export default function Transactions() {
                                     <input
                                         type="checkbox"
                                         className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                        checked={filteredTxns.length > 0 && selectedIds.size === filteredTxns.length}
+                                        checked={transactions.length > 0 && selectedIds.size === transactions.length}
                                         onChange={toggleSelectAll}
                                     />
                                 </th>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Date</th>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Description</th>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Category</th>
+                                <SortHeader column="date">Date</SortHeader>
+                                <SortHeader column="description">Description</SortHeader>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 relative">
+                                    <button
+                                        onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                                        className={`flex items-center gap-1 hover:text-indigo-600 transition ${categoryFilter ? 'text-indigo-600' : ''}`}
+                                    >
+                                        Category
+                                        <ChevronDown size={14} />
+                                        {categoryFilter && <span className="w-2 h-2 bg-indigo-500 rounded-full" />}
+                                    </button>
+                                    {showCategoryDropdown && (
+                                        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-20 min-w-[200px] max-h-[300px] overflow-y-auto">
+                                            <button
+                                                onClick={() => { setCategoryFilter(null); setShowCategoryDropdown(false); }}
+                                                className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${!categoryFilter ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                                            >
+                                                All Categories
+                                            </button>
+                                            {buckets.map(b => (
+                                                <button
+                                                    key={b.id}
+                                                    onClick={() => { setCategoryFilter(b.id); setShowCategoryDropdown(false); }}
+                                                    className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${categoryFilter === b.id ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                                                >
+                                                    {b.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </th>
                                 <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Goal</th>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Who?</th>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 text-right">Amount</th>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 relative">
+                                    <button
+                                        onClick={() => setShowSpenderDropdown(!showSpenderDropdown)}
+                                        className={`flex items-center gap-1 hover:text-indigo-600 transition ${spenderFilter ? 'text-indigo-600' : ''}`}
+                                    >
+                                        Who?
+                                        <ChevronDown size={14} />
+                                        {spenderFilter && <span className="w-2 h-2 bg-indigo-500 rounded-full" />}
+                                    </button>
+                                    {showSpenderDropdown && (
+                                        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-20 min-w-[150px]">
+                                            <button
+                                                onClick={() => { setSpenderFilter(null); setShowSpenderDropdown(false); }}
+                                                className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${!spenderFilter ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                                            >
+                                                All
+                                            </button>
+                                            {['Joint', 'User A', 'User B'].map(s => (
+                                                <button
+                                                    key={s}
+                                                    onClick={() => { setSpenderFilter(s); setShowSpenderDropdown(false); }}
+                                                    className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${spenderFilter === s ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                                                >
+                                                    {s === 'User A' ? (userSettings?.name_a || 'User A') : s === 'User B' ? (userSettings?.name_b || 'User B') : s}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </th>
+                                <SortHeader column="amount" className="text-right">Amount</SortHeader>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
