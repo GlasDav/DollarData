@@ -202,6 +202,8 @@ JSON RESPONSE:"""
             # Validate bucket names (case-insensitive matching)
             bucket_lookup = {b.lower(): b for b in bucket_names}
             
+            unmatched_categories = []  # Track what AI returns that doesn't match
+            
             for pred in predictions:
                 idx = pred.get("index")
                 category = pred.get("category", "")
@@ -209,12 +211,19 @@ JSON RESPONSE:"""
                 
                 if idx is not None and 0 <= idx < batch_size:
                     # Match category to user's bucket (case-insensitive)
-                    matched_bucket = bucket_lookup.get(category.lower(), category)
+                    matched_bucket = bucket_lookup.get(category.lower())
                     
-                    # Only include if category exists in user's buckets
-                    if matched_bucket.lower() in bucket_lookup:
+                    if matched_bucket:
                         results[idx] = (matched_bucket, min(confidence, 0.85))
-                    # Don't include "Uncategorized" predictions
+                    else:
+                        # Track unmatched for debugging
+                        unmatched_categories.append(category)
+            
+            # Log unmatched categories for debugging
+            if unmatched_categories:
+                unique_unmatched = list(set(unmatched_categories))
+                logger.warning(f"AI returned {len(unmatched_categories)} predictions with non-matching categories: {unique_unmatched[:10]}")
+                logger.debug(f"User's buckets: {bucket_names}")
                     
         except json.JSONDecodeError as e:
             logger.warning(f"Failed to parse AI response as JSON: {e}")
