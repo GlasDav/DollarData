@@ -61,8 +61,20 @@ def create_default_user_setup(user: models.User, db: Session):
     )
     db.add(transfers_bucket)
     
+    # Default "Investments" bucket (excluded from expenses but shown in Sankey)
+    investments_bucket = models.BudgetBucket(
+        user_id=user.id,
+        name="Investments",
+        icon_name="TrendingUp",
+        group="Non-Discretionary",
+        is_investment=True,  # Key flag for investment tracking
+        monthly_limit_a=0.0,
+        monthly_limit_b=0.0
+    )
+    db.add(investments_bucket)
+    
     db.commit()
-    logger.info(f"Created default accounts and Transfer bucket for user {user.email}")
+    logger.info(f"Created default accounts and Transfer/Investment buckets for user {user.email}")
 
 
 @router.post("/register", response_model=schemas.User)

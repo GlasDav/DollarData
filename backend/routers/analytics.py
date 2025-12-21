@@ -620,9 +620,10 @@ def get_sankey_data(
     if spender != "Combined":
         totals_query = totals_query.filter(models.Transaction.spender == spender)
 
-    # Exclude Transfer buckets
+    # Exclude Transfer and Investment buckets from expense totals
     totals_query = totals_query.filter(
-        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
     )
         
     totals_res = totals_query.first()
@@ -644,9 +645,10 @@ def get_sankey_data(
     if spender != "Combined":
         expense_query = expense_query.filter(models.Transaction.spender == spender)
 
-    # Exclude Transfer buckets
+    # Exclude Transfer and Investment buckets from expenses
     expense_query = expense_query.filter(
-        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
     )
         
     expense_results = expense_query.group_by(models.Transaction.bucket_id).all()
@@ -719,6 +721,31 @@ def get_sankey_data(
         
         links.append({"source": idx_income, "target": idx_savings_group, "value": net_savings})
         links.append({"source": idx_savings_group, "target": idx_savings_bucket, "value": net_savings})
+    
+    # Investment Logic - Query investment transactions separately
+    investment_query = db.query(
+        func.sum(models.Transaction.amount)
+    ).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.date >= s_date,
+        models.Transaction.date <= e_date,
+        models.Transaction.amount < 0,  # Outgoing money to investments
+        models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
+    )
+    
+    if spender != "Combined":
+        investment_query = investment_query.filter(models.Transaction.spender == spender)
+    
+    investment_res = investment_query.first()
+    total_investments = abs(investment_res[0] or 0.0)
+    
+    if total_investments > 0:
+        # Income -> "Investments" (Group) -> "Investment Contributions" (Detail)
+        idx_investments_group = get_node("Investments")
+        idx_investments_detail = get_node("Investment Contributions")
+        
+        links.append({"source": idx_income, "target": idx_investments_group, "value": total_investments})
+        links.append({"source": idx_investments_group, "target": idx_investments_detail, "value": total_investments})
         
     # Filter out unused nodes
     used_indices = set()

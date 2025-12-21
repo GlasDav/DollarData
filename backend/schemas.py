@@ -25,6 +25,7 @@ class BudgetBucketBase(BaseModel):
     group: str = "Discretionary"
     is_rollover: bool = False
     is_transfer: bool = False  # Transfer buckets excluded from spending analytics
+    is_investment: bool = False  # Investment buckets excluded from expenses but shown in Sankey
     tags: List[str] = []
     target_amount: Optional[float] = None
     target_date: Optional[date] = None
