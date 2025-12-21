@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch, Menu } from '@headlessui/react';
 import { Trash2, Plus, Download, Moon, Sun, DollarSign, Euro, PoundSterling, Save, Upload, Wallet, ShoppingCart, Tag as TagIcon, Home, Utensils, Zap, Car, Film, Heart, ShoppingBag, Briefcase, Coffee, Gift, Music, Smartphone, Plane, Play } from 'lucide-react';
@@ -28,13 +28,14 @@ const cleanKeywords = (str) => {
 };
 
 // Bucket Table Row Component - compact inline editing
-const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation }) => {
+const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation, allTags = [] }) => {
     const Icon = ICON_MAP[bucket.icon_name] || Wallet;
     const [localName, setLocalName] = useState(bucket.name || '');
     const [localLimitA, setLocalLimitA] = useState(bucket.monthly_limit_a || 0);
     const [localLimitB, setLocalLimitB] = useState(bucket.monthly_limit_b || 0);
     const [showTags, setShowTags] = useState(false);
     const [newTag, setNewTag] = useState('');
+    const tagDropdownRef = useRef(null);
     const currencySymbol = CURRENCY_MAP[userSettings?.currency_symbol] || userSettings?.currency_symbol || '$';
 
     useEffect(() => {
@@ -42,6 +43,20 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
         setLocalLimitA(bucket.monthly_limit_a || 0);
         setLocalLimitB(bucket.monthly_limit_b || 0);
     }, [bucket.name, bucket.monthly_limit_a, bucket.monthly_limit_b]);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target)) {
+                setShowTags(false);
+                setNewTag('');
+            }
+        };
+        if (showTags) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showTags]);
 
     const handleBlurName = () => {
         if (localName !== bucket.name && localName.trim()) {
@@ -63,13 +78,26 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
         }
     };
 
-    const handleAddTag = (e) => {
-        if (e.key === 'Enter' && newTag.trim()) {
-            const currentTags = bucket.tags || [];
-            if (!currentTags.some(t => t.name.toLowerCase() === newTag.toLowerCase())) {
-                updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: [...currentTags, { name: newTag.trim() }] } });
+    const handleTagKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            if (newTag.trim()) {
+                const currentTags = bucket.tags || [];
+                if (!currentTags.some(t => t.name.toLowerCase() === newTag.toLowerCase())) {
+                    updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: [...currentTags, { name: newTag.trim() }] } });
+                }
+                setNewTag('');
             }
+            setShowTags(false);
+        } else if (e.key === 'Tab' || e.key === 'Escape') {
+            setShowTags(false);
             setNewTag('');
+        }
+    };
+
+    const handleAddExistingTag = (tagName) => {
+        const currentTags = bucket.tags || [];
+        if (!currentTags.some(t => t.name.toLowerCase() === tagName.toLowerCase())) {
+            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: [...currentTags, { name: tagName }] } });
         }
     };
 
@@ -81,6 +109,10 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
     const tags = bucket.tags || [];
     const visibleTags = tags.slice(0, 2);
     const hiddenCount = tags.length - visibleTags.length;
+
+    // Get suggestions (existing tags not already on this bucket)
+    const currentTagNames = tags.map(t => t.name.toLowerCase());
+    const suggestions = allTags.filter(t => !currentTagNames.includes(t.toLowerCase()));
 
     return (
         <tr className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
@@ -212,7 +244,8 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
 
                 {/* Expanded Tags Dropdown */}
                 {showTags && (
-                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-20 min-w-[200px]">
+                    <div ref={tagDropdownRef} className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-20 min-w-[220px]">
+                        {/* Current tags on this bucket */}
                         <div className="flex flex-wrap gap-1 mb-2">
                             {tags.map((tag, idx) => (
                                 <span key={idx} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
@@ -221,13 +254,32 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
                                 </span>
                             ))}
                         </div>
+
+                        {/* Suggestions from other buckets */}
+                        {suggestions.length > 0 && (
+                            <div className="mb-2">
+                                <div className="text-[10px] text-slate-400 mb-1">Add existing:</div>
+                                <div className="flex flex-wrap gap-1">
+                                    {suggestions.map((tagName, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleAddExistingTag(tagName)}
+                                            className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-purple-100 hover:text-purple-600 dark:hover:bg-purple-900/30 dark:hover:text-purple-400 transition"
+                                        >
+                                            + {tagName}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <input
                             type="text"
                             className="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white outline-none focus:border-purple-500"
-                            placeholder="Add filter tag (e.g. Property)"
+                            placeholder="New tag (Enter to add)"
                             value={newTag}
                             onChange={(e) => setNewTag(e.target.value)}
-                            onKeyDown={handleAddTag}
+                            onKeyDown={handleTagKeyDown}
                             autoFocus
                         />
                     </div>
@@ -252,7 +304,7 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
 };
 
 // Bucket Table Section Component - one per group with sortable columns
-const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, createBucketMutation, updateBucketMutation, deleteBucketMutation, groupName }) => {
+const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, createBucketMutation, updateBucketMutation, deleteBucketMutation, groupName, allTags = [] }) => {
     const [sortField, setSortField] = useState('name');
     const [sortDir, setSortDir] = useState('asc');
 
@@ -357,6 +409,7 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
                                 userSettings={userSettings}
                                 updateBucketMutation={updateBucketMutation}
                                 deleteBucketMutation={deleteBucketMutation}
+                                allTags={allTags}
                             />
                         ))}
 
@@ -808,6 +861,16 @@ function SettingsContent() {
         return groups;
     }, [buckets]);
 
+    // Collect all unique tag names across all buckets for suggestions
+    const allTags = React.useMemo(() => {
+        if (!buckets) return [];
+        const tagSet = new Set();
+        buckets.forEach(bucket => {
+            (bucket.tags || []).forEach(tag => tagSet.add(tag.name));
+        });
+        return Array.from(tagSet).sort();
+    }, [buckets]);
+
     const handleDownloadBackup = async () => {
         try {
             const response = await fetch('http://localhost:8000/settings/backup');
@@ -1011,6 +1074,7 @@ function SettingsContent() {
                         updateBucketMutation={updateBucketMutation}
                         deleteBucketMutation={deleteBucketMutation}
                         groupName="Income"
+                        allTags={allTags}
                     />
 
                     {/* Non-Discretionary Section */}
@@ -1023,6 +1087,7 @@ function SettingsContent() {
                         updateBucketMutation={updateBucketMutation}
                         deleteBucketMutation={deleteBucketMutation}
                         groupName="Non-Discretionary"
+                        allTags={allTags}
                     />
 
                     {/* Discretionary Section */}
@@ -1035,6 +1100,7 @@ function SettingsContent() {
                         updateBucketMutation={updateBucketMutation}
                         deleteBucketMutation={deleteBucketMutation}
                         groupName="Discretionary"
+                        allTags={allTags}
                     />
                 </section>
 
