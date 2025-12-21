@@ -134,6 +134,11 @@ export const deleteRule = async (id) => {
     return response.data;
 };
 
+export const bulkDeleteRules = async (ids) => {
+    const response = await api.post('/settings/rules/bulk-delete', ids);
+    return response.data;
+};
+
 export const splitTransaction = async (id, items) => {
     const response = await api.post(`/transactions/${id}/split`, { items });
     return response.data;

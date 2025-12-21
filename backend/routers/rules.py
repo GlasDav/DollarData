@@ -53,6 +53,16 @@ def delete_rule(rule_id: int, db: Session = Depends(get_db), current_user: model
     db.commit()
     return {"ok": True}
 
+@router.post("/bulk-delete")
+def bulk_delete_rules(rule_ids: List[int], db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """Delete multiple rules at once."""
+    deleted_count = db.query(models.CategorizationRule).filter(
+        models.CategorizationRule.id.in_(rule_ids),
+        models.CategorizationRule.user_id == current_user.id
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"ok": True, "deleted_count": deleted_count}
+
 @router.put("/{rule_id}", response_model=schemas.Rule)
 def update_rule(rule_id: int, rule: schemas.RuleCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_rule = db.query(models.CategorizationRule).filter(models.CategorizationRule.id == rule_id, models.CategorizationRule.user_id == current_user.id).first()

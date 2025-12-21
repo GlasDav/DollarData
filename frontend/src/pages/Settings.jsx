@@ -492,7 +492,7 @@ const AccountCard = ({ account, updateAccountMutation, deleteAccountMutation }) 
     );
 };
 
-const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation }) => {
+const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSelected, onToggleSelect }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localKeywords, setLocalKeywords] = useState(rule.keywords);
     const [localBucketId, setLocalBucketId] = useState(rule.bucket_id);
@@ -523,7 +523,8 @@ const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation }) => 
     if (isEditing) {
         return (
             <div className="p-4 bg-indigo-50 dark:bg-slate-900 border-b border-indigo-100 dark:border-slate-700 grid grid-cols-12 gap-4 items-center">
-                <div className="col-span-6">
+                <div className="col-span-1" />
+                <div className="col-span-5">
                     <input
                         className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
                         value={localKeywords}
@@ -561,8 +562,16 @@ const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation }) => 
     }
 
     return (
-        <div className="grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 transition cursor-pointer group border-l-2 border-transparent hover:border-indigo-500" onClick={() => setIsEditing(true)}>
-            <div className="col-span-6 truncate font-medium text-slate-800 dark:text-slate-200 text-sm group-hover:text-indigo-600 transition-colors" title={rule.keywords}>
+        <div className="grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group border-l-2 border-transparent hover:border-indigo-500">
+            <div className="col-span-1 flex items-center">
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => { e.stopPropagation(); onToggleSelect(); }}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+            </div>
+            <div className="col-span-5 truncate font-medium text-slate-800 dark:text-slate-200 text-sm group-hover:text-indigo-600 transition-colors cursor-pointer" title={rule.keywords} onClick={() => setIsEditing(true)}>
                 {rule.keywords}
             </div>
             <div className="col-span-4 truncate text-sm text-indigo-600 dark:text-indigo-400 font-medium">
@@ -587,6 +596,7 @@ const RulesSection = ({ buckets }) => {
     const [bucketId, setBucketId] = useState("");
     const [priority, setPriority] = useState(0);
     const [runResult, setRunResult] = useState(null);
+    const [selectedRules, setSelectedRules] = useState(new Set());
 
     const { data: rules } = useQuery({
         queryKey: ['rules'],
@@ -612,6 +622,14 @@ const RulesSection = ({ buckets }) => {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rules'] })
     });
 
+    const bulkDeleteMutation = useMutation({
+        mutationFn: api.bulkDeleteRules,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['rules'] });
+            setSelectedRules(new Set());
+        }
+    });
+
     const runRulesMutation = useMutation({
         mutationFn: api.runRules,
         onSuccess: (data) => {
@@ -631,11 +649,48 @@ const RulesSection = ({ buckets }) => {
         });
     };
 
+    const toggleSelectAll = () => {
+        if (selectedRules.size === rules?.length) {
+            setSelectedRules(new Set());
+        } else {
+            setSelectedRules(new Set(rules?.map(r => r.id) || []));
+        }
+    };
+
+    const toggleSelectRule = (id) => {
+        const newSelected = new Set(selectedRules);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedRules(newSelected);
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedRules.size === 0) return;
+        if (confirm(`Delete ${selectedRules.size} rule(s)?`)) {
+            bulkDeleteMutation.mutate([...selectedRules]);
+        }
+    };
+
     return (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
             {/* Header / Actions */}
             <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                <h3 className="font-semibold text-slate-700 dark:text-slate-200">Defined Rules</h3>
+                <div className="flex items-center gap-3">
+                    <h3 className="font-semibold text-slate-700 dark:text-slate-200">Defined Rules</h3>
+                    {selectedRules.size > 0 && (
+                        <button
+                            onClick={handleBulkDelete}
+                            disabled={bulkDeleteMutation.isPending}
+                            className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 rounded text-xs font-medium transition disabled:opacity-50"
+                        >
+                            <Trash2 size={12} />
+                            Delete {selectedRules.size} selected
+                        </button>
+                    )}
+                </div>
                 <div className="flex items-center gap-4">
                     {runResult && <span className="text-sm text-green-600 dark:text-green-400 font-medium animate-fade-in">{runResult}</span>}
                     <button
@@ -696,7 +751,15 @@ const RulesSection = ({ buckets }) => {
 
             {/* Rules List - Table Header */}
             <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                <div className="col-span-6">Keywords</div>
+                <div className="col-span-1 flex items-center">
+                    <input
+                        type="checkbox"
+                        checked={rules?.length > 0 && selectedRules.size === rules?.length}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                </div>
+                <div className="col-span-5">Keywords</div>
                 <div className="col-span-4">Category</div>
                 <div className="col-span-2 text-right">Priority</div>
             </div>
@@ -713,6 +776,8 @@ const RulesSection = ({ buckets }) => {
                         buckets={buckets}
                         updateRuleMutation={updateRuleMutation}
                         deleteRuleMutation={deleteRuleMutation}
+                        isSelected={selectedRules.has(rule.id)}
+                        onToggleSelect={() => toggleSelectRule(rule.id)}
                     />
                 ))}
             </div>
