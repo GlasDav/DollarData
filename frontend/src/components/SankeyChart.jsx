@@ -20,7 +20,6 @@ const SankeyChart = ({ data }) => {
     // Custom Node
     const renderNode = (props) => {
         const { x, y, width, height, index, payload, containerWidth } = props;
-        const isOut = x + width > containerWidth / 2;
 
         // Configuration
         const isLeft = x < containerWidth / 2;
@@ -28,13 +27,16 @@ const SankeyChart = ({ data }) => {
         const xPos = isLeft ? x - 6 : x + width + 6;
         const yPos = y + height / 2;
 
+        // Make sure node has minimum height for visibility
+        const minHeight = Math.max(height, 8);
+
         return (
             <g>
                 <rect
                     x={x}
                     y={y}
                     width={width}
-                    height={height}
+                    height={minHeight}
                     fill="#6366f1"
                     fillOpacity={0.8}
                     rx={4}
@@ -43,11 +45,11 @@ const SankeyChart = ({ data }) => {
                 {/* Node Label */}
                 <text
                     x={xPos}
-                    y={yPos - 6} // Shift up slightly
+                    y={yPos - 6}
                     textAnchor={textAnchor}
                     dominantBaseline="middle"
-                    fill="#334155" // Slate-700
-                    fontSize={12}
+                    fill="#334155"
+                    fontSize={11}
                     fontWeight="bold"
                     className="dark:fill-slate-200"
                     style={{ pointerEvents: 'none' }}
@@ -58,10 +60,10 @@ const SankeyChart = ({ data }) => {
                 {/* Node Value */}
                 <text
                     x={xPos}
-                    y={yPos + 8} // Shift down slightly
+                    y={yPos + 8}
                     textAnchor={textAnchor}
                     dominantBaseline="middle"
-                    fill="#64748b" // Slate-500
+                    fill="#64748b"
                     fontSize={10}
                     fontWeight="medium"
                     className="dark:fill-slate-400"
@@ -73,21 +75,49 @@ const SankeyChart = ({ data }) => {
         );
     };
 
-    // Dynamic Height Calculation
-    // Estimate height based on number of nodes to prevent crowding/overflow
-    // Base height 400px, add 40px per node if there are many nodes.
-    const dynamicHeight = Math.max(400, (data?.nodes?.length || 0) * 40);
+    // Custom Link with proper gradient and width
+    const renderLink = (props) => {
+        const { sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index } = props;
+
+        // Ensure minimum link width for visibility
+        const minWidth = Math.max(linkWidth || 2, 2);
+
+        return (
+            <path
+                d={`
+                    M${sourceX},${sourceY}
+                    C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}
+                `}
+                fill="none"
+                stroke="#818cf8"
+                strokeWidth={minWidth}
+                strokeOpacity={0.5}
+            />
+        );
+    };
+
+    // Calculate appropriate height - cap at reasonable max
+    const nodeCount = Math.max(
+        data.nodes.filter((_, i) => i === 0 || data.links.some(l => l.source === 0)).length,
+        data.nodes.filter((_, i) => i !== 0 && !data.links.some(l => l.target === i && l.source === 0)).length
+    );
+    // Base height of 350, add 30px per category node, cap at 600
+    const calculatedHeight = Math.min(600, Math.max(350, nodeCount * 35 + 100));
+
+    // Node padding based on number of categories
+    const nodePadding = Math.max(20, Math.min(50, 300 / data.nodes.length));
 
     return (
-        <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 transition-all duration-300 flex flex-col" style={{ height: `${dynamicHeight}px` }}>
+        <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 transition-all duration-300 flex flex-col" style={{ height: `${calculatedHeight}px` }}>
             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 shrink-0">Cash Flow</h3>
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                     <Sankey
                         data={data}
-                        link={{ stroke: '#818cf8' }}
-                        nodePadding={50}
-                        margin={{ left: 150, right: 150, top: 10, bottom: 10 }}
+                        link={renderLink}
+                        nodePadding={nodePadding}
+                        nodeWidth={10}
+                        margin={{ left: 120, right: 120, top: 5, bottom: 5 }}
                         node={renderNode}
                     >
                         <Tooltip
