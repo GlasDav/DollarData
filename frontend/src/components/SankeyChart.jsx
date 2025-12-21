@@ -37,22 +37,14 @@ const SankeyChart = ({ data }) => {
                 />
                 <text
                     x={xPos}
-                    y={yPos - 5}
+                    y={yPos}
                     textAnchor={textAnchor}
+                    dominantBaseline="middle"
                     fill="#e2e8f0"
                     fontSize={10}
                     fontWeight="600"
                 >
                     {payload.name}
-                </text>
-                <text
-                    x={xPos}
-                    y={yPos + 7}
-                    textAnchor={textAnchor}
-                    fill="#94a3b8"
-                    fontSize={9}
-                >
-                    {formatCurrency(payload.value)}
                 </text>
             </Layer>
         );
@@ -110,12 +102,14 @@ const SankeyChart = ({ data }) => {
                         <Tooltip
                             contentStyle={{
                                 borderRadius: '8px',
-                                border: 'none',
-                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                                backgroundColor: '#1e293b',
-                                color: '#e2e8f0'
+                                border: '1px solid #475569',
+                                boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.3)',
+                                backgroundColor: '#0f172a',
+                                color: '#f1f5f9',
+                                padding: '8px 12px'
                             }}
-                            formatter={(value) => formatCurrency(value)}
+                            labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
+                            formatter={(value, name) => [formatCurrency(value), name]}
                         />
                     </Sankey>
                 </div>
