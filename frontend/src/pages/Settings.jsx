@@ -33,6 +33,8 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
     const [localName, setLocalName] = useState(bucket.name || '');
     const [localLimitA, setLocalLimitA] = useState(bucket.monthly_limit_a || 0);
     const [localLimitB, setLocalLimitB] = useState(bucket.monthly_limit_b || 0);
+    const [showTags, setShowTags] = useState(false);
+    const [newTag, setNewTag] = useState('');
     const currencySymbol = CURRENCY_MAP[userSettings?.currency_symbol] || userSettings?.currency_symbol || '$';
 
     useEffect(() => {
@@ -60,6 +62,25 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
             updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, monthly_limit_b: val } });
         }
     };
+
+    const handleAddTag = (e) => {
+        if (e.key === 'Enter' && newTag.trim()) {
+            const currentTags = bucket.tags || [];
+            if (!currentTags.some(t => t.name.toLowerCase() === newTag.toLowerCase())) {
+                updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: [...currentTags, { name: newTag.trim() }] } });
+            }
+            setNewTag('');
+        }
+    };
+
+    const handleRemoveTag = (tagName) => {
+        const newTags = (bucket.tags || []).filter(t => t.name !== tagName);
+        updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTags } });
+    };
+
+    const tags = bucket.tags || [];
+    const visibleTags = tags.slice(0, 2);
+    const hiddenCount = tags.length - visibleTags.length;
 
     return (
         <tr className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
@@ -162,6 +183,57 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
                 </button>
             </td>
 
+            {/* Tags (for filtering insights) */}
+            <td className="p-2 relative">
+                <div className="flex flex-wrap gap-1 items-center">
+                    {visibleTags.map((tag, idx) => (
+                        <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                            {tag.name}
+                            {showTags && (
+                                <button onClick={() => handleRemoveTag(tag.name)} className="ml-1 hover:text-red-500">×</button>
+                            )}
+                        </span>
+                    ))}
+                    {hiddenCount > 0 && (
+                        <button
+                            onClick={() => setShowTags(!showTags)}
+                            className="text-[10px] text-purple-500 hover:text-purple-700 font-medium"
+                        >
+                            +{hiddenCount} more
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setShowTags(!showTags)}
+                        className="text-slate-300 hover:text-purple-500 opacity-0 group-hover:opacity-100 transition"
+                    >
+                        <Plus size={12} />
+                    </button>
+                </div>
+
+                {/* Expanded Tags Dropdown */}
+                {showTags && (
+                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-20 min-w-[200px]">
+                        <div className="flex flex-wrap gap-1 mb-2">
+                            {tags.map((tag, idx) => (
+                                <span key={idx} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                                    {tag.name}
+                                    <button onClick={() => handleRemoveTag(tag.name)} className="ml-1.5 hover:text-red-500">×</button>
+                                </span>
+                            ))}
+                        </div>
+                        <input
+                            type="text"
+                            className="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white outline-none focus:border-purple-500"
+                            placeholder="Add filter tag (e.g. Property)"
+                            value={newTag}
+                            onChange={(e) => setNewTag(e.target.value)}
+                            onKeyDown={handleAddTag}
+                            autoFocus
+                        />
+                    </div>
+                )}
+            </td>
+
             {/* Delete */}
             <td className="p-2 w-10">
                 <button
@@ -179,13 +251,72 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
     );
 };
 
-// Bucket Table Section Component - one per group
+// Bucket Table Section Component - one per group with sortable columns
 const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, createBucketMutation, updateBucketMutation, deleteBucketMutation, groupName }) => {
-    const [showNewRow, setShowNewRow] = useState(false);
+    const [sortField, setSortField] = useState('name');
+    const [sortDir, setSortDir] = useState('asc');
 
     const handleAddNew = () => {
         createBucketMutation.mutate({ name: "New Category", group: groupName, is_shared: false });
     };
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDir('asc');
+        }
+    };
+
+    // Sort buckets
+    const sortedBuckets = [...buckets].sort((a, b) => {
+        let aVal, bVal;
+        switch (sortField) {
+            case 'name':
+                aVal = (a.name || '').toLowerCase();
+                bVal = (b.name || '').toLowerCase();
+                break;
+            case 'limitA':
+                aVal = a.monthly_limit_a || 0;
+                bVal = b.monthly_limit_a || 0;
+                break;
+            case 'limitB':
+                aVal = a.monthly_limit_b || 0;
+                bVal = b.monthly_limit_b || 0;
+                break;
+            case 'rollover':
+                aVal = a.is_rollover ? 1 : 0;
+                bVal = b.is_rollover ? 1 : 0;
+                break;
+            case 'tags':
+                aVal = (a.tags || []).length;
+                bVal = (b.tags || []).length;
+                break;
+            default:
+                aVal = (a.name || '').toLowerCase();
+                bVal = (b.name || '').toLowerCase();
+        }
+        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const SortHeader = ({ field, children, className = '' }) => (
+        <th
+            className={`p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none ${className}`}
+            onClick={() => handleSort(field)}
+        >
+            <div className="flex items-center gap-1">
+                {children}
+                {sortField === field && (
+                    <span className="text-indigo-500">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                )}
+            </div>
+        </th>
+    );
+
+    const colSpan = userSettings?.is_couple_mode ? 8 : 6;
 
     return (
         <div className="mb-8">
@@ -200,25 +331,26 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
                     <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                         <tr>
                             <th className="p-2 w-12"></th>
-                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Name</th>
-                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-28">
+                            <SortHeader field="name">Name</SortHeader>
+                            <SortHeader field="limitA" className="w-28">
                                 {userSettings?.is_couple_mode ? (userSettings?.name_a || 'User A') : 'Limit'}
-                            </th>
+                            </SortHeader>
                             {userSettings?.is_couple_mode && (
-                                <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-28">
+                                <SortHeader field="limitB" className="w-28">
                                     {userSettings?.name_b || 'User B'}
-                                </th>
+                                </SortHeader>
                             )}
                             {userSettings?.is_couple_mode && (
                                 <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-16 text-center">Shared</th>
                             )}
-                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-20 text-center">Rollover</th>
+                            <SortHeader field="rollover" className="w-20 text-center">Rollover</SortHeader>
+                            <SortHeader field="tags">Tags</SortHeader>
                             <th className="p-2 w-10"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {/* Existing Buckets */}
-                        {buckets.map(bucket => (
+                        {sortedBuckets.map(bucket => (
                             <BucketTableRow
                                 key={bucket.id}
                                 bucket={bucket}
@@ -230,7 +362,7 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
 
                         {buckets.length === 0 && (
                             <tr>
-                                <td colSpan={userSettings?.is_couple_mode ? 7 : 5} className="p-6 text-center text-slate-400 text-sm">
+                                <td colSpan={colSpan} className="p-6 text-center text-slate-400 text-sm">
                                     No categories yet
                                 </td>
                             </tr>
@@ -238,7 +370,7 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
 
                         {/* Add New Row - at bottom */}
                         <tr className="border-t border-slate-100 dark:border-slate-700 bg-slate-25 dark:bg-slate-800/30">
-                            <td colSpan={userSettings?.is_couple_mode ? 7 : 5} className="p-2">
+                            <td colSpan={colSpan} className="p-2">
                                 <button
                                     onClick={handleAddNew}
                                     className="w-full py-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center justify-center gap-2 text-sm font-medium"
