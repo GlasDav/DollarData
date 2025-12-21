@@ -78,7 +78,10 @@ class AICategorizer:
         bucket_names: List[str],
         progress_callback=None  # Optional: progress_callback(processed_count, total_count, batch_num)
     ) -> Dict[int, Tuple[str, float]]:
-        """Synchronous version that processes ALL transactions in batches of 50."""
+        """Synchronous version that processes ALL transactions in parallel batches."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import threading
+        
         self._ensure_initialized()
         
         if not self.enabled or not transactions:
@@ -86,47 +89,75 @@ class AICategorizer:
             return {}
         
         total_count = len(transactions)
-        batch_size = 50
+        batch_size = 10  # Small batches to prevent Gemini response truncation
         num_batches = (total_count + batch_size - 1) // batch_size
         
-        logger.info(f"AI categorizing {total_count} transactions across {num_batches} batches")
+        logger.info(f"AI categorizing {total_count} transactions across {num_batches} batches (parallel)")
         
         all_results = {}
+        results_lock = threading.Lock()
+        completed_batches = [0]  # Use list to allow mutation in nested function
         
-        # Process all transactions in batches
-        for batch_start in range(0, total_count, batch_size):
+        def process_single_batch(batch_start: int) -> Dict[int, Tuple[str, float]]:
+            """Process a single batch and return results with global indices."""
             batch = transactions[batch_start:batch_start + batch_size]
             batch_num = batch_start // batch_size + 1
             prompt = self._build_prompt(batch, bucket_names)
+            batch_results = {}
             
             try:
-                # Use generation config with timeout settings
                 response = self.model.generate_content(
                     prompt,
                     generation_config=genai.types.GenerationConfig(
-                        max_output_tokens=2048,
-                        temperature=0.3,
+                        max_output_tokens=4096,
+                        temperature=0.1,
                     ),
-                    request_options={"timeout": 30}
+                    request_options={"timeout": 45}
                 )
-                batch_results = self._parse_response(response.text, len(batch), bucket_names)
+                parsed = self._parse_response(response.text, len(batch), bucket_names)
                 
-                # Map batch indices back to global indices
-                for local_idx, (bucket, conf) in batch_results.items():
-                    global_idx = batch_start + local_idx
-                    all_results[global_idx] = (bucket, conf)
-                    
-                logger.info(f"Batch {batch_num}/{num_batches}: categorized {len(batch_results)}/{len(batch)} transactions")
+                # Map local indices to global indices
+                for local_idx, (bucket, conf) in parsed.items():
+                    batch_results[batch_start + local_idx] = (bucket, conf)
                 
-                # Report progress after each batch
-                if progress_callback:
-                    progress_callback(batch_start + len(batch), total_count, batch_num, num_batches)
-                    
+                with results_lock:
+                    with open("ai_debug.log", "a") as f:
+                        f.write(f"Batch {batch_num}/{num_batches}: {len(parsed)}/{len(batch)} matched\n")
+                        
+                logger.info(f"Batch {batch_num}/{num_batches}: {len(parsed)}/{len(batch)} matched")
+                
             except Exception as e:
+                with results_lock:
+                    with open("ai_debug.log", "a") as f:
+                        f.write(f"Batch {batch_num}/{num_batches} FAILED: {e}\n")
                 logger.error(f"AI batch {batch_num}/{num_batches} failed: {e}")
-                # Report progress even on failure
-                if progress_callback:
-                    progress_callback(batch_start + len(batch), total_count, batch_num, num_batches)
+            
+            return batch_results
+        
+        # Process batches in parallel with 5 concurrent workers
+        batch_starts = list(range(0, total_count, batch_size))
+        
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {executor.submit(process_single_batch, bs): bs for bs in batch_starts}
+            
+            for future in as_completed(futures):
+                batch_start = futures[future]
+                try:
+                    batch_results = future.result()
+                    with results_lock:
+                        all_results.update(batch_results)
+                        completed_batches[0] += 1
+                        
+                    # Report progress
+                    if progress_callback:
+                        progress_callback(
+                            min(completed_batches[0] * batch_size, total_count),
+                            total_count,
+                            completed_batches[0],
+                            num_batches
+                        )
+                except Exception as e:
+                    logger.error(f"Batch future failed: {e}")
         
         logger.info(f"AI total: categorized {len(all_results)}/{total_count} transactions")
         return all_results
@@ -142,35 +173,32 @@ class AICategorizer:
             txn_list.append(f"{i}. \"{desc}\" (${abs(amount):.2f})")
         
         txn_text = "\n".join(txn_list)
-        buckets_text = ", ".join(bucket_names)
+        # Format buckets as a numbered list for clarity
+        buckets_list = "\n".join([f"- {name}" for name in bucket_names])
         
-        prompt = f"""You are a financial transaction categorizer. Analyze each transaction and assign it to the most appropriate category.
+        prompt = f"""You are a financial transaction categorizer. 
 
-AVAILABLE CATEGORIES:
-{buckets_text}
+## CRITICAL: You MUST use ONLY these exact category names:
+{buckets_list}
 
-TRANSACTIONS TO CATEGORIZE:
+## Rules:
+1. For each transaction, choose the BEST MATCHING category from the list above
+2. You MUST use the EXACT category name as written above - copy it exactly
+3. DO NOT create new categories or modify the names
+4. If nothing fits, use "Uncategorized" (but try to find a match first)
+
+## Transactions to categorize:
 {txn_text}
 
-INSTRUCTIONS:
-1. For each transaction, determine the best matching category from the list above
-2. Only use categories from the provided list - do not invent new ones
-3. If no category fits well, use "Uncategorized"
-4. Consider the merchant name, amount, and typical spending patterns
-
-RESPOND WITH ONLY A JSON ARRAY in this exact format:
+## Response format (JSON array only, no other text):
 [
-  {{"index": 0, "category": "CategoryName", "confidence": 0.9}},
-  {{"index": 1, "category": "CategoryName", "confidence": 0.8}},
-  ...
+  {{"index": 0, "category": "EXACT_CATEGORY_NAME", "confidence": 0.9}},
+  {{"index": 1, "category": "EXACT_CATEGORY_NAME", "confidence": 0.8}}
 ]
 
-Where:
-- index: the transaction number (0-indexed)
-- category: exact category name from the list above
-- confidence: 0.5-1.0 (how confident you are in this categorization)
+IMPORTANT: The category field MUST be copied exactly from the list above. Do not paraphrase.
 
-JSON RESPONSE:"""
+JSON:"""
         
         return prompt
     
@@ -196,8 +224,16 @@ JSON RESPONSE:"""
             lines = text.split("\n")
             text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
         
+        # Log raw response BEFORE parsing
+        with open("ai_debug.log", "a") as f:
+            f.write(f"\n--- Raw AI Response ---\n{response_text[:800]}\n---\n")
+        
         try:
             predictions = json.loads(text)
+            
+            # Log parsed count
+            with open("ai_debug.log", "a") as f:
+                f.write(f"Parsed {len(predictions)} predictions\n")
             
             # Validate bucket names (case-insensitive matching)
             bucket_lookup = {b.lower(): b for b in bucket_names}
@@ -222,12 +258,20 @@ JSON RESPONSE:"""
             # Log unmatched categories for debugging
             if unmatched_categories:
                 unique_unmatched = list(set(unmatched_categories))
-                logger.warning(f"AI returned {len(unmatched_categories)} predictions with non-matching categories: {unique_unmatched[:10]}")
-                logger.debug(f"User's buckets: {bucket_names}")
+                print(f"[AI DEBUG] Unmatched categories ({len(unmatched_categories)} total): {unique_unmatched[:10]}")
+                print(f"[AI DEBUG] User's buckets: {bucket_names}")
+                # Also write to file for debugging
+                with open("ai_debug.log", "a") as f:
+                    f.write(f"\n=== AI Batch Debug ===\n")
+                    f.write(f"Unmatched categories ({len(unmatched_categories)} total): {unique_unmatched}\n")
+                    f.write(f"User's buckets: {bucket_names}\n")
                     
         except json.JSONDecodeError as e:
+            # Log to file for debugging
+            with open("ai_debug.log", "a") as f:
+                f.write(f"JSON PARSE ERROR: {e}\n")
+                f.write(f"Text attempted to parse: {text[:500]}...\n")
             logger.warning(f"Failed to parse AI response as JSON: {e}")
-            logger.debug(f"Response was: {response_text[:500]}")
         
         return results
 

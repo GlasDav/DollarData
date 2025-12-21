@@ -141,7 +141,7 @@ export default function Ingest() {
 
             // Poll for status until complete
             let attempts = 0;
-            const maxAttempts = 300; // 5 minutes max (300 * 1000ms)
+            const maxAttempts = 600; // 10 minutes max (600 * 1000ms)
 
             while (attempts < maxAttempts) {
                 // Check if cancelled
