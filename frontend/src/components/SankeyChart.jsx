@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sankey, Tooltip, ResponsiveContainer } from 'recharts';
+import { Sankey, Tooltip, Layer, Rectangle } from 'recharts';
 
 const SankeyChart = ({ data }) => {
     if (!data || !data.nodes || data.nodes.length === 0 || !data.links || data.links.length === 0) {
@@ -17,115 +17,108 @@ const SankeyChart = ({ data }) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
     };
 
-    // Custom Node
-    const renderNode = (props) => {
-        const { x, y, width, height, index, payload, containerWidth } = props;
-
-        // Configuration
+    // Custom Node with labels outside
+    const CustomNode = ({ x, y, width, height, index, payload, containerWidth }) => {
         const isLeft = x < containerWidth / 2;
         const textAnchor = isLeft ? 'end' : 'start';
         const xPos = isLeft ? x - 6 : x + width + 6;
         const yPos = y + height / 2;
-
-        // Make sure node has minimum height for visibility
-        const minHeight = Math.max(height, 8);
+        const minHeight = Math.max(height, 4);
 
         return (
-            <g>
-                <rect
+            <Layer key={`node-${index}`}>
+                <Rectangle
                     x={x}
                     y={y}
                     width={width}
                     height={minHeight}
                     fill="#6366f1"
-                    fillOpacity={0.8}
-                    rx={4}
+                    fillOpacity={0.9}
                 />
-
-                {/* Node Label */}
                 <text
                     x={xPos}
-                    y={yPos - 6}
+                    y={yPos - 5}
                     textAnchor={textAnchor}
-                    dominantBaseline="middle"
-                    fill="#334155"
-                    fontSize={11}
-                    fontWeight="bold"
-                    className="dark:fill-slate-200"
-                    style={{ pointerEvents: 'none' }}
+                    fill="#e2e8f0"
+                    fontSize={10}
+                    fontWeight="600"
                 >
                     {payload.name}
                 </text>
-
-                {/* Node Value */}
                 <text
                     x={xPos}
-                    y={yPos + 8}
+                    y={yPos + 7}
                     textAnchor={textAnchor}
-                    dominantBaseline="middle"
-                    fill="#64748b"
-                    fontSize={10}
-                    fontWeight="medium"
-                    className="dark:fill-slate-400"
-                    style={{ pointerEvents: 'none' }}
+                    fill="#94a3b8"
+                    fontSize={9}
                 >
                     {formatCurrency(payload.value)}
                 </text>
-            </g>
+            </Layer>
         );
     };
 
-    // Custom Link with proper gradient and width
-    const renderLink = (props) => {
-        const { sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index } = props;
-
-        // Ensure minimum link width for visibility
-        const minWidth = Math.max(linkWidth || 2, 2);
+    // Custom Link with gradient fill
+    const CustomLink = ({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index, payload }) => {
+        const gradientId = `linkGradient${index}`;
+        // Ensure minimum visible width
+        const width = Math.max(linkWidth || 1, 2);
 
         return (
-            <path
-                d={`
-                    M${sourceX},${sourceY}
-                    C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}
-                `}
-                fill="none"
-                stroke="#818cf8"
-                strokeWidth={minWidth}
-                strokeOpacity={0.5}
-            />
+            <Layer key={`link-${index}`}>
+                <defs>
+                    <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#818cf8" stopOpacity={0.6} />
+                        <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.4} />
+                    </linearGradient>
+                </defs>
+                <path
+                    d={`
+                        M${sourceX},${sourceY}
+                        C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}
+                    `}
+                    stroke={`url(#${gradientId})`}
+                    strokeWidth={width}
+                    fill="none"
+                    strokeOpacity={0.7}
+                />
+            </Layer>
         );
     };
 
-    // Calculate appropriate height - cap at reasonable max
-    const nodeCount = Math.max(
-        data.nodes.filter((_, i) => i === 0 || data.links.some(l => l.source === 0)).length,
-        data.nodes.filter((_, i) => i !== 0 && !data.links.some(l => l.target === i && l.source === 0)).length
-    );
-    // Base height of 350, add 30px per category node, cap at 600
-    const calculatedHeight = Math.min(600, Math.max(350, nodeCount * 35 + 100));
-
-    // Node padding based on number of categories
-    const nodePadding = Math.max(20, Math.min(50, 300 / data.nodes.length));
+    // Calculate height based on number of destination nodes (categories)
+    // Count unique target nodes (excluding the source nodes like Income, Savings, etc)
+    const categoryCount = data.nodes.length - 4; // Subtract source nodes (Income, Non-Disc, Disc, Savings)
+    const chartHeight = Math.max(400, Math.min(800, categoryCount * 28 + 100));
+    const nodePadding = Math.max(8, Math.min(30, 400 / categoryCount));
 
     return (
-        <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 transition-all duration-300 flex flex-col" style={{ height: `${calculatedHeight}px` }}>
+        <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex flex-col">
             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 shrink-0">Cash Flow</h3>
-            <div className="flex-1 min-h-0 overflow-hidden">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="overflow-auto" style={{ maxHeight: '500px' }}>
+                <div style={{ height: `${chartHeight}px`, minHeight: '400px' }}>
                     <Sankey
+                        width={800}
+                        height={chartHeight}
                         data={data}
-                        link={renderLink}
+                        node={<CustomNode />}
+                        link={<CustomLink />}
                         nodePadding={nodePadding}
-                        nodeWidth={10}
-                        margin={{ left: 120, right: 120, top: 5, bottom: 5 }}
-                        node={renderNode}
+                        nodeWidth={8}
+                        margin={{ left: 120, right: 120, top: 20, bottom: 20 }}
                     >
                         <Tooltip
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            contentStyle={{
+                                borderRadius: '8px',
+                                border: 'none',
+                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                backgroundColor: '#1e293b',
+                                color: '#e2e8f0'
+                            }}
                             formatter={(value) => formatCurrency(value)}
                         />
                     </Sankey>
-                </ResponsiveContainer>
+                </div>
             </div>
         </div>
     );
