@@ -32,8 +32,8 @@ class AICategorizer:
         if api_key:
             try:
                 genai.configure(api_key=api_key)
-                # Use the latest Gemini 3 Flash (released Dec 2025)
-                self.model = genai.GenerativeModel('gemini-3-flash-preview')
+                # Use Gemini 1.5 Flash for fast, efficient categorization
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
                 self.enabled = True
                 logger.info("AI Categorizer initialized successfully with Gemini API")
             except Exception as e:
@@ -95,7 +95,15 @@ class AICategorizer:
             prompt = self._build_prompt(batch, bucket_names)
             
             try:
-                response = self.model.generate_content(prompt)
+                # Use generation config with timeout settings
+                response = self.model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=2048,
+                        temperature=0.3,  # Lower for more deterministic output
+                    ),
+                    request_options={"timeout": 30}  # 30 second timeout per batch
+                )
                 batch_results = self._parse_response(response.text, len(batch), bucket_names)
                 
                 # Map batch indices back to global indices
@@ -106,6 +114,7 @@ class AICategorizer:
                 logger.info(f"Batch {batch_start//batch_size + 1}: categorized {len(batch_results)}/{len(batch)} transactions")
             except Exception as e:
                 logger.error(f"AI batch {batch_start//batch_size + 1} failed: {e}")
+                # Continue with other batches even if one fails
         
         logger.info(f"AI total: categorized {len(all_results)}/{len(transactions)} transactions")
         return all_results
