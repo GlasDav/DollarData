@@ -359,7 +359,7 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
             className={`p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition select-none ${className}`}
             onClick={() => handleSort(field)}
         >
-            <div className="flex items-center gap-1">
+            <div className={`flex items-center gap-1 ${className.includes('text-center') ? 'justify-center' : ''}`}>
                 {children}
                 {sortField === field && (
                     <span className="text-indigo-500">{sortDir === 'asc' ? '↑' : '↓'}</span>
