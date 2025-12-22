@@ -84,5 +84,5 @@ Tasks
                 - Transfers
 
 Things to fix:
-    - Net savings not adding up with sankey 
-    - Insights - fix
+    - Net savings not adding up with sankey diagram's net savings
+    - Insights - don't want a hard-coded threshold. Want irregularities to be identified based on the data

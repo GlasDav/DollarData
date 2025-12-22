@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users } from 'lucide-react';
+import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users, BarChart3 } from 'lucide-react';
 import Settings from './pages/Settings';
 import Ingest from './pages/Ingest';
 import Transactions from './pages/Transactions';
@@ -12,6 +12,7 @@ import Subscriptions from './pages/Subscriptions';
 import Tools from './pages/Tools';
 import Budget from './pages/Budget';
 import Review from './pages/Review';
+import Reports from './pages/Reports';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -27,6 +28,7 @@ import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import Footer from './components/Footer';
 import { LogOut } from 'lucide-react';
 
 const queryClient = new QueryClient();
@@ -85,6 +87,7 @@ function Layout() {
           <NavItem to="/goals" icon={Target}>Goals</NavItem>
           <NavItem to="/budget" icon={PiggyBank}>Budget</NavItem>
           <NavItem to="/review" icon={Users}>Review</NavItem>
+          <NavItem to="/reports" icon={BarChart3}>Reports</NavItem>
           <NavItem to="/tools" icon={Wrench}>Tools</NavItem>
           <NavItem to="/insights" icon={Zap}>Insights</NavItem>
           <NavItem to="/settings" icon={SettingsIcon}>Settings</NavItem>
@@ -102,10 +105,15 @@ function Layout() {
       </div>
 
       {/* Main Content - wrapped in error boundary */}
-      <div className="flex-1 overflow-auto">
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
+      <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-900">
+        <div className="min-h-full flex flex-col">
+          <ErrorBoundary>
+            <div className="flex-1">
+              <Outlet />
+            </div>
+          </ErrorBoundary>
+          <Footer />
+        </div>
       </div>
     </div>
   );
@@ -137,6 +145,7 @@ function App() {
                 <Route path="/tools" element={<Tools />} />
                 <Route path="/budget" element={<Budget />} />
                 <Route path="/review" element={<Review />} />
+                <Route path="/reports" element={<Reports />} />
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/ingest" element={<Ingest />} />
                 <Route path="/settings" element={<Settings />} />

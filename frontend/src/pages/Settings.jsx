@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch, Menu } from '@headlessui/react';
-import { Trash2, Plus, Download, Moon, Sun, DollarSign, Euro, PoundSterling, Save, Upload, Wallet, ShoppingCart, Tag as TagIcon, Home, Utensils, Zap, Car, Film, Heart, ShoppingBag, Briefcase, Coffee, Gift, Music, Smartphone, Plane, Play } from 'lucide-react';
+import { Trash2, Plus, Download, Moon, Sun, DollarSign, Euro, PoundSterling, Save, Upload, Wallet, ShoppingCart, Tag as TagIcon, Home, Utensils, Zap, Car, Film, Heart, ShoppingBag, Briefcase, Coffee, Gift, Music, Smartphone, Plane, Play, TrendingUp, PiggyBank, Landmark } from 'lucide-react';
 import * as api from '../services/api';
 import { ICON_MAP, DEFAULT_ICON } from '../utils/icons';
 import { useTheme } from '../context/ThemeContext';
@@ -447,7 +447,14 @@ const AccountCard = ({ account, updateAccountMutation, deleteAccountMutation }) 
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg ${account.type === 'Asset' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                    {account.type === 'Asset' ? <Wallet size={20} /> : <ShoppingCart size={20} />}
+                    {(() => {
+                        const c = (account.category || '').toLowerCase();
+                        if (c.includes('real estate') || c.includes('property')) return <Home size={20} />;
+                        if (c.includes('investment')) return <TrendingUp size={20} />;
+                        if (c.includes('loan')) return <Landmark size={20} />;
+                        if (account.type === 'Asset') return <Wallet size={20} />;
+                        return <ShoppingCart size={20} />;
+                    })()}
                 </div>
 
                 <div className="flex flex-col flex-1 gap-1">
@@ -1125,51 +1132,6 @@ function SettingsContent() {
                     </div>
                 </section>
 
-                {/* Budget Buckets - Table Layout */}
-                <section>
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Budget Categories</h2>
-                    </div>
-
-                    {/* Income Section */}
-                    <BucketTableSection
-                        title="Income"
-                        icon={DollarSign}
-                        buckets={groupedBuckets["Income"] || []}
-                        userSettings={userSettings}
-                        createBucketMutation={createBucketMutation}
-                        updateBucketMutation={updateBucketMutation}
-                        deleteBucketMutation={deleteBucketMutation}
-                        groupName="Income"
-                        allTags={allTags}
-                    />
-
-                    {/* Non-Discretionary Section */}
-                    <BucketTableSection
-                        title="Non-Discretionary"
-                        icon={Home}
-                        buckets={groupedBuckets["Non-Discretionary"] || []}
-                        userSettings={userSettings}
-                        createBucketMutation={createBucketMutation}
-                        updateBucketMutation={updateBucketMutation}
-                        deleteBucketMutation={deleteBucketMutation}
-                        groupName="Non-Discretionary"
-                        allTags={allTags}
-                    />
-
-                    {/* Discretionary Section */}
-                    <BucketTableSection
-                        title="Discretionary"
-                        icon={ShoppingBag}
-                        buckets={groupedBuckets["Discretionary"] || []}
-                        userSettings={userSettings}
-                        createBucketMutation={createBucketMutation}
-                        updateBucketMutation={updateBucketMutation}
-                        deleteBucketMutation={deleteBucketMutation}
-                        groupName="Discretionary"
-                        allTags={allTags}
-                    />
-                </section>
 
                 {/* Net Worth Accounts (Moved above Smart Rules) */}
                 <section>
@@ -1218,13 +1180,6 @@ function SettingsContent() {
                     </div>
                 </section>
 
-                {/* Categorization Rules Section */}
-                <section>
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Smart Rules</h2>
-                    </div>
-                    <RulesSection buckets={buckets} />
-                </section>
 
                 {/* Danger Zone */}
                 <section className="mt-12">

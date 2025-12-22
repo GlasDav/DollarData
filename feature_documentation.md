@@ -6,11 +6,14 @@ This document provides a comprehensive overview of the features currently implem
 The dashboard serves as the central hub for financial oversight.
 
 -   **Cash Flow Sankey Diagram**: A dynamic visual representation of money flow.
-    -   **3-Layer Hierarchy**: Income → Groups (Discretionary/Non-Discretionary/Savings/Investments) → Buckets.
-    -   **Dynamic Sizing**: Automatically adjusts height based on the number of categories to prevent overflow.
+    -   **3-Layer Hierarchy**: Income → Savings & Investments / Groups → Buckets.
+    -   **Combined Wealth View** *(New)*: "Investments" and "Net Savings" are grouped under "Savings & Investments" to show total collection of unspent wealth.
     -   **Empty State Handling**: Gracefully handles periods with no data.
     -   **Transfer Exclusion**: Transfers between accounts are automatically excluded from spending analytics.
-    -   **Investment Flow** *(New)*: Investments appear as a separate flow from Income, excluded from expense totals.
+-   **Dynamic Insights** *(New)*:
+    -   **Anomaly Detection**: Identifies spending irregularities using statistical analysis (Mean + 2 Standard Deviations) rather than hardcoded thresholds.
+    -   **Large Transactions**: Flags expenses significantly larger than the 90-day average.
+    -   **Category Spikes**: Alerts when category spending exceeds historical volatility norms (3-6 month window).
 -   **Summary Cards**: High-level metrics for the selected period.
     -   Total Income
     -   Total Expenses (excludes transfers)
@@ -19,18 +22,30 @@ The dashboard serves as the central hub for financial oversight.
 -   **Spending Trends**: Bar chart visualizing spending over time, with filters for specific budget categories.
 -   **Global Filtering**: Date range (e.g., "This Month") and Spender (Combined, You, Partner) filters affect all dashboard data.
 
-## 2. Core Banking
+## 2. Reports & Reports Tab *(New)*
+Dedicated reporting section for deeper financial analysis.
+-   **Expense Distribution**: Donut chart showing breakdown of spending by Group or Category (excludes Income/Transfers).
+-   **Spending History**: Line chart tracking spending trends over time, filterable by Spender (User A/B/Combined).
+-   **Cash Flow Projection** *(New)*:
+    -   Forecasts future account balance based on current cash and recurring active subscriptions.
+    -   Helps warn of potential shortfalls.
+-   **Net Worth Projection** *(New)*:
+    -   Projects future net worth growth based on historical trends (linear regression).
+    -   Visualizes "Projected" path as a dashed line extending 12 months forward.
+-   **Data Export**: Download all transaction data as CSV for external analysis.
+
+## 3. Core Banking
 ### Transactions
 -   **Comprehensive List**: View all transactions with dates, descriptions, categories, and amounts.
 -   **Split Transactions**: Ability to split a single transaction into multiple categories (accessible via hover/select).
 -   **Filtering & Sorting**: Sort by date, amount, or filter by specific criteria.
 
 ### Data Import (Ingest)
--   **Connect Bank**: Integrated button to link financial institutions (via Basiq/ConnectBank component).
+-   **Connect Bank**: Integrated button to link financial institutions (via Basiq/ConnectBank component - *In Progress*).
 -   **File Import**: Support for manual file uploads.
     -   **PDF Statements**: Extract transactions from bank PDFs.
     -   **CSV Import**: Map and import CSV data from other sources.
--   **Review Before Save** *(New)*:
+-   **Review Before Save**:
     -   Transactions are categorized and shown for review but NOT saved to database.
     -   Users can edit categories, descriptions, and spender before confirming.
     -   Only "Confirm & Save" button persists transactions to database.
@@ -47,7 +62,7 @@ The dashboard serves as the central hub for financial oversight.
     -   Hash-based fingerprinting detects previously imported transactions.
     -   Automatically skips duplicates when re-importing overlapping statements.
     -   "Skip duplicate transactions" checkbox (enabled by default).
--   **Import Progress Indicator** *(Updated)*:
+-   **Import Progress Indicator**:
     -   Async background processing for large imports.
     -   Real-time progress bar showing batch completion.
     -   Shows duplicate count and categorization status.
@@ -63,23 +78,26 @@ The dashboard serves as the central hub for financial oversight.
 -   **Protected Category**: Transfer bucket cannot be deleted (system-protected).
 -   **Visual Distinction**: Orange background in Settings table.
 
-### Investment Tracking *(New)*
+### Investment Tracking
 -   **Investment Buckets**: A default "Investments" bucket is automatically created for all users.
--   **Separate Sankey Flow**: Investment transactions flow from Income → Investments → Investment Contributions.
+-   **Separate Sankey Flow**: Investment transactions flow from Income → Savings & Investments → Investments.
 -   **Expense Exclusion**: Investment transactions are excluded from expense totals (they increase net worth, not reduce it).
 -   **Protected Category**: Investment bucket cannot be deleted (system-protected).
 -   **Visual Distinction**: Green background in Settings table.
 
-## 3. Wealth Management
+## 4. Wealth Management
 ### Net Worth
 -   **Dual Views**: Toggle between "Net Worth" (Assets - Liabilities) and "Investments" (Performance history) charts.
+-   **Real Estate Support** *(New)*:
+    -   Dedicated support for "Property", "Mortgage", and "Real Estate" accounts.
+    -   Visual distinction with Home icons 🏠 vs Wallet/Graph icons.
 -   **Automated Market Values**: Stock and ETF holdings are automatically updated via Yahoo Finance every time the page is loaded.
 -   **Accounts List**:
-    -   **Assets**: Savings, Investments, Cash.
+    -   **Assets**: Savings, Investments, Cash, Property.
     -   **Liabilities**: Credit Cards, Loans, Mortgages.
 -   **Manual Accounts**: Ability to manually add and update account balances (via Check-In).
 
-### Tools & Calculators *(New)*
+### Tools & Calculators
 -   **Combined Hub**: Centralized "Tools" page for financial planning utilities.
 -   **Debt Payoff Visualizer**:
     -   **Projections**: Visualizes debt payoff timelines based on current payments.
@@ -90,7 +108,7 @@ The dashboard serves as the central hub for financial oversight.
 -   **Investment Search**: Ticker lookup functionality to add holdings (now integrated into Net Worth page).
 -   **Optimized Navigation**: Tools are accessible via a tabbed interface to reduce sidebar clutter.
 
-## 4. Planning & Budgeting
+## 5. Planning & Budgeting
 ### Financial Calendar
 -   **Monthly View**: specialized calendar view for financial planning.
 -   **Projected Bills**: Automatically maps recurring subscriptions and bills to specific days.
@@ -108,9 +126,9 @@ The dashboard serves as the central hub for financial oversight.
     -   **Linked Account**: Automatically tracks the balance of a specific asset account (e.g., "Holiday Savings Account").
 -   **Progress Visualization**: Progress bars indicating completion percentage and remaining amount.
 
-## 5. System & Settings
+## 6. System & Settings
 ### Budget Configuration
--   **Compact Table Layout** *(New)*:
+-   **Compact Table Layout**:
     -   Categories displayed in grouped tables instead of large cards.
     -   Three sections: Income, Non-Discretionary, Discretionary.
     -   Inline editing for all fields (click to edit).
@@ -121,21 +139,21 @@ The dashboard serves as the central hub for financial oversight.
     -   Shared toggle to combine limits for joint expenses.
 -   **Rollover Toggle**: Enable/disable budget rollover per category.
 -   **Transfer Flag**: Mark buckets as "transfer" to exclude from spending analytics.
--   **Investment Flag** *(New)*: Mark buckets as "investment" to track separately in Sankey without counting as expenses.
+-   **Investment Flag**: Mark buckets as "investment" to track separately in Sankey without counting as expenses.
 
 ### Smart Rules (Auto-Learning)
 -   **Automatic Rule Creation**: When you manually categorize a transaction, a Smart Rule is auto-created.
 -   **Keyword Matching**: Rules match transaction descriptions to categories.
 -   **Priority-Based**: Higher priority rules take precedence.
--   **Amount Conditions** *(New)*: Rules can filter by min/max amount thresholds.
--   **Create from Transaction** *(New)*: Quickly create a rule by clicking the 📘 icon on any transaction row.
--   **Rule Preview API** *(New)*: Backend endpoint to preview which transactions would match a rule before saving.
+-   **Amount Conditions**: Rules can filter by min/max amount thresholds.
+-   **Create from Transaction**: Quickly create a rule by clicking the 📘 icon on any transaction row.
+-   **Rule Preview API**: Backend endpoint to preview which transactions would match a rule before saving.
 -   **Categorization Order**:
     1. Smart Rules (user-created, highest priority)
     2. Global Keywords (common merchant patterns)
     3. AI Prediction (Google Gemini fallback)
 
-### Partner Review Queue *(New)*
+### Partner Review Queue
 -   **Assign for Review**: In Couple Mode, assign transactions to your partner for review.
     -   Click the 👤✓ icon on any transaction row (Transactions or Import page).
     -   Select partner from dropdown.
@@ -150,20 +168,21 @@ The dashboard serves as the central hub for financial oversight.
 -   **Couple Mode**: Toggle to enable features for shared finances (Partner A / Partner B distinction).
 -   **User Profile**: Manage user details and preferences.
 -   **Tax Settings**: Configure tax residency and deductions for accurate net income calculations.
+-   **Legal**: Standard financial disclaimers added to footer.
 
-## 6. Authentication & Security
+## 7. Authentication & Security
 -   **User Accounts**: Secure Login and Registration flows using Argon2 password hashing.
--   **Password Reset** *(New)*:
+-   **Password Reset**:
     -   Forgot password flow with secure token-based reset.
     -   Email verification flow for new accounts.
--   **Account Deletion** *(New)*: Users can permanently delete their account from Settings.
+-   **Account Deletion**: Users can permanently delete their account from Settings.
 -   **Session Management**:
     -   **Short-lived Access Tokens**: Access tokens expire after 60 minutes for enhanced security.
     -   **Refresh Tokens**: Long-lived refresh tokens (7 days) allow seamless sessions while maintaining high rotate frequency for access keys.
     -   **Automatic Token Rotation**: The frontend automatically detects expired sessions and refreshes them in the background.
 -   **Environment Configuration**: Sensitive data like `SECRET_KEY` and API credentials are managed via `.env` files and never hardcoded.
 
-## 7. AI & Machine Learning *(Updated)*
+## 8. AI & Machine Learning
 -   **Gemini 3 Flash Integration**: Transaction categorization powered by Google's latest Gemini model.
 -   **Async Background Processing**: Large imports processed in background with real-time progress updates.
 -   **Parallel Batch Processing**: 5 concurrent API calls for faster categorization (~2 min for 500 transactions).
@@ -175,4 +194,3 @@ The dashboard serves as the central hub for financial oversight.
 ---
 
 *Last Updated: December 2025*
-

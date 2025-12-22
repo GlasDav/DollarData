@@ -3,11 +3,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { refreshHoldingPrices, getInvestmentHistory } from '../services/api'; // Use standardized API
 import {
     TrendingUp, TrendingDown, Plus, DollarSign,
-    Landmark, CreditCard, Wallet, LineChart, RefreshCw, X
+    Landmark, CreditCard, Wallet, LineChart, RefreshCw, X, Home, PiggyBank
 } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import CheckInModal from '../components/CheckInModal';
 import AccountDetailsModal from '../components/AccountDetailsModal';
+
+const getCategoryIcon = (category, type) => {
+    const c = (category || '').toLowerCase();
+    if (c.includes('property') || c.includes('real estate') || c.includes('mortgage')) return Home;
+    if (c.includes('investment')) return TrendingUp;
+    if (c.includes('loan')) return Landmark;
+    if (c.includes('credit card')) return CreditCard;
+    if (c.includes('savings')) return PiggyBank;
+    return type === 'Asset' ? Wallet : CreditCard;
+};
 
 export default function NetWorth() {
     const queryClient = useQueryClient();
@@ -16,6 +26,7 @@ export default function NetWorth() {
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [chartMode, setChartMode] = useState('net_worth'); // 'net_worth' | 'investments'
+    const [showProjection, setShowProjection] = useState(false);
 
     // --- Data Fetching ---
     const { data: accounts = [], isLoading: loadingAccounts } = useQuery({
@@ -32,6 +43,15 @@ export default function NetWorth() {
         queryKey: ['investmentHistory'],
         queryFn: getInvestmentHistory
     });
+
+    // Projection Data
+    const { data: projectionData = [] } = useQuery({
+        queryKey: ['netWorthProjection'],
+        queryFn: async () => (await api.get('/analytics/networth-projection?months=12')).data,
+        enabled: showProjection // Only fetch if toggled? Or always fetch. Let's toggle fetch to save bandwidth or just fetch.
+    });
+
+    // --- Mutations ---
 
     // --- Mutations ---
     const createAccountMutation = useMutation({
@@ -105,7 +125,78 @@ export default function NetWorth() {
     const ALLOCATION_COLORS = ['#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B'];
 
     // Chart Data Config
-    const chartData = chartMode === 'net_worth' ? history : investmentHistory;
+    // Chart Data Config
+    const chartData = useMemo(() => {
+        if (chartMode === 'investments') return investmentHistory;
+
+        let data = [...history];
+        if (showProjection && projectionData.length > 0 && data.length > 0) {
+            // Add connection point (last history point) to projection to ensure continuity
+            const lastHistory = data[data.length - 1];
+
+            // Map projection data to match structure
+            const projectedPoints = projectionData.map(p => ({
+                ...p,
+                net_worth: undefined, // Clear normal net_worth so it doesn't render on main line if we use separate key?
+                // Actually to make valid single line, we can use same key but different stroke? 
+                // Recharts doesn't support changing stroke mid-line easily without custom content.
+                // Better: Use separate key "projected_net_worth"
+                projected_net_worth: p.net_worth
+            }));
+
+            // Add connection point
+            projectedPoints.unshift({
+                date: lastHistory.date,
+                projected_net_worth: lastHistory.net_worth
+            });
+
+            // To make the main area stop at today, we leave 'net_worth' as is for history points.
+            // For projected points, 'net_worth' is undefined.
+
+            return [...data, ...projectedPoints.slice(1)]; // Append projection (skipping dup date? actually data structure differs)
+            // Wait, Recharts needs consistent array.
+            // History items: { date, net_worth, ... }
+            // Projection items: { date, projected_net_worth, ... }
+            // We need to merge them into a single array where:
+            // History items have (net_worth, projected_net_worth=null)
+            // Projection items have (net_worth=null, projected_net_worth=value)
+            // Connection point (today) should have BOTH? No, connection is tricky.
+            // Easier: 
+            // 1. History items
+            // 2. Projection items
+        }
+        return history;
+    }, [chartMode, history, investmentHistory, showProjection, projectionData]);
+
+    // For Recharts to draw two lines connected, the connection point must exist in both sequences?
+    // Or we use two Area components.
+
+    // We need a unified data array.
+    const unifiedData = useMemo(() => {
+        if (chartMode !== 'net_worth' || !showProjection) return chartData;
+
+        const base = history.map(h => ({ ...h, is_projected: false }));
+        if (projectionData.length === 0) return base;
+
+        const proj = projectionData.map(p => ({ ...p, is_projected: true, projected_net_worth: p.net_worth, net_worth: undefined }));
+
+        // Connect them: Add a point equal to last history point but with 'projected_net_worth' set
+        if (base.length > 0) {
+            const last = base[base.length - 1];
+            const connection = {
+                ...last,
+                projected_net_worth: last.net_worth,
+                // net_worth is already set, so this point has BOTH.
+                // This ensures the first Area ends here and second starts/connects here?
+            };
+            // Replace last point?
+            base[base.length - 1] = connection;
+        }
+
+        return [...base, ...proj];
+    }, [chartMode, chartData, showProjection, history, projectionData]);
+
+    const activeData = (chartMode === 'net_worth' && showProjection) ? unifiedData : chartData;
     const chartDataKey = chartMode === 'net_worth' ? 'net_worth' : 'value';
     const chartColor = chartMode === 'net_worth' ? '#6366f1' : '#8b5cf6'; // Indigo vs Violet
 
@@ -182,10 +273,19 @@ export default function NetWorth() {
                                     Investments
                                 </button>
                             </div>
+                            {chartMode === 'net_worth' && (
+                                <div className="flex items-center gap-2 ml-4">
+                                    <label className="flex items-center cursor-pointer relative">
+                                        <input type="checkbox" checked={showProjection} onChange={(e) => setShowProjection(e.target.checked)} className="sr-only peer" />
+                                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        <span className="ml-2 text-xs font-medium text-slate-600 dark:text-slate-400">Projection</span>
+                                    </label>
+                                </div>
+                            )}
                         </div>
                         <div className="flex-1 min-h-0 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                <AreaChart data={activeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorNw" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} />
@@ -243,13 +343,25 @@ export default function NetWorth() {
                                     />
                                     <Area
                                         type="monotone"
-                                        dataKey={chartDataKey}
+                                        dataKey={chartMode === 'net_worth' ? 'net_worth' : 'value'}
                                         stroke={chartColor}
                                         strokeWidth={3}
                                         fillOpacity={1}
                                         fill="url(#colorNw)"
-                                        activeDot={{ r: 6, fill: chartColor, stroke: "#fff", strokeWidth: 2 }}
                                     />
+                                    {showProjection && chartMode === 'net_worth' && (
+                                        <Area
+                                            type="monotone"
+                                            dataKey="projected_net_worth"
+                                            stroke={chartColor}
+                                            strokeWidth={3}
+                                            strokeDasharray="5 5"
+                                            fillOpacity={0.1}
+                                            fill={chartColor}
+                                            connectNulls={true} // Crucial to connect the dot
+                                            activeDot={{ r: 6, fill: chartColor, stroke: "#fff", strokeWidth: 2 }}
+                                        />
+                                    )}
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -403,19 +515,22 @@ export default function NetWorth() {
                                     Assets
                                 </h4>
                                 <div className="space-y-2">
-                                    {accounts.filter(a => a.type === 'Asset').map(account => (
-                                        <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-indigo-100 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-lg group-hover:bg-emerald-100 transition-colors">
-                                                    <Wallet size={18} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{account.name}</p>
-                                                    <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{account.category}</p>
+                                    {accounts.filter(a => a.type === 'Asset').map(account => {
+                                        const Icon = getCategoryIcon(account.category, 'Asset');
+                                        return (
+                                            <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-indigo-100 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                                                        <Icon size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{account.name}</p>
+                                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{account.category}</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     {accounts.filter(a => a.type === 'Asset').length === 0 && <p className="text-sm text-slate-400 italic pl-2">No assets yet.</p>}
                                 </div>
                             </div>
@@ -426,26 +541,29 @@ export default function NetWorth() {
                                     Liabilities
                                 </h4>
                                 <div className="space-y-2">
-                                    {accounts.filter(a => a.type === 'Liability').map(account => (
-                                        <div key={account.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-red-100 transition-colors flex items-center justify-between group">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg group-hover:bg-red-100 transition-colors">
-                                                    <CreditCard size={18} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{account.name}</p>
-                                                    <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{account.category}</p>
+                                    {accounts.filter(a => a.type === 'Liability').map(account => {
+                                        const Icon = getCategoryIcon(account.category, 'Liability');
+                                        return (
+                                            <div key={account.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-red-100 transition-colors flex items-center justify-between group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg group-hover:bg-red-100 transition-colors">
+                                                        <Icon size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{account.name}</p>
+                                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{account.category}</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     {accounts.filter(a => a.type === 'Liability').length === 0 && <p className="text-sm text-slate-400 italic pl-2">No liabilities yet.</p>}
                                 </div>
                             </div>
                         </>
                     )}
                 </div>
-            </div>
+            </div >
 
             <CheckInModal
                 isOpen={isCheckInOpen}
@@ -459,6 +577,6 @@ export default function NetWorth() {
                 onClose={() => { setIsDetailsOpen(false); setSelectedAccount(null); }}
                 account={selectedAccount}
             />
-        </div>
+        </div >
     );
 }

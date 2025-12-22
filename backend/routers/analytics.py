@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, extract, case
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+import statistics
 from ..database import get_db
 from .. import models, schemas, auth
 
@@ -170,6 +171,7 @@ def get_dashboard_data(
 def get_analytics_history(
     start_date: str = Query(..., description="ISO Date string"), 
     end_date: str = Query(..., description="ISO Date string"),
+    spender: str = Query(default="Combined"), # Combined, User A, User B
     bucket_id: Optional[int] = Query(None),
     group: Optional[str] = Query(None), # Non-Discretionary, Discretionary
     db: Session = Depends(get_db),
@@ -223,6 +225,9 @@ def get_analytics_history(
             models.Transaction.date < m_end,
             models.Transaction.amount < 0 # Only expenses
         )
+        
+        if spender != "Combined":
+            query = query.filter(models.Transaction.spender == spender)
         
         if bucket_id or group:
              query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
@@ -511,81 +516,101 @@ def get_anomalies(
     user = current_user
     today = datetime.now()
     
-    # 1. Large Transactions (Last 30 days)
-    # Threshold: $500
-    thirty_days_ago = today - timedelta(days=30)
-    large_txns = db.query(models.Transaction).filter(
+    # 1. Large Transactions (Dynamic Threshold based on last 90 days)
+    ninety_days_ago = today - timedelta(days=90)
+    
+    # Fetch all expenses in last 90 days
+    recent_txns = db.query(models.Transaction).filter(
         models.Transaction.user_id == user.id,
-        models.Transaction.date >= thirty_days_ago,
-        models.Transaction.amount <= -500.0 # Expenses < -500
-    ).order_by(models.Transaction.date.desc()).all()
+        models.Transaction.date >= ninety_days_ago,
+        models.Transaction.amount < 0
+    ).all()
     
     anomalies = []
     
-    for t in large_txns:
-        anomalies.append({
-            "type": "large_transaction",
-            "severity": "medium",
-            "message": f"Large expense detected: {t.description}",
-            "amount": abs(t.amount),
-            "date": t.date,
-            "details": f"Amount exceeds $500 threshold."
-        })
-        
-    # 2. Category Spikes (Current Month vs 3-Month Avg)
-    # Current Month
-    cm_start = today.replace(day=1)
+    if recent_txns:
+        amounts = [abs(t.amount) for t in recent_txns]
+        if len(amounts) > 1:
+            mean_amt = statistics.mean(amounts)
+            std_amt = statistics.stdev(amounts)
+            # Threshold: Mean + 2 Standard Deviations (approx 95th percentile)
+            # Minimum threshold of $100 to avoid noise
+            large_threshold = max(200.0, mean_amt + (2 * std_amt))
+        else:
+            large_threshold = 500.0 # Fallback
+            
+        # Find large txns in last 30 days
+        thirty_days_ago = today - timedelta(days=30)
+        for t in recent_txns:
+            if t.date >= thirty_days_ago and abs(t.amount) > large_threshold:
+                anomalies.append({
+                    "type": "large_transaction",
+                    "severity": "high" if abs(t.amount) > (mean_amt + 3*std_amt) else "medium",
+                    "message": f"Large expense detected: {t.description}",
+                    "amount": abs(t.amount),
+                    "date": t.date,
+                    "details": f"Amount ${abs(t.amount):.0f} exceeds typical range (Threshold: ${large_threshold:.0f})"
+                })
+
+    # 2. Category Spikes (Dynamic based on last 6 months)
+    # Fetch 6 months history
+    six_months_ago = (today.replace(day=1) - timedelta(days=180)).replace(day=1)
     
-    # 3 Months Prior Range
-    avg_end = cm_start
-    avg_start = (avg_end - timedelta(days=92)).replace(day=1) # Start of 3 months ago window
-    
-    # Optimized: Calculate 3-Month Totals Aggregated by Bucket
-    # Query: SELECT bucket_id, SUM(ABS(amount)) FROM transactions WHERE ... GROUP BY bucket_id
-    historical_totals = db.query(
-        models.Transaction.bucket_id,
-        func.sum(func.abs(models.Transaction.amount))
-    ).filter(
+    hist_txns = db.query(models.Transaction).filter(
         models.Transaction.user_id == user.id,
+        models.Transaction.date >= six_months_ago,
         models.Transaction.bucket_id.isnot(None),
-        models.Transaction.date >= avg_start,
-        models.Transaction.date < avg_end,
         models.Transaction.amount < 0
-    ).group_by(models.Transaction.bucket_id).all()
+    ).all()
     
-    # Calculate Monthly Average (Total / 3)
-    cat_avgs = {bid: total / 3.0 for bid, total in historical_totals}
+    # Aggregate by Bucket and Month
+    bucket_monthly = {} # bid -> { 'yyyy-mm': total }
+    from collections import defaultdict
+    bucket_monthly = defaultdict(lambda: defaultdict(float))
     
-    # Current Month Spends Aggregated
-    cm_totals_res = db.query(
-        models.Transaction.bucket_id,
-        func.sum(func.abs(models.Transaction.amount))
-    ).filter(
-        models.Transaction.user_id == user.id,
-        models.Transaction.bucket_id.isnot(None),
-        models.Transaction.date >= cm_start,
-        models.Transaction.amount < 0
-    ).group_by(models.Transaction.bucket_id).all()
-    
-    cm_totals = {bid: total for bid, total in cm_totals_res}
+    for t in hist_txns:
+        month_key = t.date.strftime("%Y-%m")
+        bucket_monthly[t.bucket_id][month_key] += abs(t.amount)
         
-    # Compare
-    buckets = {b.id: b for b in db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).all()}
+    current_month_key = today.strftime("%Y-%m")
     
-    for bid, current_spent in cm_totals.items():
-        avg = cat_avgs.get(bid, 0.0)
-        if avg < 50: continue # Ignore small categories noise
+    # Get Bucket Names
+    buckets = {b.id: b.name for b in db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).all()}
+    
+    for bid, months_data in bucket_monthly.items():
+        if bid not in buckets: continue
         
-        if current_spent > avg * 1.5:
-            b_name = buckets[bid].name if bid in buckets else "Unknown"
-            pct = int((current_spent / avg) * 100)
+        current_val = months_data.get(current_month_key, 0.0)
+        if current_val == 0: continue
+        
+        # Get history values (excluding current month)
+        history_vals = [val for m, val in months_data.items() if m != current_month_key]
+        
+        # If sparsely populated, treat missing months as 0? 
+        # Better: compare against available history.
+        if not history_vals: continue
+        
+        # Calculate stats
+        avg_val = statistics.mean(history_vals)
+        if len(history_vals) > 1:
+            std_val = statistics.stdev(history_vals)
+            spike_threshold = avg_val + (2 * std_val)
+        else:
+            spike_threshold = avg_val * 1.5 # Fallback
+            
+        # Ignore small amounts (< $50 or < 20% over avg)
+        if current_val < 50: continue
+        
+        if current_val > spike_threshold:
+            pct = int((current_val / avg_val) * 100) if avg_val > 0 else 100
+            
             anomalies.append({
                 "type": "category_spike",
-                "severity": "high" if pct > 200 else "medium",
-                "message": f"High spending in '{b_name}'",
-                "amount": current_spent,
+                "severity": "high" if current_val > (avg_val + 3 * (std_val if len(history_vals) > 1 else 0)) else "medium",
+                "message": f"High spending in '{buckets[bid]}'",
+                "amount": current_val,
                 "date": today,
-                "details": f"{pct}% of average. Spent ${current_spent:.0f} vs avg ${avg:.0f}."
+                "details": f"{pct}% of average. Spent ${current_val:.0f} vs typical ${avg_val:.0f}."
             })
             
     return anomalies
@@ -712,15 +737,14 @@ def get_sankey_data(
         links.append({"source": idx_income, "target": idx_disc, "value": disc_total})
         
     # Savings Logic
-    net_savings = total_income - total_expenses
-    if net_savings > 0:
-        # Create a 3-layer path for Savings to match other groups:
-        # Income -> "Savings" (Group) -> "Net Savings" (Bucket)
-        idx_savings_group = get_node("Savings") 
-        idx_savings_bucket = get_node("Net Savings")
-        
-        links.append({"source": idx_income, "target": idx_savings_group, "value": net_savings})
-        links.append({"source": idx_savings_group, "target": idx_savings_bucket, "value": net_savings})
+    # Net Savings in this variable is (Income - Expenses).
+    # Since Expenses calculated above EXCLUDE investments, this 'net_savings' currently includes 
+    # the money spent on investments + actual cash savings.
+    # Because we plot Investments separately (below), we must subtract them here to avoid double counting 
+    # and to accurately represent "Cash Savings".
+    
+    # We need total_investments calculated BEFORE this block or access it.
+    # Move Investment Calculation UP or do it here.
     
     # Investment Logic - Query investment transactions separately
     investment_query = db.query(
@@ -739,13 +763,31 @@ def get_sankey_data(
     investment_res = investment_query.first()
     total_investments = abs(investment_res[0] or 0.0)
     
-    if total_investments > 0:
-        # Income -> "Investments" (Group) -> "Investment Contributions" (Detail)
-        idx_investments_group = get_node("Investments")
-        idx_investments_detail = get_node("Investment Contributions")
+    
+    # Combined Savings & Investments Logic
+    # 1. Net Savings (Cash) = Income - Expenses - Investments
+    net_savings = total_income - total_expenses - total_investments
+    
+    # 2. Total Investments calculated above
+    
+    combined_savings_total = net_savings + total_investments
+    
+    if combined_savings_total > 0:
+        # Parent Node: "Savings & Investments"
+        idx_combined = get_node("Savings & Investments")
         
-        links.append({"source": idx_income, "target": idx_investments_group, "value": total_investments})
-        links.append({"source": idx_investments_group, "target": idx_investments_detail, "value": total_investments})
+        # Income -> "Savings & Investments"
+        links.append({"source": idx_income, "target": idx_combined, "value": combined_savings_total})
+        
+        # "Savings & Investments" -> "Net Cash Savings" (if > 0)
+        if net_savings > 0:
+            idx_cash_savings = get_node("Net Cash Savings")
+            links.append({"source": idx_combined, "target": idx_cash_savings, "value": net_savings})
+            
+        # "Savings & Investments" -> "Investments" (if > 0)
+        if total_investments > 0:
+            idx_investments_bucket = get_node("Investments")
+            links.append({"source": idx_combined, "target": idx_investments_bucket, "value": total_investments})
         
     # Filter out unused nodes
     used_indices = set()
@@ -770,3 +812,155 @@ def get_sankey_data(
         })
 
     return {"nodes": new_nodes, "links": new_links}
+
+
+# --- Projections ---
+
+@router.get("/cashflow-projection")
+def get_cashflow_projection(
+    months: int = 3,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # 1. Get Starting Balance (Cash Accounts)
+    # Strategy: Sum "Cash" account balances from LATEST snapshot
+    # Fallback: 0 if no snapshot
+    
+    start_balance = 0.0
+    latest_snapshot = db.query(models.NetWorthSnapshot).filter(
+        models.NetWorthSnapshot.user_id == current_user.id
+    ).order_by(models.NetWorthSnapshot.date.desc()).first()
+    
+    if latest_snapshot:
+        cash_balances = db.query(models.AccountBalance).join(models.Account).filter(
+            models.AccountBalance.snapshot_id == latest_snapshot.id,
+            models.Account.category == "Cash"
+        ).all()
+        start_balance = sum(b.balance for b in cash_balances)
+        
+    # 2. Get Active Subscriptions
+    subs = db.query(models.Subscription).filter(
+        models.Subscription.user_id == current_user.id,
+        models.Subscription.is_active == True
+    ).all()
+    
+    # 3. Simulate Forward
+    today = date.today()
+    end_date = today + timedelta(days=30 * months)
+    
+    projection = []
+    running_balance = start_balance
+    
+    # Iterate day by day
+    # Optimization: iterate only subscription days? No, we want a daily line chart usually, or at least sparse points.
+    # Daily iteration is fast enough for 3-12 months (90-365 iterations).
+    
+    current_d = today
+    while current_d <= end_date:
+        daily_flow = 0.0
+        
+        for sub in subs:
+            # Check if sub is due today
+            is_due = False
+            
+            # Base logic on next_due_date
+            # Simple assumption: next_due_date is valid anchor.
+            # Handle Weekly, Monthly, Yearly
+            
+            # Normalize dates to avoid years-ago next_due_date issues? 
+            # Ideally next_due_date is updated. If not, we project based on intervals from it.
+            
+            anchor = sub.next_due_date
+            if not anchor: continue
+            
+            if sub.frequency == "Weekly":
+                delta = (current_d - anchor).days
+                if delta >= 0 and delta % 7 == 0:
+                    is_due = True
+            elif sub.frequency == "Bi-Weekly": # Every 2 weeks
+                delta = (current_d - anchor).days
+                if delta >= 0 and delta % 14 == 0:
+                    is_due = True
+            elif sub.frequency == "Monthly":
+                # Matches day of month
+                # Handle short months? (e.g. 31st due date in Feb)
+                # Simple logic: if anchor.day == current_d.day
+                # But if anchor day > current_d month length, it usually processes on last day?
+                # MVP: exact day match.
+                if current_d.day == anchor.day:
+                    pass # Potential match, but need to check if it's in future relative to anchor? 
+                    # If anchor is in past, yes.
+                    # We assume it repeats monthly from anchor.
+                    # Also need to check if current_d >= anchor.
+                    if current_d >= anchor:
+                         is_due = True
+            elif sub.frequency == "Yearly":
+                if current_d.month == anchor.month and current_d.day == anchor.day and current_d.year >= anchor.year:
+                    is_due = True
+
+            if is_due:
+                # Assume amount is expense (positive value). Subtract it.
+                # If negative, it adds (income). But typically subs are expenses.
+                # TODO: add type to Subscription for distinct income. For now, assume expense.
+                if sub.amount > 0:
+                    daily_flow -= sub.amount
+                else:
+                    daily_flow -= sub.amount # Add negative (income) logic if user enters negative numbers?
+                    
+        running_balance += daily_flow
+        
+        projection.append({
+            "date": current_d.isoformat(),
+            "balance": running_balance,
+            "flow": daily_flow
+        })
+        
+        current_d += timedelta(days=1)
+        
+    return projection
+
+@router.get("/networth-projection")
+def get_networth_projection(
+    months: int = 12,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # 1. Get History
+    snapshots = db.query(models.NetWorthSnapshot).filter(
+        models.NetWorthSnapshot.user_id == current_user.id
+    ).order_by(models.NetWorthSnapshot.date.asc()).all()
+    
+    if len(snapshots) < 2:
+        return [] # Not enough data
+        
+    # 2. Calculate Growth Rate (Linear Regression or Simple Average)
+    # Let's use average monthly growth over the last 6 snapshots (or less)
+    
+    recent_snapshots = snapshots[-6:] 
+    first = recent_snapshots[0]
+    last = recent_snapshots[-1]
+    
+    days_diff = (last.date - first.date).days
+    if days_diff == 0:
+        return []
+        
+    net_growth = last.net_worth - first.net_worth
+    daily_growth = net_growth / days_diff
+    
+    # 3. Project
+    projection = []
+    start_date = last.date
+    start_val = last.net_worth
+    
+    # Generate one point per month
+    for i in range(1, months + 1):
+        future_date = start_date + timedelta(days=30 * i)
+        future_val = start_val + (daily_growth * 30 * i)
+        
+        projection.append({
+            "date": future_date.isoformat(),
+            "net_worth": future_val,
+            "is_projected": True
+        })
+        
+    return projection
