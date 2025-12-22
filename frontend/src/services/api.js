@@ -154,6 +154,16 @@ export const runRules = async () => {
     return response.data;
 };
 
+export const previewRule = async (keywords, minAmount = null, maxAmount = null) => {
+    const response = await api.post('/settings/rules/preview', {
+        keywords,
+        min_amount: minAmount,
+        max_amount: maxAmount,
+        limit: 5
+    });
+    return response.data;
+};
+
 // Holdings
 export const getHoldings = async (accountId) => (await api.get(`/net-worth/accounts/${accountId}/holdings`)).data;
 export const createHolding = async (accountId, holding) => (await api.post(`/net-worth/accounts/${accountId}/holdings`, holding)).data;

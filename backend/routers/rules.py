@@ -36,7 +36,9 @@ def create_rule(rule: schemas.RuleCreate, db: Session = Depends(get_db), current
         user_id=current_user.id,
         bucket_id=rule.bucket_id,
         keywords=norm_keywords,
-        priority=rule.priority
+        priority=rule.priority,
+        min_amount=rule.min_amount,
+        max_amount=rule.max_amount
     )
     db.add(db_rule)
     db.commit()
@@ -92,10 +94,87 @@ def update_rule(rule_id: int, rule: schemas.RuleCreate, db: Session = Depends(ge
     db_rule.bucket_id = rule.bucket_id
     db_rule.keywords = norm_keywords
     db_rule.priority = rule.priority
+    db_rule.min_amount = rule.min_amount
+    db_rule.max_amount = rule.max_amount
     
     db.commit()
     db.refresh(db_rule)
     return db_rule
+
+
+class RulePreviewRequest(schemas.BaseModel):
+    """Request schema for previewing matching transactions."""
+    keywords: str
+    min_amount: float = None
+    max_amount: float = None
+    limit: int = 10
+
+
+class TransactionPreview(schemas.BaseModel):
+    """Minimal transaction info for preview."""
+    id: int
+    date: str
+    description: str
+    amount: float
+
+
+class RulePreviewResponse(schemas.BaseModel):
+    """Response for rule preview."""
+    match_count: int
+    sample_transactions: List[TransactionPreview]
+
+
+@router.post("/preview", response_model=RulePreviewResponse)
+def preview_rule(
+    request: RulePreviewRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Preview which transactions would match a rule's keywords and amount conditions.
+    Returns count of matches and sample transactions (up to limit).
+    """
+    from ..services.categorizer import Categorizer
+    categorizer = Categorizer()
+    
+    # Get all user transactions
+    transactions = db.query(models.Transaction).filter(
+        models.Transaction.user_id == current_user.id
+    ).all()
+    
+    # Parse keywords
+    keywords = [k.strip().lower() for k in request.keywords.split(",") if k.strip()]
+    if not keywords:
+        return {"match_count": 0, "sample_transactions": []}
+    
+    # Find matches
+    matches = []
+    for txn in transactions:
+        # Check amount conditions
+        if request.min_amount is not None and abs(txn.amount) < request.min_amount:
+            continue
+        if request.max_amount is not None and abs(txn.amount) > request.max_amount:
+            continue
+        
+        # Check keywords match
+        clean_desc = categorizer.clean_description(txn.raw_description or txn.description).lower()
+        if any(k in clean_desc for k in keywords):
+            matches.append(txn)
+    
+    # Return results
+    sample = matches[:request.limit]
+    return {
+        "match_count": len(matches),
+        "sample_transactions": [
+            {
+                "id": t.id,
+                "date": t.date.isoformat() if t.date else "",
+                "description": t.description,
+                "amount": t.amount
+            }
+            for t in sample
+        ]
+    }
 
 @router.post("/run", response_model=dict)
 def run_rules(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
@@ -127,7 +206,7 @@ def run_rules(db: Session = Depends(get_db), current_user: models.User = Depends
         # Let's clean it here too to match ingestion behavior.
         clean_desc = categorizer.clean_description(txn.raw_description or txn.description)
         
-        rule_bucket_id = categorizer.apply_rules(clean_desc, rules)
+        rule_bucket_id = categorizer.apply_rules(clean_desc, rules, amount=txn.amount)
         
         if rule_bucket_id and rule_bucket_id != txn.bucket_id:
             txn.bucket_id = rule_bucket_id

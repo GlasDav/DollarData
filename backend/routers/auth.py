@@ -34,9 +34,9 @@ def create_default_user_setup(user: models.User, db: Session):
     
     # Default Balance Sheet Accounts
     default_accounts = [
-        {"name": "Checking Account", "type": "checking", "category": "Cash"},
-        {"name": "Savings Account", "type": "savings", "category": "Cash"},
-        {"name": "Credit Card", "type": "credit_card", "category": "Credit Card"},
+        {"name": "Checking Account", "type": "Asset", "category": "Cash"},
+        {"name": "Savings Account", "type": "Asset", "category": "Cash"},
+        {"name": "Credit Card", "type": "Liability", "category": "Credit Card"},
     ]
     
     for account_data in default_accounts:
@@ -49,32 +49,106 @@ def create_default_user_setup(user: models.User, db: Session):
         )
         db.add(account)
     
-    # Default "Transfers" bucket (excluded from spending analytics)
-    transfers_bucket = models.BudgetBucket(
-        user_id=user.id,
-        name="Transfers",
-        icon_name="ArrowLeftRight",
-        group="Non-Discretionary",
-        is_transfer=True,  # Key flag to exclude from analytics
-        monthly_limit_a=0.0,
-        monthly_limit_b=0.0
-    )
-    db.add(transfers_bucket)
+    # === DEFAULT BUDGET CATEGORIES ===
+    # Based on comprehensive category tree
     
-    # Default "Investments" bucket (excluded from expenses but shown in Sankey)
-    investments_bucket = models.BudgetBucket(
-        user_id=user.id,
-        name="Investments",
-        icon_name="TrendingUp",
-        group="Non-Discretionary",
-        is_investment=True,  # Key flag for investment tracking
-        monthly_limit_a=0.0,
-        monthly_limit_b=0.0
-    )
-    db.add(investments_bucket)
+    # --- INCOME ---
+    income_buckets = [
+        {"name": "Salary", "icon_name": "Briefcase"},
+        {"name": "Interest", "icon_name": "TrendingUp"},
+        {"name": "Business Income", "icon_name": "Building"},
+        {"name": "Other Income", "icon_name": "DollarSign"},
+    ]
+    for b in income_buckets:
+        db.add(models.BudgetBucket(
+            user_id=user.id, name=b["name"], icon_name=b["icon_name"],
+            group="Income", monthly_limit_a=0.0, monthly_limit_b=0.0
+        ))
+    
+    # --- NON-DISCRETIONARY ---
+    non_disc_buckets = [
+        # Household
+        {"name": "Gas & Electricity", "icon_name": "Zap"},
+        {"name": "Water", "icon_name": "Droplet"},
+        {"name": "Internet", "icon_name": "Wifi"},
+        {"name": "Mortgage/Rent", "icon_name": "Home"},
+        {"name": "Strata Levies", "icon_name": "Building"},
+        {"name": "Council Rates", "icon_name": "Landmark"},
+        {"name": "Home Insurance", "icon_name": "Shield"},
+        {"name": "Subscriptions", "icon_name": "CreditCard"},
+        {"name": "Home Maintenance", "icon_name": "Wrench"},
+        # Vehicle
+        {"name": "Petrol", "icon_name": "Fuel"},
+        {"name": "Car Insurance & Rego", "icon_name": "Car"},
+        {"name": "Car Maintenance", "icon_name": "Settings"},
+        # Health
+        {"name": "Medical", "icon_name": "Stethoscope"},
+        {"name": "Dental", "icon_name": "Smile"},
+        {"name": "Pharmacy", "icon_name": "Pill"},
+        {"name": "Health Insurance", "icon_name": "ShieldCheck"},
+        # Kids
+        {"name": "Childcare", "icon_name": "Baby"},
+        {"name": "Education", "icon_name": "GraduationCap"},
+        # Financial
+        {"name": "Bank Fees", "icon_name": "Building2"},
+        {"name": "Accounting", "icon_name": "Calculator"},
+    ]
+    for b in non_disc_buckets:
+        db.add(models.BudgetBucket(
+            user_id=user.id, name=b["name"], icon_name=b["icon_name"],
+            group="Non-Discretionary", monthly_limit_a=0.0, monthly_limit_b=0.0
+        ))
+    
+    # --- DISCRETIONARY ---
+    disc_buckets = [
+        # Food
+        {"name": "Groceries", "icon_name": "ShoppingCart"},
+        {"name": "Dining Out", "icon_name": "Utensils"},
+        {"name": "Coffee", "icon_name": "Coffee"},
+        {"name": "Snacks", "icon_name": "Cookie"},
+        # Lifestyle
+        {"name": "Personal", "icon_name": "User"},
+        {"name": "Homewares", "icon_name": "Sofa"},
+        {"name": "Beauty", "icon_name": "Sparkles"},
+        {"name": "Health & Fitness", "icon_name": "Dumbbell"},
+        {"name": "Clothing", "icon_name": "Shirt"},
+        {"name": "Leisure", "icon_name": "Film"},
+        {"name": "Dates", "icon_name": "Heart"},
+        {"name": "Gifts", "icon_name": "Gift"},
+        # Transport
+        {"name": "Parking & Tolls", "icon_name": "ParkingCircle"},
+        {"name": "Public Transport", "icon_name": "Train"},
+        {"name": "Taxi & Rideshare", "icon_name": "Car"},
+        # Other
+        {"name": "Donations", "icon_name": "HandHeart"},
+        {"name": "Work Expenses", "icon_name": "Briefcase"},
+        {"name": "Kids Expenses", "icon_name": "Baby"},
+        {"name": "Miscellaneous", "icon_name": "MoreHorizontal"},
+        {"name": "Uncategorised", "icon_name": "HelpCircle"},
+    ]
+    for b in disc_buckets:
+        db.add(models.BudgetBucket(
+            user_id=user.id, name=b["name"], icon_name=b["icon_name"],
+            group="Discretionary", monthly_limit_a=0.0, monthly_limit_b=0.0
+        ))
+    
+    # --- SPECIAL BUCKETS (Protected) ---
+    # Transfers bucket (excluded from spending analytics)
+    db.add(models.BudgetBucket(
+        user_id=user.id, name="Transfers", icon_name="ArrowLeftRight",
+        group="Non-Discretionary", is_transfer=True,
+        monthly_limit_a=0.0, monthly_limit_b=0.0
+    ))
+    
+    # Investments bucket (excluded from expenses, shown in Sankey)
+    db.add(models.BudgetBucket(
+        user_id=user.id, name="Investments", icon_name="TrendingUp",
+        group="Non-Discretionary", is_investment=True,
+        monthly_limit_a=0.0, monthly_limit_b=0.0
+    ))
     
     db.commit()
-    logger.info(f"Created default accounts and Transfer/Investment buckets for user {user.email}")
+    logger.info(f"Created default accounts and {4 + len(non_disc_buckets) + len(disc_buckets) + 2} buckets for user {user.email}")
 
 
 @router.post("/register", response_model=schemas.User)

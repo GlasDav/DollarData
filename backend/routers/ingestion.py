@@ -719,7 +719,6 @@ def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session 
             except:
                 txn_date = datetime.strptime(update.date, "%Y-%m-%d")
             
-            # Create new transaction
             db_txn = models.Transaction(
                 date=txn_date,
                 description=update.description,
@@ -731,7 +730,8 @@ def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session 
                 spender=update.spender or "Joint",
                 transaction_hash=update.transaction_hash,
                 category_confidence=update.category_confidence or 0.0,
-                goal_id=update.goal_id
+                goal_id=update.goal_id,
+                assigned_to=update.assigned_to
             )
             db.add(db_txn)
             db.flush()  # Get the ID without committing
@@ -767,6 +767,8 @@ def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session 
                 txn.bucket_id = update.bucket_id
                 if update.spender:
                     txn.spender = update.spender
+                if update.assigned_to is not None:
+                    txn.assigned_to = update.assigned_to if update.assigned_to else None
                 txn.is_verified = True
                 confirmed_ids.append(txn.id)
                 

@@ -5,15 +5,23 @@ class Categorizer:
     def __init__(self):
         pass
 
-    def apply_rules(self, description: str, rules) -> Optional[int]:
+    def apply_rules(self, description: str, rules, amount: float = None) -> Optional[int]:
         """
         Applies priority-based regex rules.
         rules: List of CategorizationRule objects (ordered by priority desc)
+        amount: Optional transaction amount to check against min_amount/max_amount conditions
         Returns: bucket_id (int) or None
         """
         description_lower = description.lower()
         
         for rule in rules:
+            # Check amount conditions if rule has them set
+            if amount is not None:
+                if rule.min_amount is not None and abs(amount) < rule.min_amount:
+                    continue  # Amount too low, skip this rule
+                if rule.max_amount is not None and abs(amount) > rule.max_amount:
+                    continue  # Amount too high, skip this rule
+            
             keywords = rule.keywords.lower().split(",")
             for k in keywords:
                 k = k.strip()

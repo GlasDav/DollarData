@@ -104,6 +104,8 @@ def update_transaction(
         txn.description = update.description
     if update.spender is not None:
         txn.spender = update.spender
+    if update.assigned_to is not None:
+        txn.assigned_to = update.assigned_to if update.assigned_to else None
         
     db.commit()
     db.refresh(txn)
@@ -111,6 +113,30 @@ def update_transaction(
     # Reload to ensure bucket relation is fresh
     txn = db.query(models.Transaction).options(joinedload(models.Transaction.bucket)).filter(models.Transaction.id == txn.id).first()
     return txn
+
+@router.get("/pending-review")
+def get_pending_review(
+    assigned_to: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Get transactions assigned for partner review.
+    If assigned_to is specified, filter by that partner ("A" or "B").
+    """
+    query = db.query(models.Transaction).options(
+        joinedload(models.Transaction.bucket)
+    ).filter(
+        models.Transaction.user_id == current_user.id,
+        models.Transaction.assigned_to.isnot(None),
+        models.Transaction.assigned_to != ''  # Also exclude empty strings
+    )
+    
+    if assigned_to:
+        query = query.filter(models.Transaction.assigned_to == assigned_to)
+    
+    transactions = query.order_by(models.Transaction.date.desc()).limit(100).all()
+    return {"items": transactions, "count": len(transactions)}
 
 @router.delete("/all")
 def delete_all_transactions(

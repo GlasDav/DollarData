@@ -46,6 +46,8 @@ class RuleBase(BaseModel):
     keywords: str
     bucket_id: int
     priority: int = 0
+    min_amount: Optional[float] = None  # Optional: only match if amount >= min_amount
+    max_amount: Optional[float] = None  # Optional: only match if amount <= max_amount
 
 class RuleCreate(RuleBase):
     pass
@@ -82,6 +84,7 @@ class TransactionConfirm(BaseModel):
     is_verified: bool = True
     spender: Optional[str] = None
     goal_id: Optional[int] = None
+    assigned_to: Optional[str] = None  # For partner review: "A", "B", or None
     # Fields required for creating new transactions from preview
     date: Optional[str] = None  # ISO date string
     description: Optional[str] = None
@@ -96,6 +99,7 @@ class TransactionUpdate(BaseModel):
     description: Optional[str] = None
     spender: Optional[str] = None
     goal_id: Optional[int] = None
+    assigned_to: Optional[str] = None  # For partner review: "A", "B", or None
     parent_transaction_id: Optional[int] = None
 
 class Transaction(TransactionBase):
@@ -104,6 +108,7 @@ class Transaction(TransactionBase):
     raw_description: Optional[str] = None
     category_confidence: float = 0.0
     is_verified: bool = False
+    assigned_to: Optional[str] = None  # For partner review: "A", "B", or None
     
     bucket: Optional[BudgetBucket] = None  # Relationship
 

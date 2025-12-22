@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Listbox, Transition } from '@headlessui/react';
-import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2 } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2, UserCheck } from 'lucide-react';
 import api from '../services/api';
 import ConnectBank from '../components/ConnectBank';
 
@@ -26,6 +26,7 @@ export default function Ingest() {
     const [skipDuplicates, setSkipDuplicates] = useState(true);
     const [importProgress, setImportProgress] = useState(null);  // { jobId, progress, total, message, status }
     const cancelImportRef = useRef(false);  // Used to cancel polling loop
+    const [assignDropdownId, setAssignDropdownId] = useState(null);  // ID of txn showing assign dropdown
     const queryClient = useQueryClient();
 
     // Fetch User Settings for Names
@@ -56,6 +57,12 @@ export default function Ingest() {
     const handleSpenderChange = (txnId, newSpender) => {
         setTransactions(prev => prev.map(t =>
             t.id === txnId ? { ...t, spender: newSpender } : t
+        ));
+    };
+
+    const handleAssignChange = (txnId, assignTo) => {
+        setTransactions(prev => prev.map(t =>
+            t.id === txnId ? { ...t, assigned_to: assignTo || null } : t
         ));
     };
 
@@ -199,7 +206,8 @@ export default function Ingest() {
                 raw_description: t.raw_description,
                 amount: t.amount,
                 transaction_hash: t.transaction_hash,
-                category_confidence: t.category_confidence
+                category_confidence: t.category_confidence,
+                assigned_to: t.assigned_to || null
             }));
             const res = await api.post('/ingest/confirm', payload);
             return res.data;
@@ -598,9 +606,45 @@ export default function Ingest() {
                                                     onClick={(e) => e.stopPropagation()} // Prevent re-triggering parent click
                                                 />
                                             ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-slate-900 dark:text-white">{txn.description}</span>
-                                                    <Pencil size={14} className="text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-slate-900 dark:text-white">{txn.description}</span>
+                                                        <Pencil size={14} className="text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
+                                                    </div>
+                                                    {/* Assign for Review Action */}
+                                                    {userSettings?.is_couple_mode && (
+                                                        <div className="relative">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setAssignDropdownId(assignDropdownId === txn.id ? null : txn.id); }}
+                                                                className={`p-1 transition ${txn.assigned_to ? 'text-red-500' : 'opacity-0 group-hover/cell:opacity-100 text-slate-400 hover:text-orange-500'}`}
+                                                                title={txn.assigned_to ? `Assigned to ${txn.assigned_to === 'A' ? userSettings?.name_a : userSettings?.name_b}` : 'Assign for Review'}
+                                                            >
+                                                                <UserCheck size={16} />
+                                                            </button>
+                                                            {assignDropdownId === txn.id && (
+                                                                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-30 min-w-[140px]">
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleAssignChange(txn.id, ''); setAssignDropdownId(null); }}
+                                                                        className="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
+                                                                    >
+                                                                        None
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleAssignChange(txn.id, 'A'); setAssignDropdownId(null); }}
+                                                                        className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'A' ? 'text-orange-600 font-medium' : ''}`}
+                                                                    >
+                                                                        {userSettings?.name_a || 'Partner A'}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleAssignChange(txn.id, 'B'); setAssignDropdownId(null); }}
+                                                                        className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'B' ? 'text-orange-600 font-medium' : ''}`}
+                                                                    >
+                                                                        {userSettings?.name_b || 'Partner B'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>

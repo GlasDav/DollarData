@@ -82,6 +82,7 @@ class Transaction(Base):
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True) # Linked Bank Account
     external_id = Column(String, unique=True, nullable=True) # Basiq Transaction ID
     transaction_hash = Column(String, index=True, nullable=True)  # Duplicate detection fingerprint
+    assigned_to = Column(String, nullable=True)  # For partner review: "A", "B", or None (reviewed)
     
     account = relationship("Account")
 
@@ -154,6 +155,8 @@ class CategorizationRule(Base):
     bucket_id = Column(Integer, ForeignKey("budget_buckets.id"))
     keywords = Column(String) # Comma separated or regex
     priority = Column(Integer, default=0) # Higher executes first
+    min_amount = Column(Float, nullable=True)  # Optional: only match if amount >= min_amount
+    max_amount = Column(Float, nullable=True)  # Optional: only match if amount <= max_amount
     
     user = relationship("User")
     bucket = relationship("BudgetBucket")

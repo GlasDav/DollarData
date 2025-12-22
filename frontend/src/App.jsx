@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench } from 'lucide-react';
+import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users } from 'lucide-react';
 import Settings from './pages/Settings';
 import Ingest from './pages/Ingest';
 import Transactions from './pages/Transactions';
@@ -10,6 +10,8 @@ import NetWorth from './pages/NetWorth';
 import FinancialCalendar from './pages/FinancialCalendar';
 import Subscriptions from './pages/Subscriptions';
 import Tools from './pages/Tools';
+import Budget from './pages/Budget';
+import Review from './pages/Review';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -81,6 +83,8 @@ function Layout() {
           <NavItem to="/calendar" icon={Calendar}>Calendar</NavItem>
           <NavItem to="/subscriptions" icon={CreditCard}>Subscriptions</NavItem>
           <NavItem to="/goals" icon={Target}>Goals</NavItem>
+          <NavItem to="/budget" icon={PiggyBank}>Budget</NavItem>
+          <NavItem to="/review" icon={Users}>Review</NavItem>
           <NavItem to="/tools" icon={Wrench}>Tools</NavItem>
           <NavItem to="/insights" icon={Zap}>Insights</NavItem>
           <NavItem to="/settings" icon={SettingsIcon}>Settings</NavItem>
@@ -131,6 +135,8 @@ function App() {
                 <Route path="/subscriptions" element={<Subscriptions />} />
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/tools" element={<Tools />} />
+                <Route path="/budget" element={<Budget />} />
+                <Route path="/review" element={<Review />} />
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/ingest" element={<Ingest />} />
                 <Route path="/settings" element={<Settings />} />

@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getBuckets, getSettings, getGoals, deleteAllTransactions } from '../services/api';
-import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X, BookPlus, UserCheck } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
 import SplitTransactionModal from '../components/SplitTransactionModal';
+import CreateRuleModal from '../components/CreateRuleModal';
 import EmptyState from '../components/EmptyState';
 
 // Debounce hook
@@ -31,6 +32,9 @@ export default function Transactions() {
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [splitModalOpen, setSplitModalOpen] = useState(false);
     const [transactionToSplit, setTransactionToSplit] = useState(null);
+    const [ruleModalOpen, setRuleModalOpen] = useState(false);
+    const [transactionForRule, setTransactionForRule] = useState(null);
+    const [assignDropdownId, setAssignDropdownId] = useState(null);  // ID of txn showing assign dropdown
 
     // Filters
     const [categoryFilter, setCategoryFilter] = useState(bucketIdParam ? parseInt(bucketIdParam) : null);
@@ -87,12 +91,13 @@ export default function Transactions() {
 
     // Update Transaction
     const updateMutation = useMutation({
-        mutationFn: async ({ id, bucket_id, description, spender, goal_id }) => {
+        mutationFn: async ({ id, bucket_id, description, spender, goal_id, assigned_to }) => {
             const payload = {};
             if (bucket_id !== undefined) payload.bucket_id = bucket_id;
             if (description !== undefined) payload.description = description;
             if (spender !== undefined) payload.spender = spender;
             if (goal_id !== undefined) payload.goal_id = goal_id;
+            if (assigned_to !== undefined) payload.assigned_to = assigned_to;
 
             await api.put(`/transactions/${id}`, payload);
         },
@@ -323,12 +328,19 @@ export default function Transactions() {
             {/* Split Modal */}
             <SplitTransactionModal
                 isOpen={splitModalOpen}
-                onClose={() => setSplitModalOpen(false)
-                }
+                onClose={() => setSplitModalOpen(false)}
                 transaction={transactionToSplit}
                 onSplitSuccess={() => {
                     queryClient.invalidateQueries(['transactions']);
                 }}
+            />
+
+            {/* Create Rule Modal */}
+            <CreateRuleModal
+                isOpen={ruleModalOpen}
+                onClose={() => setRuleModalOpen(false)}
+                transaction={transactionForRule}
+                buckets={buckets}
             />
 
             {/* Show empty state if no transactions at all */}
@@ -491,6 +503,48 @@ export default function Transactions() {
                                                     >
                                                         <Split size={16} />
                                                     </button>
+                                                    {/* Create Rule Action */}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setTransactionForRule(txn); setRuleModalOpen(true); }}
+                                                        className="opacity-0 group-hover/cell:opacity-100 p-1 text-slate-400 hover:text-emerald-500 transition"
+                                                        title="Create Rule from Transaction"
+                                                    >
+                                                        <BookPlus size={16} />
+                                                    </button>
+                                                    {/* Assign for Review Action */}
+                                                    {userSettings?.is_couple_mode && (
+                                                        <div className="relative">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setAssignDropdownId(assignDropdownId === txn.id ? null : txn.id); }}
+                                                                className={`p-1 transition ${txn.assigned_to ? 'text-red-500' : 'opacity-0 group-hover/cell:opacity-100 text-slate-400 hover:text-orange-500'}`}
+                                                                title={txn.assigned_to ? `Assigned to ${txn.assigned_to === 'A' ? userSettings?.name_a : userSettings?.name_b}` : 'Assign for Review'}
+                                                            >
+                                                                <UserCheck size={16} />
+                                                            </button>
+                                                            {assignDropdownId === txn.id && (
+                                                                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-30 min-w-[140px]">
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); updateMutation.mutate({ id: txn.id, assigned_to: '' }); setAssignDropdownId(null); }}
+                                                                        className="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
+                                                                    >
+                                                                        None
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); updateMutation.mutate({ id: txn.id, assigned_to: 'A' }); setAssignDropdownId(null); }}
+                                                                        className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'A' ? 'text-orange-600 font-medium' : ''}`}
+                                                                    >
+                                                                        {userSettings?.name_a || 'Partner A'}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); updateMutation.mutate({ id: txn.id, assigned_to: 'B' }); setAssignDropdownId(null); }}
+                                                                        className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'B' ? 'text-orange-600 font-medium' : ''}`}
+                                                                    >
+                                                                        {userSettings?.name_b || 'Partner B'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>

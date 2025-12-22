@@ -127,10 +127,24 @@ The dashboard serves as the central hub for financial oversight.
 -   **Automatic Rule Creation**: When you manually categorize a transaction, a Smart Rule is auto-created.
 -   **Keyword Matching**: Rules match transaction descriptions to categories.
 -   **Priority-Based**: Higher priority rules take precedence.
+-   **Amount Conditions** *(New)*: Rules can filter by min/max amount thresholds.
+-   **Create from Transaction** *(New)*: Quickly create a rule by clicking the 📘 icon on any transaction row.
+-   **Rule Preview API** *(New)*: Backend endpoint to preview which transactions would match a rule before saving.
 -   **Categorization Order**:
     1. Smart Rules (user-created, highest priority)
     2. Global Keywords (common merchant patterns)
     3. AI Prediction (Google Gemini fallback)
+
+### Partner Review Queue *(New)*
+-   **Assign for Review**: In Couple Mode, assign transactions to your partner for review.
+    -   Click the 👤✓ icon on any transaction row (Transactions or Import page).
+    -   Select partner from dropdown.
+    -   Assigned transactions show a persistent red icon.
+-   **Review Page**: Dedicated `/review` page showing transactions pending partner review.
+    -   Organized by partner (Partner A's queue, Partner B's queue).
+    -   **Category Editing**: Reviewers can change the category before approving.
+    -   **Approve Button**: Marks transaction as verified and removes from queue.
+-   **Import Integration**: Assign transactions during CSV/PDF import preview before confirming.
 
 ### Applications Settings
 -   **Couple Mode**: Toggle to enable features for shared finances (Partner A / Partner B distinction).
