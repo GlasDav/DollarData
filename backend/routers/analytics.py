@@ -964,3 +964,149 @@ def get_networth_projection(
         })
         
     return projection
+
+
+# --- Category History (for budget planning) ---
+
+@router.get("/category-history/{bucket_id}")
+def get_category_history(
+    bucket_id: int,
+    months: int = Query(6, ge=1, le=12, description="Number of months to look back"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Get spending history for a specific category over the last N months.
+    Useful when setting budget limits to see historical patterns.
+    """
+    # Verify bucket belongs to user
+    bucket = db.query(models.BudgetBucket).filter(
+        models.BudgetBucket.id == bucket_id,
+        models.BudgetBucket.user_id == current_user.id
+    ).first()
+    
+    if not bucket:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    # Calculate date range
+    end_date = date.today()
+    start_date = end_date - timedelta(days=months * 30)
+    
+    # Get monthly spending for this category
+    monthly_data = db.query(
+        extract('year', models.Transaction.date).label('year'),
+        extract('month', models.Transaction.date).label('month'),
+        func.sum(models.Transaction.amount).label('total')
+    ).filter(
+        models.Transaction.user_id == current_user.id,
+        models.Transaction.bucket_id == bucket_id,
+        models.Transaction.date >= start_date,
+        models.Transaction.date <= end_date,
+        models.Transaction.amount < 0  # Only expenses
+    ).group_by('year', 'month').order_by('year', 'month').all()
+    
+    # Build response with all months (fill gaps with zero)
+    history = []
+    current = start_date.replace(day=1)
+    
+    while current <= end_date:
+        year, month = current.year, current.month
+        
+        # Find matching data
+        month_total = 0
+        for row in monthly_data:
+            if int(row.year) == year and int(row.month) == month:
+                month_total = abs(float(row.total))
+                break
+        
+        history.append({
+            "year": year,
+            "month": month,
+            "month_name": current.strftime("%b %Y"),
+            "amount": round(month_total, 2)
+        })
+        
+        # Move to next month
+        if month == 12:
+            current = current.replace(year=year + 1, month=1)
+        else:
+            current = current.replace(month=month + 1)
+    
+    # Calculate statistics
+    amounts = [h["amount"] for h in history if h["amount"] > 0]
+    stats = {
+        "average": round(sum(amounts) / len(amounts), 2) if amounts else 0,
+        "min": round(min(amounts), 2) if amounts else 0,
+        "max": round(max(amounts), 2) if amounts else 0,
+        "total": round(sum(amounts), 2)
+    }
+    
+    return {
+        "bucket_id": bucket_id,
+        "bucket_name": bucket.name,
+        "months": months,
+        "history": history,
+        "stats": stats
+    }
+
+
+@router.get("/group-spending")
+def get_group_spending(
+    start_date: str = Query(..., description="ISO Date string"), 
+    end_date: str = Query(..., description="ISO Date string"),
+    spender: str = Query(default="Combined"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Get spending aggregated by budget group (e.g., Discretionary, Non-Discretionary).
+    Supports budget-by-group view.
+    """
+    try:
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format")
+    
+    # Build base query
+    query = db.query(
+        models.BudgetBucket.group.label('group_name'),
+        func.sum(case((models.Transaction.amount < 0, models.Transaction.amount), else_=0)).label('expenses'),
+        func.count(models.Transaction.id).label('transaction_count')
+    ).join(
+        models.Transaction, 
+        models.Transaction.bucket_id == models.BudgetBucket.id
+    ).filter(
+        models.Transaction.user_id == current_user.id,
+        models.BudgetBucket.user_id == current_user.id,
+        models.Transaction.date >= start,
+        models.Transaction.date <= end,
+        models.BudgetBucket.is_transfer == False  # Exclude transfers
+    )
+    
+    # Filter by spender if not combined
+    if spender and spender != "Combined":
+        query = query.filter(models.Transaction.spender == spender)
+    
+    results = query.group_by(models.BudgetBucket.group).all()
+    
+    # Build response
+    groups = []
+    for row in results:
+        groups.append({
+            "group": row.group_name or "Uncategorized",
+            "expenses": round(abs(float(row.expenses or 0)), 2),
+            "transaction_count": row.transaction_count
+        })
+    
+    # Sort by expenses descending
+    groups.sort(key=lambda x: x["expenses"], reverse=True)
+    
+    return {
+        "start_date": start_date,
+        "end_date": end_date,
+        "spender": spender,
+        "groups": groups,
+        "total_expenses": round(sum(g["expenses"] for g in groups), 2)
+    }
+

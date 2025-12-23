@@ -2,10 +2,30 @@ from pydantic import BaseModel, EmailStr, field_validator
 from typing import List, Optional
 from datetime import datetime, date
 import re
+import html
+
+
+def sanitize_text(value: Optional[str], max_length: int = 1000) -> Optional[str]:
+    """
+    Sanitize text input by escaping HTML entities to prevent XSS attacks.
+    """
+    if value is None:
+        return None
+    value = value.strip()
+    if len(value) > max_length:
+        value = value[:max_length]
+    # Escape HTML entities
+    return html.escape(value, quote=True)
+
 
 # Tags
 class TagBase(BaseModel):
     name: str
+    
+    @field_validator('name')
+    @classmethod
+    def sanitize_name(cls, v: str) -> str:
+        return sanitize_text(v, max_length=100) or ""
 
 class TagCreate(TagBase):
     pass
@@ -29,6 +49,11 @@ class BudgetBucketBase(BaseModel):
     tags: List[str] = []
     target_amount: Optional[float] = None
     target_date: Optional[date] = None
+    
+    @field_validator('name', 'icon_name', 'group')
+    @classmethod
+    def sanitize_text_fields(cls, v: str) -> str:
+        return sanitize_text(v, max_length=200) or ""
 
 class BudgetBucketCreate(BudgetBucketBase):
     pass
@@ -48,6 +73,11 @@ class RuleBase(BaseModel):
     priority: int = 0
     min_amount: Optional[float] = None  # Optional: only match if amount >= min_amount
     max_amount: Optional[float] = None  # Optional: only match if amount <= max_amount
+    
+    @field_validator('keywords')
+    @classmethod
+    def sanitize_keywords(cls, v: str) -> str:
+        return sanitize_text(v, max_length=500) or ""
 
 class RuleCreate(RuleBase):
     pass
@@ -69,11 +99,26 @@ class TransactionBase(BaseModel):
     spender: str = "Joint"
     external_id: Optional[str] = None
     account_id: Optional[int] = None
+    
+    @field_validator('description', 'spender')
+    @classmethod
+    def sanitize_text_fields(cls, v: str) -> str:
+        return sanitize_text(v, max_length=500) or ""
+    
+    @field_validator('external_id')
+    @classmethod
+    def sanitize_external_id(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_text(v, max_length=200) if v else None
 
 class TransactionCreate(TransactionBase):
     raw_description: Optional[str] = None
     category_confidence: float = 0.0
     is_verified: bool = False
+    
+    @field_validator('raw_description')
+    @classmethod
+    def sanitize_raw_description(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_text(v, max_length=1000) if v else None
 
 class TransactionSplitCreate(BaseModel):
     items: List[TransactionCreate]
@@ -92,6 +137,11 @@ class TransactionConfirm(BaseModel):
     amount: Optional[float] = None
     transaction_hash: Optional[str] = None
     category_confidence: Optional[float] = None
+    
+    @field_validator('description', 'raw_description', 'spender', 'assigned_to')
+    @classmethod
+    def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_text(v, max_length=500) if v else None
 
 class TransactionUpdate(BaseModel):
     bucket_id: Optional[int] = None
@@ -101,6 +151,11 @@ class TransactionUpdate(BaseModel):
     goal_id: Optional[int] = None
     assigned_to: Optional[str] = None  # For partner review: "A", "B", or None
     parent_transaction_id: Optional[int] = None
+    
+    @field_validator('description', 'spender', 'assigned_to')
+    @classmethod
+    def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_text(v, max_length=500) if v else None
 
 class Transaction(TransactionBase):
     id: int

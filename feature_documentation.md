@@ -175,11 +175,19 @@ Dedicated reporting section for deeper financial analysis.
 -   **Password Reset**:
     -   Forgot password flow with secure token-based reset.
     -   Email verification flow for new accounts.
+-   **Self-Service Credential Updates** *(New)*:
+    -   **Change Password**: Users can update their password (requires current password verification).
+    -   **Change Email**: Users can update their email address (resets email verification status).
 -   **Account Deletion**: Users can permanently delete their account from Settings.
 -   **Session Management**:
     -   **Short-lived Access Tokens**: Access tokens expire after 60 minutes for enhanced security.
     -   **Refresh Tokens**: Long-lived refresh tokens (7 days) allow seamless sessions while maintaining high rotate frequency for access keys.
     -   **Automatic Token Rotation**: The frontend automatically detects expired sessions and refreshes them in the background.
+    -   **Log Out Everywhere** *(New)*: Token version system allows users to invalidate all active sessions across all devices with a single action.
+-   **Input Sanitization** *(New)*:
+    -   XSS protection on all user input fields via Pydantic validators.
+    -   HTML entity escaping for transaction descriptions, bucket names, and rule keywords.
+    -   Security utilities module (`backend/security.py`) with sanitization helpers.
 -   **Environment Configuration**: Sensitive data like `SECRET_KEY` and API credentials are managed via `.env` files and never hardcoded.
 
 ## 8. AI & Machine Learning
@@ -191,6 +199,42 @@ Dedicated reporting section for deeper financial analysis.
 -   **Confidence Scoring**: AI predictions capped at 0.85 confidence to encourage user review.
 -   **Fallback Strategy**: AI only activated when rule-based methods fail, preserving deterministic behavior.
 
+## 9. Testing & DevOps *(New)*
+-   **Automated Test Suite**: Comprehensive pytest framework with 80+ tests.
+    -   Authentication tests (registration, login, password reset, account deletion)
+    -   Transaction tests (CRUD, filtering, batch operations, splitting)
+    -   Analytics tests (dashboard, Sankey, projections, category history)
+    -   Settings tests (buckets, rules, user settings)
+    -   Security tests (XSS protection, input sanitization)
+-   **CI/CD Pipeline**: GitHub Actions workflow for automated testing.
+    -   Runs pytest with coverage on every push/PR
+    -   Python linting with ruff
+    -   Frontend linting with ESLint
+-   **Test Fixtures**: Reusable fixtures for in-memory database, authentication, and sample data.
+-   **Rate Limiting Bypass**: Tests run with rate limiting disabled for comprehensive coverage.
+
+## 10. UX Components *(New)*
+-   **Skeleton Loading States** *(New)*:
+    -   Reusable skeleton components for consistent loading UX.
+    -   Variants: `SkeletonCard`, `SkeletonTable`, `SkeletonChart`, `SkeletonTransactionList`.
+    -   Full page skeleton for initial load states.
+-   **Network Status Handling** *(New)*:
+    -   Automatic offline/online detection.
+    -   Banner notifications when connection is lost/restored.
+    -   `useNetworkStatus()` hook for component-level handling.
+-   **In-App Feedback** *(New)*:
+    -   Feedback modal for bug reports, feature requests, and general feedback.
+    -   Categorized submission types with visual distinction.
+    -   Floating feedback button for easy access.
+-   **Category History** *(New)*:
+    -   API endpoint showing last 6 months of spending per category.
+    -   Statistics (average, min, max) for budget planning.
+    -   Helps users set realistic budget limits based on history.
+-   **Group Spending** *(New)*:
+    -   API endpoint for spending aggregated by budget group.
+    -   Supports "budget by group" view (Discretionary, Non-Discretionary, etc.).
+
 ---
 
 *Last Updated: December 2025*
+

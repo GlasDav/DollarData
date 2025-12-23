@@ -14,6 +14,7 @@ class User(Base):
     name_b = Column(String, default="Partner")
     currency_symbol = Column(String, default="AUD") # Default: AUD
     is_email_verified = Column(Boolean, default=False)  # Email verification status
+    token_version = Column(Integer, default=0)  # Incremented to invalidate all tokens
     
     buckets = relationship("BudgetBucket", back_populates="user")
     transactions = relationship("Transaction", back_populates="user")

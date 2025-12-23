@@ -1,88 +1,50 @@
 Tasks
 - Basiq integration
-- Legal stuff - disclaimers
-- Customizable modular dashboard (drag and drop components)
-- Create SaaS model - tiered subscription system
-- Move budget from settings to its own tab
-- Forecasting tools
+- Customizable modular dashboard
+- Tiered subscription system
+- Forecasting
 - AI Chatbot/Tutorial
-- Real Estate specific functionality
-- Assign review!
-- Create rule from transaction page. Sort transaction page by date by default.
-- Enhance rules (keyword match + less than/greater than)
 - New rule - preview changes
-- Link transaction to goal
 - Amazon extension
-- Reports tab - Income, expenditure, cash flow (sankey) - filtered by category/date/person
-- Default categories/buckets
-    - Default categories
-        - Income
-            - Salaries
-            - Interest
-            - Business
-            - Other
-        - Expenses
-            - Household Expenses
-                - Gas & Electricity
-                - Water
-                - Internet
-                - Mortgage/Rent
-                - Strata Levies
-                - Council Rates
-                - Subscriptions
-                - Maintenance
-                - Household General
-                - Other
-            - Vehicle
-                - Petrol
-                - Insurance & Registration
-                - Maintenance
-                - Other
-            - Food
-                - Groceries
-                - Dining Out
-                - Coffee
-                - Snacks
-            - Lifestyle
-                - Personal
-                - Homewares
-                - Beauty
-                - Health & Fitness
-                - Clothing
-                - Leisure
-                - Dates
-                - Gifts
-                - Parking & Tolls
-                - Public Transport
-                - Taxi & Rideshare
-                - Other
-            - Health & Wellness
-                - Medical
-                - Dental
-                - Pharmacy
-                - Fitness
-            - Kids
-                - Childcare
-                - Education
-                - Kids Expenses
-                - Investing
-                - Activities
-            - Rollover/Non-Monthly
-                - Donations
-                - Renovations
-                - Other
-            - Financial
-                - Cash & ATM Fees
-                - Financial Fees
-                - Investment Contributions
-                - Accounting
-            - Other
-                - Work Expenses
-                - Business Expenses
-                - Miscellaneous
-                - Uncategorised
-                - Transfers
-
-Things to fix:
-    - Net savings not adding up with sankey diagram's net savings
-    - Insights - don't want a hard-coded threshold. Want irregularities to be identified based on the data
+- Budget
+    - Option to budget by group instead of by category
+    - When editing the budget, should show last 6 months of history for the account
+- Settings
+    - Notifications (email, in-app, push)
+        - Budget exceeded
+        - Recurring transaction detected
+        - Recurring transaction coming up
+        - Goal milestone
+    - Security
+        - Multi-factor auth
+        - Change email/password
+        - Add email
+    - Members
+        - Add household member instead of Couples Mode
+        - Give access to professional
+    - Accounts (connected bank accounts)
+        - Add account
+        - Delete account
+        - Hide account from budget (for reimbursements for example)
+    - Categories
+        - Add groups and categories
+        - Hide category in budget
+        - Change order
+    - Rules
+        - Add a new rule
+            - If transaction matches criteria:
+                - Merchant name (contains, does not contain etc)
+                - Amount (expense or income, greater than, less than, equal to etc)
+                - Categories
+            - Then apply these updates:
+                - Update category
+                - Add tags
+                - Hide transaction
+                - Add to review for user
+                - Link to goal
+                - Split transaction…
+    - Data
+        - Download transactions
+        - Download account balances
+        - Remove card access
+        - Delete transactions

@@ -191,12 +191,15 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Include token_version for session management
+    token_version = getattr(user, 'token_version', 0) or 0
+    
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": user.email, "tv": token_version}, expires_delta=access_token_expires
     )
     refresh_token = auth.create_refresh_token(
-        data={"sub": user.email}
+        data={"sub": user.email, "tv": token_version}
     )
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
@@ -213,6 +216,7 @@ def refresh_token(request: Request, refresh_token: str = Body(..., embed=True), 
         payload = auth.jwt.decode(refresh_token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
         email: str = payload.get("sub")
         token_type: str = payload.get("type")
+        token_version: int = payload.get("tv", 0)
         if email is None or token_type != "refresh":
             raise credentials_exception
     except auth.JWTError:
@@ -221,10 +225,19 @@ def refresh_token(request: Request, refresh_token: str = Body(..., embed=True), 
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         raise credentials_exception
+    
+    # Check if token is still valid (not invalidated by "logout everywhere")
+    user_token_version = getattr(user, 'token_version', 0) or 0
+    if token_version < user_token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
-        data={"sub": email}, expires_delta=access_token_expires
+        data={"sub": email, "tv": user_token_version}, expires_delta=access_token_expires
     )
     
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
@@ -600,3 +613,157 @@ def delete_account(
     
     logger.info(f"Account deleted: {user_email}")
     return {"message": "Your account and all data have been permanently deleted."}
+
+
+# ============================================
+# SESSION MANAGEMENT ENDPOINTS
+# ============================================
+
+@router.post("/logout-all", response_model=schemas.MessageResponse)
+@limiter.limit("5/minute")
+def logout_all_sessions(
+    request: Request,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Log out from all devices by invalidating all existing tokens.
+    The user will need to log in again on all devices.
+    """
+    # Increment token version to invalidate all existing tokens
+    current_token_version = getattr(current_user, 'token_version', 0) or 0
+    current_user.token_version = current_token_version + 1
+    db.commit()
+    
+    logger.info(f"All sessions invalidated for user: {current_user.email}")
+    return {"message": "All sessions have been logged out. Please log in again."}
+
+
+# ============================================
+# CHANGE PASSWORD ENDPOINT
+# ============================================
+
+@router.post("/change-password", response_model=schemas.MessageResponse)
+@limiter.limit("5/minute")
+def change_password(
+    request: Request,
+    body: dict = Body(...),
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Change password for the current user.
+    Requires current password for verification.
+    """
+    current_password = body.get("current_password")
+    new_password = body.get("new_password")
+    
+    if not current_password or not new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password and new password are required"
+        )
+    
+    # Verify current password
+    if not auth.verify_password(current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect"
+        )
+    
+    # Validate new password strength
+    import re
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long"
+        )
+    if not re.search(r'[A-Za-z]', new_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one letter"
+        )
+    if not re.search(r'[0-9]', new_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one number"
+        )
+    
+    # Update password
+    current_user.hashed_password = auth.get_password_hash(new_password)
+    
+    # Increment token version to log out other sessions (optional security measure)
+    current_token_version = getattr(current_user, 'token_version', 0) or 0
+    current_user.token_version = current_token_version + 1
+    
+    db.commit()
+    
+    logger.info(f"Password changed for user: {current_user.email}")
+    return {"message": "Password changed successfully. Please log in again."}
+
+
+# ============================================
+# CHANGE EMAIL ENDPOINT
+# ============================================
+
+@router.post("/change-email", response_model=schemas.MessageResponse)
+@limiter.limit("3/minute")
+def change_email(
+    request: Request,
+    body: dict = Body(...),
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Change email for the current user.
+    Requires password for verification.
+    Note: Email verification will be reset.
+    """
+    password = body.get("password")
+    new_email = body.get("new_email")
+    
+    if not password or not new_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password and new email are required"
+        )
+    
+    # Verify password
+    if not auth.verify_password(password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Password is incorrect"
+        )
+    
+    # Validate email format
+    import re
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, new_email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email format"
+        )
+    
+    # Check if email is already in use
+    existing_user = db.query(models.User).filter(models.User.email == new_email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email is already in use"
+        )
+    
+    old_email = current_user.email
+    
+    # Update email
+    current_user.email = new_email
+    current_user.is_email_verified = False  # Reset verification status
+    
+    # Increment token version to log out all sessions
+    current_token_version = getattr(current_user, 'token_version', 0) or 0
+    current_user.token_version = current_token_version + 1
+    
+    db.commit()
+    
+    logger.info(f"Email changed for user from {old_email} to {new_email}")
+    return {"message": "Email changed successfully. Please verify your new email and log in again."}
+

@@ -78,6 +78,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
+        token_version: int = payload.get("tv", 0)  # Token version from JWT
         if email is None:
             raise credentials_exception
         token_data = schemas.TokenData(email=email)
@@ -87,4 +88,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     user = db.query(models.User).filter(models.User.email == token_data.email).first()
     if user is None:
         raise credentials_exception
+    
+    # Check if token is still valid (not invalidated by "logout everywhere")
+    user_token_version = getattr(user, 'token_version', 0) or 0
+    if token_version < user_token_version:
+        logger.warning(f"Token invalidated for user {email} - token_version mismatch")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     return user
+
