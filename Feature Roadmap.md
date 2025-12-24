@@ -70,6 +70,7 @@
 - [x] **Budget Exceeded Alerts** - In-app alerts at 80%/100%/120% thresholds
 - [x] **Recurring Transaction Reminders** - Upcoming bills widget and notifications
 - [x] **Goal Milestone Celebrations** - Alerts at 25%/50%/75%/100% milestones
+- [x] **Notification Settings** - User preferences for enabling/disabling each alert type
 
 ### Categories & Organization
 - [x] **Custom Groups & Categories** - User-defined category hierarchy
