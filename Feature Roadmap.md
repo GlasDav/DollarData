@@ -88,11 +88,12 @@
 
 **AI-powered insights and predictive features.**
 
-- [x] **Cash Flow Forecasting** - Predict future balance based on patterns
+- [x] **Cash Flow Forecasting** - Predict future balance based on 90-day income/expense patterns
 - [x] **AI Chatbot** - Natural language queries about finances
 - [x] **Interactive Tutorial** - AI-guided onboarding and feature discovery
 - [x] **Spending Anomaly Alerts** - Proactive unusual spending notifications
 - [x] **Savings Opportunity Detection** - AI suggests where to cut spending
+- [x] **One-Off Category** - Exclude non-recurring items from forecasts and insights
 
 
 

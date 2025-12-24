@@ -211,6 +211,15 @@ Dedicated reporting section for deeper financial analysis.
     -   Page-specific contextual tips for feature discovery.
     -   AI-generated personalized recommendations.
     -   Progress tracking for completed tours.
+-   **Cash Flow Forecasting** *(New)*:
+    -   90-day projection based on historical spending patterns.
+    -   Calculates daily income vs daily spend from last 90 days.
+    -   Displays Net/Day rate and minimum projected balance.
+    -   Excludes transfers, investments, and one-off items for accuracy.
+-   **One-Off Category** *(New)*:
+    -   Special bucket type for non-recurring large transactions.
+    -   Automatically excluded from forecasts, anomaly detection, and insights.
+    -   Use for tax payments/refunds, large one-time purchases, insurance claims.
 -   **Async Background Processing**: Large imports processed in background with real-time progress updates.
 -   **Parallel Batch Processing**: 5 concurrent API calls for faster categorization (~2 min for 500 transactions).
 -   **Compact JSON Optimization**: Prompt engineered for minimal token usage, preventing response truncation.

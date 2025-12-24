@@ -9,6 +9,10 @@ Tasks
 - Budget
     - Option to budget by group instead of by category
     - When editing the budget, should show last 6 months of history for the account
+- Sankey diagram - break up income into different buckets
+- Default superannuation account
+- Move sankey diagram from dashboard onto reports page
+
 - Settings
     - Notifications (email, in-app, push)
         - Budget exceeded
