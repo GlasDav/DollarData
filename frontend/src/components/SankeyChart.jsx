@@ -25,6 +25,10 @@ const SankeyChart = ({ data }) => {
         const yPos = y + height / 2;
         const minHeight = Math.max(height, 4);
 
+        // Detect dark mode from document class
+        const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+        const textColor = isDarkMode ? '#e2e8f0' : '#334155'; // slate-200 for dark, slate-700 for light
+
         return (
             <Layer key={`node-${index}`}>
                 <Rectangle
@@ -40,7 +44,7 @@ const SankeyChart = ({ data }) => {
                     y={yPos}
                     textAnchor={textAnchor}
                     dominantBaseline="middle"
-                    fill="#e2e8f0"
+                    fill={textColor}
                     fontSize={10}
                     fontWeight="600"
                 >
