@@ -722,32 +722,36 @@ def get_sankey_data(
     total_expenses = abs(totals_res.expenses or 0.0)
     total_income = totals_res.income or 0.0
     
-    # 2. Fetch Expenses Grouped by Bucket
-    # Query: SELECT bucket_id, SUM(amount) FROM transactions ... GROUP BY bucket_id
+    # 2. Fetch NET Spending by Bucket (expenses minus refunds)
+    # This allows refunds to offset expenses within the same bucket
     expense_query = db.query(
         models.Transaction.bucket_id,
-        func.sum(models.Transaction.amount)
+        func.sum(models.Transaction.amount)  # Sum all transactions (negative = expense, positive = refund)
     ).filter(
         models.Transaction.user_id == user.id,
         models.Transaction.date >= s_date,
         models.Transaction.date <= e_date,
-        models.Transaction.amount < 0 # Only expenses
+        # Include both expenses AND refunds for expense buckets
+        # (we'll filter to only show buckets with net negative later)
     )
     
     if spender != "Combined":
         expense_query = expense_query.filter(models.Transaction.spender == spender)
 
-    # Exclude Transfer and Investment buckets from expenses
+    # Exclude Transfer and Investment buckets from expense view
     expense_query = expense_query.filter(
         ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
-        ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True),
+        # Also exclude Income group buckets from expense calculation
+        ~models.Transaction.bucket.has(models.BudgetBucket.group == "Income")
     )
         
     expense_results = expense_query.group_by(models.Transaction.bucket_id).all()
     
-    # Map bucket_id -> spent
-    bucket_spend = {bid: abs(amt) for bid, amt in expense_results if bid is not None}
-    unallocated_spend = sum(abs(amt) for bid, amt in expense_results if bid is None)
+    # Map bucket_id -> NET spent (only include buckets with net negative balance)
+    # Positive amounts mean more refunds than expenses - these won't show in Sankey
+    bucket_spend = {bid: abs(amt) for bid, amt in expense_results if bid is not None and amt is not None and amt < 0}
+    unallocated_spend = sum(abs(amt) for bid, amt in expense_results if bid is None and amt is not None and amt < 0)
     
     # 3. Get Bucket Details for Names/Groups
     buckets = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).all()
@@ -785,25 +789,46 @@ def get_sankey_data(
         
     income_results = income_by_bucket_query.group_by(models.Transaction.bucket_id).all()
     
-    # Create income bucket nodes flowing INTO "Income"
+    # Helper to check if a bucket belongs to Income group (check self AND parent)
+    def is_income_bucket(bucket):
+        if bucket.group == "Income":
+            return True
+        # Check parent bucket's group (for inherited categories)
+        if bucket.parent_id and bucket.parent_id in bucket_map:
+            parent = bucket_map[bucket.parent_id]
+            if parent.group == "Income":
+                return True
+        return False
+    
+    # Track income by category
+    income_by_bucket = {}
+    other_income_total = 0.0
+    
     for bid, amount in income_results:
-        if bid is None or amount is None or amount <= 0:
-            continue
-        if bid not in bucket_map:
-            continue
-        bucket = bucket_map[bid]
-        # Only include buckets from Income group
-        if bucket.group != "Income":
+        if amount is None or amount <= 0:
             continue
             
-        idx_income_bucket = get_node(bucket.name)
-        links.append({"source": idx_income_bucket, "target": idx_income, "value": amount})
+        if bid is None:
+            # Uncategorized income
+            other_income_total += amount
+        elif bid in bucket_map:
+            bucket = bucket_map[bid]
+            # Only show buckets from Income group on income side
+            if is_income_bucket(bucket):
+                income_by_bucket[bucket.name] = income_by_bucket.get(bucket.name, 0) + amount
+            # Refunds to expense buckets are now netted in expense calculation
+            # so we don't add them to Other Income
     
-    # Handle uncategorized income
-    uncategorized_income = sum(amt for bid, amt in income_results if bid is None and amt and amt > 0)
-    if uncategorized_income > 0:
+    # Create income bucket nodes flowing INTO "Income"
+    for bucket_name, amount in income_by_bucket.items():
+        if amount > 0:
+            idx_income_bucket = get_node(bucket_name)
+            links.append({"source": idx_income_bucket, "target": idx_income, "value": amount})
+    
+    # Handle other/uncategorized income
+    if other_income_total > 0:
         idx_other_income = get_node("Other Income")
-        links.append({"source": idx_other_income, "target": idx_income, "value": uncategorized_income})
+        links.append({"source": idx_other_income, "target": idx_income, "value": other_income_total})
     
     # --- EXPENSE GROUPS (Income -> Groups) ---
     # Groups (User requested "Discretionary" vs "Non-Discretionary")
