@@ -20,6 +20,7 @@ import TermsOfService from './pages/TermsOfService';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { Navigate, Outlet } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -31,6 +32,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Footer from './components/Footer';
 import { FeedbackModal, FeedbackButton } from './components/FeedbackModal';
 import { LogOut } from 'lucide-react';
+import NotificationBell from './components/NotificationBell';
 
 const queryClient = new QueryClient();
 
@@ -114,14 +116,21 @@ function Layout() {
       </div>
 
       {/* Main Content - wrapped in error boundary */}
-      <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-900">
-        <div className="min-h-full flex flex-col">
-          <ErrorBoundary>
-            <div className="flex-1">
-              <Outlet />
-            </div>
-          </ErrorBoundary>
-          <Footer />
+      {/* Main Content - wrapped in error boundary */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-end px-6 shadow-sm z-10">
+          <NotificationBell />
+        </header>
+
+        <div className="flex-1 overflow-auto">
+          <div className="min-h-full flex flex-col">
+            <ErrorBoundary>
+              <div className="flex-1">
+                <Outlet />
+              </div>
+            </ErrorBoundary>
+            <Footer />
+          </div>
         </div>
       </div>
 
@@ -136,34 +145,36 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfService />} />
+          <NotificationProvider>
+            <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
 
-              {/* Protected Routes */}
-              <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/net-worth" element={<NetWorth />} />
-                <Route path="/transactions" element={<Transactions />} />
-                <Route path="/calendar" element={<FinancialCalendar />} />
-                <Route path="/subscriptions" element={<Subscriptions />} />
-                <Route path="/goals" element={<Goals />} />
-                <Route path="/tools" element={<Tools />} />
-                <Route path="/budget" element={<Budget />} />
-                <Route path="/review" element={<Review />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/insights" element={<Insights />} />
-                <Route path="/ingest" element={<Ingest />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
-            </Routes>
-          </Router>
+                {/* Protected Routes */}
+                <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/net-worth" element={<NetWorth />} />
+                  <Route path="/transactions" element={<Transactions />} />
+                  <Route path="/calendar" element={<FinancialCalendar />} />
+                  <Route path="/subscriptions" element={<Subscriptions />} />
+                  <Route path="/goals" element={<Goals />} />
+                  <Route path="/tools" element={<Tools />} />
+                  <Route path="/budget" element={<Budget />} />
+                  <Route path="/review" element={<Review />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/insights" element={<Insights />} />
+                  <Route path="/ingest" element={<Ingest />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
+              </Routes>
+            </Router>
+          </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

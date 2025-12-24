@@ -218,4 +218,25 @@ export const getInvestmentHistory = async () => (await api.get('/investments/his
 export const searchTicker = async (query) => (await api.get(`/market/search?q=${query}`)).data;
 export const getQuote = async (ticker) => (await api.get(`/market/quote?ticker=${ticker}`)).data;
 
+// Notifications
+export const getNotifications = async (unreadOnly = false) => {
+    const res = await api.get('/notifications/', { params: { unread_only: unreadOnly } });
+    return res.data;
+};
+
+export const markNotificationRead = async (id) => {
+    const res = await api.post(`/notifications/${id}/read`);
+    return res.data;
+};
+
+export const markAllNotificationsRead = async () => {
+    const res = await api.post('/notifications/read-all');
+    return res.data;
+};
+
+export const deleteNotification = async (id) => {
+    const res = await api.delete(`/notifications/${id}`);
+    return res.data;
+};
+
 export default api;

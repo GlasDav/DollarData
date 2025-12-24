@@ -443,3 +443,20 @@ class HouseholdMember(HouseholdMemberBase):
     class Config:
         from_attributes = True
 
+# Notifications
+class NotificationBase(BaseModel):
+    type: str
+    message: str
+    is_read: bool = False
+    meta_data: Optional[str] = None
+
+class NotificationCreate(NotificationBase):
+    pass
+
+class Notification(NotificationBase):
+    id: int
+    user_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
