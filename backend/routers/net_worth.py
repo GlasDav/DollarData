@@ -4,6 +4,7 @@ from typing import List
 from datetime import date
 from ..database import get_db
 from .. import models, schemas, auth
+from ..services.notification_service import NotificationService
 import yfinance as yf
 
 router = APIRouter(
@@ -115,6 +116,10 @@ def create_snapshot(snapshot_in: schemas.NetWorthSnapshotCreate, db: Session = D
     
     db.commit()
     db.refresh(new_snapshot)
+    
+    # Check goal milestones for linked accounts
+    NotificationService.check_all_goal_milestones(db, current_user.id)
+    
     return new_snapshot
 
 # --- Holdings ---
@@ -334,4 +339,8 @@ def update_account_balance_from_holdings(db: Session, user_id: int, account_id: 
     latest_snapshot.net_worth = new_assets - new_liabilities
     
     db.commit()
+    
+    # Check goal milestones for this update
+    NotificationService.check_all_goal_milestones(db, user_id)
+
 

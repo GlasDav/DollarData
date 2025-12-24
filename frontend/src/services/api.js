@@ -239,4 +239,10 @@ export const deleteNotification = async (id) => {
     return res.data;
 };
 
+// Upcoming Bills
+export const getUpcomingBills = async (days = 7) => {
+    const res = await api.get('/notifications/upcoming-bills', { params: { days } });
+    return res.data;
+};
+
 export default api;

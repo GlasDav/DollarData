@@ -86,3 +86,43 @@ def delete_notification(
     db.delete(notification)
     db.commit()
     return {"message": "Notification deleted"}
+
+@router.get("/upcoming-bills")
+def get_upcoming_bills(
+    days: int = 7,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Get subscriptions/bills due within the next X days.
+    """
+    from ..services.notification_service import NotificationService
+    
+    upcoming = NotificationService.get_upcoming_bills(db, current_user.id, days)
+    
+    return [{
+        "id": sub.id,
+        "name": sub.name,
+        "amount": sub.amount,
+        "frequency": sub.frequency,
+        "next_due_date": sub.next_due_date.isoformat() if sub.next_due_date else None,
+        "days_until": (sub.next_due_date - __import__('datetime').datetime.utcnow().date()).days if sub.next_due_date else None
+    } for sub in upcoming]
+
+@router.post("/check-bills")
+def trigger_bill_check(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Manually trigger check for upcoming bills (creates notifications).
+    """
+    from ..services.notification_service import NotificationService
+    
+    notifications = NotificationService.check_upcoming_bills(db, current_user.id, days_ahead=3)
+    
+    return {
+        "message": f"Created {len(notifications)} bill reminder(s)",
+        "notifications": [n.message for n in notifications]
+    }
+

@@ -18,6 +18,7 @@ from .. import models, schemas, auth
 from ..services.pdf_parser import parse_pdf
 from ..services.categorizer import Categorizer
 from ..services.csv_service import parse_preview, process_csv
+from ..services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -807,6 +808,15 @@ def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session 
                 # These are often corrections, not patterns to learn from
     
     db.commit()
+    
+    # Check budget exceeded for affected buckets
+    affected_bucket_ids = set()
+    for update in updates:
+        if update.bucket_id:
+            affected_bucket_ids.add(update.bucket_id)
+    
+    for bucket_id in affected_bucket_ids:
+        NotificationService.check_budget_exceeded(db, current_user.id, bucket_id)
     
     # Return confirmed transactions
     if confirmed_ids:

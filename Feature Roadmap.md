@@ -67,9 +67,9 @@
 
 ### Notifications
 - [x] **Notification Infrastructure** - Bell UI, dropdown, context, API endpoints, database table
-- [ ] **Budget Exceeded Alerts** - Email/in-app when budget limit hit
-- [ ] **Recurring Transaction Reminders** - Upcoming bill notifications
-- [ ] **Goal Milestone Celebrations** - Notify when reaching savings goals
+- [x] **Budget Exceeded Alerts** - In-app alerts at 80%/100%/120% thresholds
+- [x] **Recurring Transaction Reminders** - Upcoming bills widget and notifications
+- [x] **Goal Milestone Celebrations** - Alerts at 25%/50%/75%/100% milestones
 
 ### Categories & Organization
 - [x] **Custom Groups & Categories** - User-defined category hierarchy
