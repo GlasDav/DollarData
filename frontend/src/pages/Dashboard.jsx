@@ -12,6 +12,7 @@ import GoalsWidget from '../components/widgets/GoalsWidget';
 import NetWorthWidget from '../components/widgets/NetWorthWidget';
 import RecentTransactionsWidget from '../components/widgets/RecentTransactionsWidget';
 import InvestmentsSummaryWidget from '../components/widgets/InvestmentsSummaryWidget';
+import PeriodComparisonWidget from '../components/widgets/PeriodComparisonWidget';
 
 export default function Dashboard() {
     // Date Range State
@@ -200,6 +201,14 @@ export default function Dashboard() {
             <div className="space-y-8">
                 {/* Row 1: Summary Cards */}
                 <SummaryCardsWidget totals={totals} netWorth={netWorth} formatCurrency={formatCurrency} />
+
+                {/* Row 1.5: Period Comparison */}
+                <PeriodComparisonWidget
+                    currentStart={start}
+                    currentEnd={end}
+                    spenderMode={spenderMode}
+                    formatCurrency={formatCurrency}
+                />
 
                 {/* Row 2: Net Worth + Investments + Goals */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
