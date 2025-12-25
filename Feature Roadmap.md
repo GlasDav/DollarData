@@ -112,7 +112,7 @@
 **Power user features and third-party integrations.**
 
 ### Dashboard
-- [ ] **Customizable Modular Dashboard** - Drag-and-drop widget layout
+- [x] **Customizable Modular Dashboard** - Widget-based layout with reusable components
 - [ ] **Custom Date Range Comparisons** - Compare spending across custom periods
 - [ ] **Dashboard Themes** - Light/dark mode, color schemes
 
