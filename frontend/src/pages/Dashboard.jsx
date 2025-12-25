@@ -14,6 +14,11 @@ import RecentTransactionsWidget from '../components/widgets/RecentTransactionsWi
 import InvestmentsSummaryWidget from '../components/widgets/InvestmentsSummaryWidget';
 import PeriodComparisonWidget from '../components/widgets/PeriodComparisonWidget';
 
+// Drag and Drop Imports
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableWidgetWrapper } from '../components/widgets/SortableWidgetWrapper';
+
 export default function Dashboard() {
     // Date Range State
     const [rangeType, setRangeType] = useState("This Month");
@@ -22,6 +27,51 @@ export default function Dashboard() {
     const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
     const [trendOption, setTrendOption] = useState("Total");
     const [excludeOneOffs, setExcludeOneOffs] = useState(false);
+
+    // Widget Order State
+    const defaultWidgetOrder = [
+        'summary-cards',
+        'period-comparison',
+        'financial-overview',
+        'recent-activity',
+        'cash-flow',
+        'spending-trends',
+        'budget-progress'
+    ];
+
+    const [widgetOrder, setWidgetOrder] = useState(() => {
+        try {
+            const saved = localStorage.getItem('dashboard_widget_order');
+            // Validate that saved order contains all current widgets (in case new ones were added)
+            const parsed = saved ? JSON.parse(saved) : null;
+            if (parsed && Array.isArray(parsed) && parsed.length === defaultWidgetOrder.length) {
+                return parsed;
+            }
+        } catch (e) {
+            console.error("Failed to parse widget order", e);
+        }
+        return defaultWidgetOrder;
+    });
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        if (active.id !== over.id) {
+            setWidgetOrder((items) => {
+                const oldIndex = items.indexOf(active.id);
+                const newIndex = items.indexOf(over.id);
+                const newOrder = arrayMove(items, oldIndex, newIndex);
+                localStorage.setItem('dashboard_widget_order', JSON.stringify(newOrder));
+                return newOrder;
+            });
+        }
+    };
 
     // Helper to calculate dates
     const getDateRange = (type) => {
@@ -108,6 +158,38 @@ export default function Dashboard() {
     // Formatting helper
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    };
+
+    const renderWidget = (id) => {
+        switch (id) {
+            case 'summary-cards':
+                return <SummaryCardsWidget totals={totals} netWorth={netWorth} formatCurrency={formatCurrency} />;
+            case 'period-comparison':
+                return <PeriodComparisonWidget currentStart={start} currentEnd={end} spenderMode={spenderMode} formatCurrency={formatCurrency} />;
+            case 'financial-overview':
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <NetWorthWidget history={netWorthHistory} formatCurrency={formatCurrency} />
+                        <InvestmentsSummaryWidget formatCurrency={formatCurrency} />
+                        <GoalsWidget formatCurrency={formatCurrency} />
+                    </div>
+                );
+            case 'recent-activity':
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <RecentTransactionsWidget formatCurrency={formatCurrency} />
+                        <UpcomingBillsWidget bills={upcomingBills || []} formatCurrency={formatCurrency} />
+                    </div>
+                );
+            case 'cash-flow':
+                return <CashFlowWidget data={sankeyData} excludeOneOffs={excludeOneOffs} onToggleExcludeOneOffs={setExcludeOneOffs} />;
+            case 'spending-trends':
+                return <SpendingTrendsWidget trendHistory={trendHistory} trendOption={trendOption} onTrendOptionChange={setTrendOption} buckets={buckets} />;
+            case 'budget-progress':
+                return <BudgetProgressWidget buckets={buckets} formatCurrency={formatCurrency} startDate={start} endDate={end} />;
+            default:
+                return null;
+        }
     };
 
     return (
@@ -198,54 +280,17 @@ export default function Dashboard() {
             </header>
 
             {/* Widget Grid */}
-            <div className="space-y-8">
-                {/* Row 1: Summary Cards */}
-                <SummaryCardsWidget totals={totals} netWorth={netWorth} formatCurrency={formatCurrency} />
-
-                {/* Row 1.5: Period Comparison */}
-                <PeriodComparisonWidget
-                    currentStart={start}
-                    currentEnd={end}
-                    spenderMode={spenderMode}
-                    formatCurrency={formatCurrency}
-                />
-
-                {/* Row 2: Net Worth + Investments + Goals */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <NetWorthWidget history={netWorthHistory} formatCurrency={formatCurrency} />
-                    <InvestmentsSummaryWidget formatCurrency={formatCurrency} />
-                    <GoalsWidget formatCurrency={formatCurrency} />
-                </div>
-
-                {/* Row 3: Recent Transactions + Upcoming Bills */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <RecentTransactionsWidget formatCurrency={formatCurrency} />
-                    <UpcomingBillsWidget bills={upcomingBills} formatCurrency={formatCurrency} />
-                </div>
-
-                {/* Row 3: Cash Flow (Sankey) */}
-                <CashFlowWidget
-                    data={sankeyData}
-                    excludeOneOffs={excludeOneOffs}
-                    onToggleExcludeOneOffs={setExcludeOneOffs}
-                />
-
-                {/* Row 4: Spending Trends */}
-                <SpendingTrendsWidget
-                    trendHistory={trendHistory}
-                    trendOption={trendOption}
-                    onTrendOptionChange={setTrendOption}
-                    buckets={buckets}
-                />
-
-                {/* Row 5: Budget Progress (Needs + Wants) */}
-                <BudgetProgressWidget
-                    buckets={buckets}
-                    formatCurrency={formatCurrency}
-                    startDate={start}
-                    endDate={end}
-                />
-            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-8 pb-10">
+                        {widgetOrder.map((id) => (
+                            <SortableWidgetWrapper key={id} id={id}>
+                                {renderWidget(id)}
+                            </SortableWidgetWrapper>
+                        ))}
+                    </div>
+                </SortableContext>
+            </DndContext>
         </div>
     );
 }
