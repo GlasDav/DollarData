@@ -116,7 +116,9 @@
 - [x] **Recent Transactions Widget** - Show 5 most recent transactions with categories
 - [x] **Investments Summary Widget** - Total value, daily change, top movers
 - [x] **Custom Date Range Comparisons** - Compare spending vs Last Month, Last Year, or Previous Period
+- [x] **Custom Date Range Comparisons** - Compare spending vs Last Month, Last Year, or Previous Period
 - [x] **Dashboard Themes** - Light/dark mode toggle (already implemented in ThemeContext)
+- [ ] **Drag-and-Drop Widgets** - Rearrange widget order functionality
 
 ### Data & Export
 - [ ] **Download Transactions** - Export all data as CSV/JSON
