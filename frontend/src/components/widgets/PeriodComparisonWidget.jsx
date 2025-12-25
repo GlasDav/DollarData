@@ -10,7 +10,8 @@ export default function PeriodComparisonWidget({
     currentStart,
     currentEnd,
     spenderMode,
-    formatCurrency
+    formatCurrency,
+    currentData
 }) {
     const [comparisonType, setComparisonType] = useState('lastMonth');
     const [isExpanded, setIsExpanded] = useState(true);
@@ -73,9 +74,7 @@ export default function PeriodComparisonWidget({
     });
 
     // Fetch current period data
-    const { data: currentData } = useQuery({
-        queryKey: ['dashboard', currentStart, currentEnd, spenderMode]
-    });
+
 
     const calculateChange = (current, previous) => {
         if (!previous || previous === 0) return { amount: current, percent: 0 };

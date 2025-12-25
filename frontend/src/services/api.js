@@ -268,6 +268,22 @@ export const getSavingsOpportunities = async () => {
     return res.data;
 };
 
+// Auth Management
+export const updatePassword = async (data) => {
+    const res = await api.post('/auth/change-password', data);
+    return res.data;
+};
+
+export const logoutAllSessions = async () => {
+    const res = await api.post('/auth/logout-all');
+    return res.data;
+};
+
+export const deleteUserAccount = async (password) => {
+    const res = await api.delete('/auth/account', { data: { password } });
+    return res.data;
+};
+
 // Cash Flow Forecast
 export const getCashFlowForecast = async (days = 90) => {
     const res = await api.get('/analytics/forecast', { params: { days } });

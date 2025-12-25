@@ -1,0 +1,39 @@
+- Settings
+    - Notifications (email, in-app, push)
+        - Budget exceeded
+        - Recurring transaction detected
+        - Recurring transaction coming up
+        - Goal milestone
+    - Security
+        - Multi-factor auth
+        - Change email/password
+        - Add email
+    - Members
+        - Add household member instead of Couples Mode
+        - Give access to professional
+    - Accounts (connected bank accounts)
+        - Add account
+        - Delete account
+        - Hide account from budget (for reimbursements for example)
+    - Categories
+        - Add groups and categories
+        - Hide category in budget
+        - Change order
+    - Rules
+        - Add a new rule
+            - If transaction matches criteria:
+                - Merchant name (contains, does not contain etc)
+                - Amount (expense or income, greater than, less than, equal to etc)
+                - Categories
+            - Then apply these updates:
+                - Update category
+                - Add tags
+                - Hide transaction
+                - Add to review for user
+                - Link to goal
+                - Split transaction…
+    - Data
+        - Download transactions
+        - Download account balances
+        - Remove card access
+        - Delete transactions

@@ -165,7 +165,7 @@ export default function Dashboard() {
             case 'summary-cards':
                 return <SummaryCardsWidget totals={totals} netWorth={netWorth} formatCurrency={formatCurrency} />;
             case 'period-comparison':
-                return <PeriodComparisonWidget currentStart={start} currentEnd={end} spenderMode={spenderMode} formatCurrency={formatCurrency} />;
+                return <PeriodComparisonWidget currentStart={start} currentEnd={end} spenderMode={spenderMode} formatCurrency={formatCurrency} currentData={dashboardData} />;
             case 'financial-overview':
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

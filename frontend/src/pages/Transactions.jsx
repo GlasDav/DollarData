@@ -358,7 +358,7 @@ export default function Transactions() {
                         title="No transactions yet"
                         description="Import your bank statements to start tracking your spending. We support CSV files and PDF statements from most major banks."
                         actionText="Import Data"
-                        actionLink="/ingest"
+                        actionLink="/data-management"
                     />
                 </div>
             ) : (

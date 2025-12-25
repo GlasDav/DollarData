@@ -28,6 +28,9 @@ export default function NetWorth() {
     const [chartMode, setChartMode] = useState('net_worth'); // 'net_worth' | 'investments'
     const [showProjection, setShowProjection] = useState(false);
 
+    // Helper
+    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+
     // --- Data Fetching ---
     const { data: accounts = [], isLoading: loadingAccounts } = useQuery({
         queryKey: ['accounts'],
@@ -245,7 +248,7 @@ export default function NetWorth() {
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Worth</p>
                     <div className="flex items-end gap-3 mt-1">
                         <span className="text-3xl font-bold text-slate-900 dark:text-white">
-                            ${currentNetWorth.toLocaleString()}
+                            {formatCurrency(currentNetWorth)}
                         </span>
                         {history.length > 1 && (
                             <span className={`text-sm font-medium mb-1 px-2 py-0.5 rounded-full flex items-center gap-1 ${change >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
@@ -258,13 +261,13 @@ export default function NetWorth() {
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Assets</p>
                     <p className="text-3xl font-bold text-emerald-600 mt-1">
-                        ${(latestSnapshot?.total_assets || 0).toLocaleString()}
+                        {formatCurrency(latestSnapshot?.total_assets || 0)}
                     </p>
                 </div>
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Liabilities</p>
                     <p className="text-3xl font-bold text-red-600 mt-1">
-                        ${(latestSnapshot?.total_liabilities || 0).toLocaleString()}
+                        {formatCurrency(latestSnapshot?.total_liabilities || 0)}
                     </p>
                 </div>
             </div >
@@ -339,18 +342,18 @@ export default function NetWorth() {
                                                         <div className="space-y-1">
                                                             <p className="text-lg font-bold text-indigo-600 flex justify-between gap-8">
                                                                 <span>{chartMode === 'net_worth' ? 'Net Worth' : 'Value'}</span>
-                                                                <span>${data[chartDataKey].toLocaleString()}</span>
+                                                                <span>{formatCurrency(data[chartDataKey])}</span>
                                                             </p>
                                                             {chartMode === 'net_worth' && (
                                                                 <>
                                                                     <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
                                                                     <p className="text-sm text-emerald-600 flex justify-between gap-8">
                                                                         <span>Assets</span>
-                                                                        <span>+${data.total_assets.toLocaleString()}</span>
+                                                                        <span>+{formatCurrency(data.total_assets)}</span>
                                                                     </p>
                                                                     <p className="text-sm text-red-500 flex justify-between gap-8">
                                                                         <span>Liabilities</span>
-                                                                        <span>-${data.total_liabilities.toLocaleString()}</span>
+                                                                        <span>-{formatCurrency(data.total_liabilities)}</span>
                                                                     </p>
                                                                 </>
                                                             )}
@@ -549,7 +552,7 @@ export default function NetWorth() {
                                                     </div>
                                                 </div>
                                                 <p className="text-sm font-semibold text-emerald-600">
-                                                    ${(accountBalances[account.id] || 0).toLocaleString()}
+                                                    {formatCurrency(accountBalances[account.id] || 0)}
                                                 </p>
                                             </div>
                                         );
@@ -578,7 +581,7 @@ export default function NetWorth() {
                                                     </div>
                                                 </div>
                                                 <p className="text-sm font-semibold text-red-500">
-                                                    -${(accountBalances[account.id] || 0).toLocaleString()}
+                                                    -{formatCurrency(accountBalances[account.id] || 0)}
                                                 </p>
                                             </div>
                                         );
