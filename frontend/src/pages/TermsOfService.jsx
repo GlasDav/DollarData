@@ -1,18 +1,20 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText } from 'lucide-react';
 
 export default function TermsOfService() {
+    const navigate = useNavigate();
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-12 px-4">
             <div className="max-w-3xl mx-auto">
-                <Link
-                    to="/login"
+                <button
+                    onClick={() => navigate(-1)}
                     className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 mb-8"
                 >
                     <ArrowLeft size={20} />
-                    Back to Login
-                </Link>
+                    Back
+                </button>
 
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8">
                     <div className="flex items-center gap-3 mb-6">

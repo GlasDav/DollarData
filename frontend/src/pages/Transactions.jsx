@@ -443,13 +443,14 @@ export default function Transactions() {
                                         </div>
                                     )}
                                 </th>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 w-24">Actions</th>
                                 <SortHeader column="amount" className="text-right">Amount</SortHeader>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan="7" className="p-12 text-center">
+                                    <td colSpan="8" className="p-12 text-center">
                                         <div className="flex flex-col items-center gap-3">
                                             <Loader2 className="animate-spin text-indigo-500" size={32} />
                                             <span className="text-slate-500">Loading transactions...</span>
@@ -458,7 +459,7 @@ export default function Transactions() {
                                 </tr>
                             ) : transactions.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center">
+                                    <td colSpan="8" className="p-8 text-center">
                                         <div className="flex flex-col items-center gap-2">
                                             <Search className="text-slate-400" size={24} />
                                             <span className="text-slate-500 font-medium">No transactions match your search</span>
@@ -504,62 +505,9 @@ export default function Transactions() {
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             ) : (
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setEditingId(txn.id)} title={`Original: ${txn.raw_description}`}>
-                                                        <span className="font-medium text-slate-900 dark:text-white">{txn.description}</span>
-                                                        <Pencil size={14} className="text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
-                                                    </div>
-
-                                                    {/* Split Action */}
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setTransactionToSplit(txn); setSplitModalOpen(true); }}
-                                                        className="opacity-0 group-hover/cell:opacity-100 p-1 text-slate-400 hover:text-indigo-500 transition"
-                                                        title="Split Transaction"
-                                                    >
-                                                        <Split size={16} />
-                                                    </button>
-                                                    {/* Create Rule Action */}
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setTransactionForRule(txn); setRuleModalOpen(true); }}
-                                                        className="opacity-0 group-hover/cell:opacity-100 p-1 text-slate-400 hover:text-emerald-500 transition"
-                                                        title="Create Rule from Transaction"
-                                                    >
-                                                        <BookPlus size={16} />
-                                                    </button>
-                                                    {/* Assign for Review Action */}
-                                                    {userSettings?.is_couple_mode && (
-                                                        <div className="relative">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); setAssignDropdownId(assignDropdownId === txn.id ? null : txn.id); }}
-                                                                className={`p-1 transition ${txn.assigned_to ? 'text-red-500' : 'opacity-0 group-hover/cell:opacity-100 text-slate-400 hover:text-orange-500'}`}
-                                                                title={txn.assigned_to ? `Assigned to ${txn.assigned_to === 'A' ? userSettings?.name_a : userSettings?.name_b}` : 'Assign for Review'}
-                                                            >
-                                                                <UserCheck size={16} />
-                                                            </button>
-                                                            {assignDropdownId === txn.id && (
-                                                                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-30 min-w-[140px]">
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); updateMutation.mutate({ id: txn.id, assigned_to: '' }); setAssignDropdownId(null); }}
-                                                                        className="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
-                                                                    >
-                                                                        None
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); updateMutation.mutate({ id: txn.id, assigned_to: 'A' }); setAssignDropdownId(null); }}
-                                                                        className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'A' ? 'text-orange-600 font-medium' : ''}`}
-                                                                    >
-                                                                        {userSettings?.name_a || 'Partner A'}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); updateMutation.mutate({ id: txn.id, assigned_to: 'B' }); setAssignDropdownId(null); }}
-                                                                        className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'B' ? 'text-orange-600 font-medium' : ''}`}
-                                                                    >
-                                                                        {userSettings?.name_b || 'Partner B'}
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setEditingId(txn.id)} title={`Original: ${txn.raw_description}`}>
+                                                    <span className="font-medium text-slate-900 dark:text-white truncate">{txn.description}</span>
+                                                    <Pencil size={14} className="text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity flex-shrink-0" />
                                                 </div>
                                             )}
                                         </td>
@@ -598,6 +546,58 @@ export default function Transactions() {
                                                     <option key={member.id} value={member.name}>{member.name}</option>
                                                 ))}
                                             </select>
+                                        </td>
+                                        {/* Actions Cell - Fixed Width */}
+                                        <td className="p-4 w-24">
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={() => { setTransactionToSplit(txn); setSplitModalOpen(true); }}
+                                                    className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition"
+                                                    title="Split Transaction"
+                                                >
+                                                    <Split size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => { setTransactionForRule(txn); setRuleModalOpen(true); }}
+                                                    className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded transition"
+                                                    title="Create Rule from Transaction"
+                                                >
+                                                    <BookPlus size={14} />
+                                                </button>
+                                                {userSettings?.is_couple_mode && (
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => setAssignDropdownId(assignDropdownId === txn.id ? null : txn.id)}
+                                                            className={`p-1.5 rounded transition ${txn.assigned_to ? 'text-orange-500 bg-orange-50 dark:bg-orange-900/30' : 'text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30'}`}
+                                                            title={txn.assigned_to ? `Assigned to ${txn.assigned_to === 'A' ? userSettings?.name_a : userSettings?.name_b}` : 'Assign for Review'}
+                                                        >
+                                                            <UserCheck size={14} />
+                                                        </button>
+                                                        {assignDropdownId === txn.id && (
+                                                            <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-30 min-w-[140px]">
+                                                                <button
+                                                                    onClick={() => { updateMutation.mutate({ id: txn.id, assigned_to: '' }); setAssignDropdownId(null); }}
+                                                                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
+                                                                >
+                                                                    None
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => { updateMutation.mutate({ id: txn.id, assigned_to: 'A' }); setAssignDropdownId(null); }}
+                                                                    className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'A' ? 'text-orange-600 font-medium' : ''}`}
+                                                                >
+                                                                    {userSettings?.name_a || 'Partner A'}
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => { updateMutation.mutate({ id: txn.id, assigned_to: 'B' }); setAssignDropdownId(null); }}
+                                                                    className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'B' ? 'text-orange-600 font-medium' : ''}`}
+                                                                >
+                                                                    {userSettings?.name_b || 'Partner B'}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className={`p-4 text-sm font-semibold text-right ${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
                                             {txn.amount.toFixed(2)}
