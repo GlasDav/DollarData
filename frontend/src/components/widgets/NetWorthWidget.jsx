@@ -69,11 +69,6 @@ export default function NetWorthWidget({ history = [], formatCurrency }) {
                     </div>
                 )}
             </div>
-
-            {/* Background decoration */}
-            <div className="absolute -right-8 -bottom-8 opacity-5 transform rotate-12 group-hover:scale-110 transition-transform">
-                <Wallet size={120} />
-            </div>
         </Link>
     );
 }

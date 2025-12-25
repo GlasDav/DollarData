@@ -10,6 +10,8 @@ import SpendingTrendsWidget from '../components/widgets/SpendingTrendsWidget';
 import BudgetProgressWidget from '../components/widgets/BudgetProgressWidget';
 import GoalsWidget from '../components/widgets/GoalsWidget';
 import NetWorthWidget from '../components/widgets/NetWorthWidget';
+import RecentTransactionsWidget from '../components/widgets/RecentTransactionsWidget';
+import InvestmentsSummaryWidget from '../components/widgets/InvestmentsSummaryWidget';
 
 export default function Dashboard() {
     // Date Range State
@@ -199,10 +201,16 @@ export default function Dashboard() {
                 {/* Row 1: Summary Cards */}
                 <SummaryCardsWidget totals={totals} netWorth={netWorth} formatCurrency={formatCurrency} />
 
-                {/* Row 2: Net Worth Chart + Goals + Upcoming Bills */}
+                {/* Row 2: Net Worth + Investments + Goals */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <NetWorthWidget history={netWorthHistory} formatCurrency={formatCurrency} />
+                    <InvestmentsSummaryWidget formatCurrency={formatCurrency} />
                     <GoalsWidget formatCurrency={formatCurrency} />
+                </div>
+
+                {/* Row 3: Recent Transactions + Upcoming Bills */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <RecentTransactionsWidget formatCurrency={formatCurrency} />
                     <UpcomingBillsWidget bills={upcomingBills} formatCurrency={formatCurrency} />
                 </div>
 
