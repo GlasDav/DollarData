@@ -31,9 +31,7 @@ export default function SummaryCardsWidget({ totals, netWorth, formatCurrency })
                         {formatCurrency(netWorth)}
                     </p>
                 </div>
-                <div className="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform">
-                    <Wallet size={80} />
-                </div>
+
             </Link>
         </div>
     );

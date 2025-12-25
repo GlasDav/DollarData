@@ -194,22 +194,7 @@ export default function Dashboard() {
 
     return (
         <div className="max-w-7xl mx-auto p-8 space-y-8">
-            {/* Welcome Header */}
-            <div className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 rounded-3xl p-8 text-white relative overflow-hidden">
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-                    <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-                </div>
-                <div className="relative z-10">
-                    <p className="text-indigo-200 text-sm font-medium mb-1">
-                        {new Date().getHours() < 12 ? '☀️ Good morning' : new Date().getHours() < 18 ? '🌤️ Good afternoon' : '🌙 Good evening'}
-                    </p>
-                    <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
-                    <p className="text-indigo-100/80">
-                        Here's an overview of your finances for {rangeType === "Custom" ? `${start} to ${end}` : rangeType.toLowerCase()}
-                    </p>
-                </div>
-            </div>
+            {/* Welcome Header - Removed per user request */}
 
             {/* Filter Controls */}
             <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
