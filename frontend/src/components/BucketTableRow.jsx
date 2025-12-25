@@ -104,7 +104,9 @@ export default function BucketTableRow({
             if (newTag.trim()) {
                 const currentTags = bucket.tags || [];
                 if (!currentTags.some(t => t.name.toLowerCase() === newTag.toLowerCase())) {
-                    updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: [...currentTags, { name: newTag.trim() }] } });
+                    // Extract just names + new name
+                    const newTagNames = [...currentTags.map(t => t.name), newTag.trim()];
+                    updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTagNames } });
                 }
                 setNewTag('');
             }
@@ -118,13 +120,16 @@ export default function BucketTableRow({
     const handleAddExistingTag = (tagName) => {
         const currentTags = bucket.tags || [];
         if (!currentTags.some(t => t.name.toLowerCase() === tagName.toLowerCase())) {
-            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: [...currentTags, { name: tagName }] } });
+            const newTagNames = [...currentTags.map(t => t.name), tagName];
+            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTagNames } });
         }
     };
 
     const handleRemoveTag = (tagName) => {
-        const newTags = (bucket.tags || []).filter(t => t.name !== tagName);
-        updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTags } });
+        const newTagNames = (bucket.tags || [])
+            .filter(t => t.name !== tagName)
+            .map(t => t.name);
+        updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTagNames } });
     };
 
     const handleAddSubCategory = () => {

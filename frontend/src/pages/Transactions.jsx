@@ -6,6 +6,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import SplitTransactionModal from '../components/SplitTransactionModal';
 import CreateRuleModal from '../components/CreateRuleModal';
 import EmptyState from '../components/EmptyState';
+import Button from '../components/ui/Button';
 
 // Debounce hook
 function useDebounce(value, delay) {
@@ -238,64 +239,7 @@ export default function Transactions() {
                         </button>
                     )}
                     {/* Bulk Actions for Selected */}
-                    {selectedIds.size > 0 && (
-                        <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-2 rounded-lg">
-                            <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-                                {selectedIds.size} selected:
-                            </span>
-                            {/* Bulk Category Change */}
-                            <select
-                                onChange={(e) => {
-                                    if (e.target.value) {
-                                        batchUpdateMutation.mutate({
-                                            ids: Array.from(selectedIds),
-                                            bucket_id: parseInt(e.target.value)
-                                        });
-                                        e.target.value = "";
-                                    }
-                                }}
-                                className="px-2 py-1 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white"
-                                disabled={batchUpdateMutation.isPending}
-                            >
-                                <option value="">Set Category...</option>
-                                {buckets.map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                ))}
-                            </select>
-                            {/* Bulk Spender Change */}
-                            <select
-                                onChange={(e) => {
-                                    if (e.target.value) {
-                                        batchUpdateMutation.mutate({
-                                            ids: Array.from(selectedIds),
-                                            spender: e.target.value
-                                        });
-                                        e.target.value = "";
-                                    }
-                                }}
-                                className="px-2 py-1 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white"
-                                disabled={batchUpdateMutation.isPending}
-                            >
-                                <option value="">Set Who...</option>
-                                <option value="Joint">Joint</option>
-                                {members.map(member => (
-                                    <option key={member.id} value={member.name}>{member.name}</option>
-                                ))}
-                            </select>
-                            {/* Delete Button */}
-                            <button
-                                onClick={() => {
-                                    if (window.confirm(`Delete ${selectedIds.size} transactions?`)) {
-                                        deleteBatchMutation.mutate(Array.from(selectedIds));
-                                    }
-                                }}
-                                className="px-2 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition flex items-center gap-1"
-                            >
-                                <Trash2 size={14} />
-                                Delete
-                            </button>
-                        </div>
-                    )}
+
                     {bucketIdParam && (
                         <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium">
                             <Filter size={14} />
@@ -359,6 +303,11 @@ export default function Transactions() {
                         description="Import your bank statements to start tracking your spending. We support CSV files and PDF statements from most major banks."
                         actionText="Import Data"
                         actionLink="/data-management"
+                        secondaryAction={
+                            <Button variant="outline" onClick={() => alert("Tip: Use the + button in the bottom right to add transactions manually.")}>
+                                Manually Add
+                            </Button>
+                        }
                     />
                 </div>
             ) : (
@@ -607,6 +556,87 @@ export default function Transactions() {
                             )}
                         </tbody>
                     </table>
+                </div>
+            )}
+            {/* Sticky Action Bar */}
+            {selectedIds.size > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-3 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-slide-up">
+                    <div className="flex items-center gap-2 border-r border-slate-200 dark:border-slate-700 pr-4">
+                        <span className="bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            {selectedIds.size}
+                        </span>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Selected</span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        {/* Bulk Category */}
+                        <div className="relative group">
+                            <select
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        batchUpdateMutation.mutate({
+                                            ids: Array.from(selectedIds),
+                                            bucket_id: parseInt(e.target.value)
+                                        });
+                                        e.target.value = "";
+                                    }
+                                }}
+                                className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                                disabled={batchUpdateMutation.isPending}
+                            >
+                                <option value="">In Category...</option>
+                                {buckets.map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+
+                        {/* Bulk Spender */}
+                        <div className="relative group">
+                            <select
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        batchUpdateMutation.mutate({
+                                            ids: Array.from(selectedIds),
+                                            spender: e.target.value
+                                        });
+                                        e.target.value = "";
+                                    }
+                                }}
+                                className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                                disabled={batchUpdateMutation.isPending}
+                            >
+                                <option value="">By Whom...</option>
+                                <option value="Joint">Joint</option>
+                                {members.map(member => (
+                                    <option key={member.id} value={member.name}>{member.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    <div className="border-l border-slate-200 dark:border-slate-700 pl-4 flex items-center gap-2">
+                        <button
+                            onClick={() => setSelectedIds(new Set())}
+                            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                            title="Clear Selection"
+                        >
+                            <X size={18} />
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (window.confirm(`Delete ${selectedIds.size} transactions?`)) {
+                                    deleteBatchMutation.mutate(Array.from(selectedIds));
+                                }
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition font-medium text-sm"
+                        >
+                            <Trash2 size={16} />
+                            Delete
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

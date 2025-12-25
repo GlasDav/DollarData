@@ -51,11 +51,11 @@ export const AuthProvider = ({ children }) => {
     }, [token]);
 
     const login = async (username, password) => {
-        const formData = new FormData();
-        formData.append("username", username);
-        formData.append("password", password);
+        const params = new URLSearchParams();
+        params.append("username", username);
+        params.append("password", password);
 
-        const res = await api.post("/auth/token", formData);
+        const res = await api.post("/auth/token", params);
         setToken(res.data.access_token);
         setRefreshToken(res.data.refresh_token);
         setUser({ username });

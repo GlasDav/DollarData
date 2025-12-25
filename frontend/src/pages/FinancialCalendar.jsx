@@ -134,6 +134,9 @@ export default function FinancialCalendar() {
 
         // Add Actuals
         transactions.forEach(txn => {
+            // Filter out transfers
+            if (txn.bucket?.is_transfer) return;
+
             const dateKey = txn.date.split('T')[0];
             if (!map[dateKey]) map[dateKey] = { txns: [], total: 0, hasProjected: false };
             map[dateKey].txns.push(txn);

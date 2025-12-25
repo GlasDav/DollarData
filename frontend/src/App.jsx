@@ -34,6 +34,7 @@ import { FeedbackModal, FeedbackButton } from './components/FeedbackModal';
 import { LogOut } from 'lucide-react';
 import NotificationBell from './components/NotificationBell';
 import AIChatBot from './components/AIChatBot';
+import QuickAddFAB from './components/QuickAddFAB';
 
 const queryClient = new QueryClient();
 
@@ -44,7 +45,7 @@ function NavItem({ to, icon: Icon, children, end = false }) {
       to={to}
       end={end}
       className={({ isActive }) => `
-        relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200
+        group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200
         ${isActive
           ? 'bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/30 dark:to-transparent text-indigo-600 dark:text-indigo-400 font-medium'
           : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-700 dark:hover:text-slate-300'
@@ -55,8 +56,8 @@ function NavItem({ to, icon: Icon, children, end = false }) {
         <>
           {/* Left accent indicator */}
           <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full transition-all duration-200 ${isActive ? 'h-5 bg-gradient-to-b from-indigo-500 to-violet-500' : 'h-0 bg-transparent'}`}></div>
-          <Icon size={18} className={isActive ? 'text-indigo-500' : ''} />
-          {children}
+          <Icon size={18} className={`transition-transform duration-200 ${isActive ? 'text-indigo-500' : 'group-hover:scale-110'}`} />
+          <span className="transition-transform duration-200 group-hover:translate-x-1">{children}</span>
         </>
       )}
     </NavLink>
@@ -137,6 +138,12 @@ function Layout() {
 
       {/* Feedback Modal */}
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* Feedback Modal */}
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* Quick Add FAB */}
+      <QuickAddFAB />
 
       {/* AI ChatBot - Available on all pages */}
       <AIChatBot />

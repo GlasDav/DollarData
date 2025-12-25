@@ -281,9 +281,23 @@ Dedicated reporting section for deeper financial analysis.
     -   API endpoint showing last 6 months of spending per category.
     -   Statistics (average, min, max) for budget planning.
     -   Helps users set realistic budget limits based on history.
--   **Group Spending** *(New)*:
-    -   API endpoint for spending aggregated by budget group.
     -   Supports "budget by group" view (Discretionary, Non-Discretionary, etc.).
+    
+## 11. Enhanced User Experience (Phase 2) *(New)*
+-   **Onboarding Wizard**:
+    -   Streamlined 4-step setup for new users.
+    -   Configures currency, household members, and prompts for data import.
+    -   Smart detection: Automatically appears when no transactions exist.
+-   **Context-Aware AI Chat**:
+    -   Smart Recommendations: AI suggests questions based on the specific page (Dashboard, Transactions, Net Worth).
+    -   Visible "Chips" rendered above the input bar for one-click querying.
+-   **Sticky Action Bar**:
+    -   Floating bottom bar for bulk transaction management.
+    -   Appears automatically when transactions are selected.
+    -   Enables bulk categorization, spender assignment, and batch deletion.
+-   **Quick Import FAB**:
+    -   Redesigned Floating Action Button focused on high-value actions (Import Data, Add Asset, New Budget).
+
 
 ---
 

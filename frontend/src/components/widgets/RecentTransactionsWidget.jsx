@@ -52,8 +52,11 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
             </div>
 
             {transactions.length === 0 ? (
-                <div className="text-center py-4">
+                <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
                     <p className="text-slate-400 dark:text-slate-500 text-sm">No transactions yet</p>
+                    <Link to="/transactions" className="text-xs text-indigo-500 font-medium hover:underline">
+                        Add Transaction
+                    </Link>
                 </div>
             ) : (
                 <div className="space-y-2">

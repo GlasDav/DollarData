@@ -17,6 +17,7 @@ import PeriodComparisonWidget from '../components/widgets/PeriodComparisonWidget
 // Drag and Drop Imports
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import OnboardingWizard from '../components/OnboardingWizard';
 import { SortableWidgetWrapper } from '../components/widgets/SortableWidgetWrapper';
 
 export default function Dashboard() {
@@ -276,6 +277,8 @@ export default function Dashboard() {
                     </div>
                 </SortableContext>
             </DndContext>
+
+            <OnboardingWizard />
         </div>
     );
 }

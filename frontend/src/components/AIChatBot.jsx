@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Send, Bot, User, Lightbulb, Loader2 } from 'lucide-react';
 import { chatWithAI } from '../services/api';
 
@@ -134,6 +135,24 @@ export default function AIChatBot() {
         }
     });
 
+    // Context Awareness
+    const location = useLocation();
+    const [contextSuggestions, setContextSuggestions] = useState([]);
+
+    const SUGGESTED_PROMPTS = {
+        '/': ["How am I doing this month?", "What's my net worth trend?", "Any upcoming bills?"],
+        '/transactions': ["Show my largest expenses", "Find duplicate transactions", "Analyze my dining spending"],
+        '/net-worth': ["Update property value", "Add a new asset", "Graph my liquid assets"],
+        '/budget': ["Am I over budget?", "Which category has the most spend?", "Create a saving rule"]
+    };
+
+    useEffect(() => {
+        const path = location.pathname;
+        // Match exact path or sub-paths if needed
+        const suggestions = SUGGESTED_PROMPTS[path] || SUGGESTED_PROMPTS['/'] || [];
+        setContextSuggestions(suggestions);
+    }, [location.pathname]);
+
     const handleSend = (question) => {
         const q = question || input;
         if (!q.trim()) return;
@@ -239,8 +258,22 @@ export default function AIChatBot() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input */}
-                    <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                        {/* Context Suggestions Chips */}
+                        {contextSuggestions.length > 0 && (
+                            <div className="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-thin">
+                                {contextSuggestions.map((s, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => handleSend(s)}
+                                        className="whitespace-nowrap px-3 py-1 bg-white dark:bg-slate-700 border border-indigo-100 dark:border-slate-600 text-indigo-600 dark:text-indigo-300 text-xs rounded-full shadow-sm hover:bg-indigo-50 dark:hover:bg-slate-600 transition-colors"
+                                    >
+                                        {s}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -248,13 +281,13 @@ export default function AIChatBot() {
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyPress={handleKeyPress}
                                 placeholder="Ask about your finances..."
-                                className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                className="flex-1 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
                                 disabled={chatMutation.isPending}
                             />
                             <button
                                 onClick={() => handleSend()}
                                 disabled={!input.trim() || chatMutation.isPending}
-                                className="p-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="p-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                             >
                                 <Send className="w-5 h-5" />
                             </button>

@@ -1,426 +1,224 @@
-/**
- * Onboarding Wizard Component
- * 
- * A step-by-step setup wizard for new users.
- * Guides users through initial configuration:
- * - Welcome & account setup
- * - Currency selection
- * - Couple mode configuration
- * - Initial budget categories
- * - Connect bank or import data
- */
-import React, { useState, Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
-import {
-    UserIcon,
-    CurrencyDollarIcon,
-    UsersIcon,
-    TagIcon,
-    BanknotesIcon,
-    CheckCircleIcon,
-    ArrowRightIcon,
-    ArrowLeftIcon,
-    XMarkIcon
-} from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Sparkles, DollarSign, Users, ArrowRight, Check, UploadCloud } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import api, { updateSettings, createMember } from '../services/api';
+import Button from './ui/Button';
 
-const STEPS = [
-    { id: 'welcome', title: 'Welcome', icon: UserIcon },
-    { id: 'currency', title: 'Currency', icon: CurrencyDollarIcon },
-    { id: 'household', title: 'Household', icon: UsersIcon },
-    { id: 'categories', title: 'Categories', icon: TagIcon },
-    { id: 'complete', title: 'Complete', icon: CheckCircleIcon },
-];
+export default function OnboardingWizard() {
+    const [isOpen, setIsOpen] = useState(false);
+    const [step, setStep] = useState(1);
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
-const CURRENCIES = [
-    { code: 'AUD', symbol: '$', name: 'Australian Dollar' },
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'GBP', symbol: '£', name: 'British Pound' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'NZD', symbol: '$', name: 'New Zealand Dollar' },
-    { code: 'CAD', symbol: '$', name: 'Canadian Dollar' },
-    { code: 'SGD', symbol: '$', name: 'Singapore Dollar' },
-];
-
-const DEFAULT_CATEGORIES = [
-    { name: 'Salary', group: 'Income', isIncome: true },
-    { name: 'Rent/Mortgage', group: 'Non-Discretionary' },
-    { name: 'Utilities', group: 'Non-Discretionary' },
-    { name: 'Groceries', group: 'Discretionary' },
-    { name: 'Transport', group: 'Discretionary' },
-    { name: 'Entertainment', group: 'Discretionary' },
-    { name: 'Health', group: 'Discretionary' },
-    { name: 'Shopping', group: 'Discretionary' },
-];
-
-export function OnboardingWizard({ isOpen, onClose, onComplete }) {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [formData, setFormData] = useState({
-        currency: 'AUD',
-        coupleMode: false,
-        partnerAName: 'You',
-        partnerBName: 'Partner',
-        selectedCategories: DEFAULT_CATEGORIES.map(c => c.name),
+    // Check if we should show the wizard
+    const { data: transactions } = useQuery({
+        queryKey: ['transactions', 'check-new'],
+        queryFn: async () => (await api.get('/transactions/', { params: { limit: 1 } })).data,
+        staleTime: 60000
     });
 
-    const handleNext = () => {
-        if (currentStep < STEPS.length - 1) {
-            setCurrentStep(currentStep + 1);
+    useEffect(() => {
+        const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+
+        // If never seen AND no data loaded yet (assuming new user)
+        if (!hasSeenOnboarding) {
+            // Slight delay for smooth entrance
+            const timer = setTimeout(() => {
+                // Only show if we confirm no transactions exist (meaning likely new user)
+                if (transactions && transactions.total === 0) {
+                    setIsOpen(true);
+                }
+            }, 1000);
+            return () => clearTimeout(timer);
         }
+    }, [transactions]);
+
+    const handleClose = () => {
+        setIsOpen(false);
+        localStorage.setItem('hasSeenOnboarding', 'true');
     };
 
-    const handleBack = () => {
-        if (currentStep > 0) {
-            setCurrentStep(currentStep - 1);
-        }
+    const handleFinish = () => {
+        handleClose();
+        navigate('/data-management');
     };
 
-    const handleComplete = async () => {
-        // Save preferences to API
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+
+                {/* Progress Bar */}
+                <div className="h-1.5 bg-slate-100 dark:bg-slate-700 w-full">
+                    <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500 ease-in-out"
+                        style={{ width: `${(step / 4) * 100}%` }}
+                    ></div>
+                </div>
+
+                {/* Content Area */}
+                <div className="p-8 flex-1 flex flex-col text-center items-center justify-center min-h-[320px]">
+
+                    {step === 1 && <WelcomeStep onNext={() => setStep(2)} />}
+                    {step === 2 && <CurrencyStep onNext={() => setStep(3)} />}
+                    {step === 3 && <HouseholdStep onNext={() => setStep(4)} />}
+                    {step === 4 && <ConnectStep onFinish={handleFinish} />}
+
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Step 1: Welcome
+function WelcomeStep({ onNext }) {
+    return (
+        <div className="animate-fade-in-up space-y-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 mx-auto transform rotate-3">
+                <Sparkles className="text-white" size={40} />
+            </div>
+            <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome to Principal</h2>
+                <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                    Your personal finance command center. Let's get you set up in just a few clicks.
+                </p>
+            </div>
+            <Button variant="primary" size="lg" onClick={onNext} className="w-full max-w-xs">
+                Get Started <ArrowRight size={18} />
+            </Button>
+        </div>
+    );
+}
+
+// Step 2: Currency
+function CurrencyStep({ onNext }) {
+    const queryClient = useQueryClient();
+    const [currency, setCurrency] = useState('$');
+    const [loading, setLoading] = useState(false);
+
+    const updateCurrency = async () => {
+        setLoading(true);
         try {
-            // Update user settings
-            await fetch('/settings/user', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                },
-                body: JSON.stringify({
-                    currency_symbol: formData.currency,
-                    is_couple_mode: formData.coupleMode,
-                    name_a: formData.partnerAName,
-                    name_b: formData.partnerBName,
-                })
-            });
-
-            // Mark onboarding complete
-            localStorage.setItem('principal_onboarding_complete', 'true');
-
-            if (onComplete) {
-                onComplete(formData);
-            }
-            onClose();
-        } catch (error) {
-            console.error('Failed to save onboarding settings:', error);
-        }
-    };
-
-    const toggleCategory = (categoryName) => {
-        setFormData(prev => ({
-            ...prev,
-            selectedCategories: prev.selectedCategories.includes(categoryName)
-                ? prev.selectedCategories.filter(c => c !== categoryName)
-                : [...prev.selectedCategories, categoryName]
-        }));
-    };
-
-    const renderStep = () => {
-        switch (STEPS[currentStep].id) {
-            case 'welcome':
-                return (
-                    <div className="text-center py-8">
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <BanknotesIcon className="w-10 h-10 text-white" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                            Welcome to Principal
-                        </h2>
-                        <p className="text-gray-600 max-w-sm mx-auto">
-                            Let's set up your personal finance tracker. This will only take a minute.
-                        </p>
-                    </div>
-                );
-
-            case 'currency':
-                return (
-                    <div className="py-6">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                            Select Your Currency
-                        </h2>
-                        <p className="text-gray-600 mb-6">
-                            Choose the currency you'll use for tracking expenses.
-                        </p>
-                        <div className="grid grid-cols-2 gap-3">
-                            {CURRENCIES.map((currency) => (
-                                <button
-                                    key={currency.code}
-                                    onClick={() => setFormData(prev => ({ ...prev, currency: currency.code }))}
-                                    className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${formData.currency === currency.code
-                                            ? 'border-blue-500 bg-blue-50'
-                                            : 'border-gray-200 hover:border-gray-300'
-                                        }`}
-                                >
-                                    <span className="text-2xl font-bold text-gray-700">
-                                        {currency.symbol}
-                                    </span>
-                                    <div className="text-left">
-                                        <div className="font-medium text-gray-900">{currency.code}</div>
-                                        <div className="text-xs text-gray-500">{currency.name}</div>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                );
-
-            case 'household':
-                return (
-                    <div className="py-6">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                            Household Setup
-                        </h2>
-                        <p className="text-gray-600 mb-6">
-                            Are you tracking finances solo or with a partner?
-                        </p>
-
-                        <div className="space-y-4">
-                            <button
-                                onClick={() => setFormData(prev => ({ ...prev, coupleMode: false }))}
-                                className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${!formData.coupleMode
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                    }`}
-                            >
-                                <UserIcon className="w-8 h-8 text-gray-600" />
-                                <div className="text-left">
-                                    <div className="font-medium text-gray-900">Individual</div>
-                                    <div className="text-sm text-gray-500">Track your personal finances</div>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={() => setFormData(prev => ({ ...prev, coupleMode: true }))}
-                                className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${formData.coupleMode
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                    }`}
-                            >
-                                <UsersIcon className="w-8 h-8 text-gray-600" />
-                                <div className="text-left">
-                                    <div className="font-medium text-gray-900">Couple / Household</div>
-                                    <div className="text-sm text-gray-500">Track shared & individual expenses</div>
-                                </div>
-                            </button>
-
-                            {formData.coupleMode && (
-                                <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Your Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.partnerAName}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, partnerAName: e.target.value }))}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                            placeholder="e.g., John"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Partner's Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.partnerBName}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, partnerBName: e.target.value }))}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                            placeholder="e.g., Jane"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-
-            case 'categories':
-                return (
-                    <div className="py-6">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                            Budget Categories
-                        </h2>
-                        <p className="text-gray-600 mb-6">
-                            Select the categories you want to track. You can customize these later in Settings.
-                        </p>
-
-                        <div className="space-y-4">
-                            {['Income', 'Non-Discretionary', 'Discretionary'].map((group) => (
-                                <div key={group}>
-                                    <h3 className="text-sm font-medium text-gray-500 mb-2">{group}</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {DEFAULT_CATEGORIES.filter(c => c.group === group).map((category) => (
-                                            <button
-                                                key={category.name}
-                                                onClick={() => toggleCategory(category.name)}
-                                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${formData.selectedCategories.includes(category.name)
-                                                        ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
-                                                        : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
-                                                    }`}
-                                            >
-                                                {category.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-
-            case 'complete':
-                return (
-                    <div className="text-center py-8">
-                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <CheckCircleIcon className="w-12 h-12 text-green-600" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                            You're All Set!
-                        </h2>
-                        <p className="text-gray-600 max-w-sm mx-auto mb-6">
-                            Your account is ready. Start by importing your bank statements or connecting your bank.
-                        </p>
-                        <div className="flex gap-3 justify-center">
-                            <button
-                                onClick={() => {
-                                    handleComplete();
-                                    window.location.href = '/ingest';
-                                }}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                Import Data
-                            </button>
-                            <button
-                                onClick={handleComplete}
-                                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                            >
-                                Skip for now
-                            </button>
-                        </div>
-                    </div>
-                );
-
-            default:
-                return null;
+            await updateSettings({ currency_symbol: currency });
+            await queryClient.invalidateQueries(['userSettings']);
+            onNext();
+        } catch (e) {
+            console.error(e);
+            alert("Failed to save currency. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-50" onClose={() => { }}>
-                <Transition.Child
-                    as={Fragment}
-                    enter="ease-out duration-300"
-                    enterFrom="opacity-0"
-                    enterTo="opacity-100"
-                    leave="ease-in duration-200"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
-                >
-                    <div className="fixed inset-0 bg-black bg-opacity-50" />
-                </Transition.Child>
+        <div className="animate-fade-in-up space-y-6 w-full max-w-xs">
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
+                <DollarSign size={32} />
+            </div>
+            <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Select Currency</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                    Choose the primary symbol for your dashboard.
+                </p>
+            </div>
 
-                <div className="fixed inset-0 overflow-y-auto">
-                    <div className="flex min-h-full items-center justify-center p-4">
-                        <Transition.Child
-                            as={Fragment}
-                            enter="ease-out duration-300"
-                            enterFrom="opacity-0 scale-95"
-                            enterTo="opacity-100 scale-100"
-                            leave="ease-in duration-200"
-                            leaveFrom="opacity-100 scale-100"
-                            leaveTo="opacity-0 scale-95"
-                        >
-                            <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
-                                {/* Progress bar */}
-                                <div className="bg-gray-100 h-1">
-                                    <div
-                                        className="bg-blue-600 h-1 transition-all duration-300"
-                                        style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
-                                    />
-                                </div>
+            <div className="grid grid-cols-3 gap-3">
+                {['$', '€', '£', '¥', '₹', 'A$'].map(sym => (
+                    <button
+                        key={sym}
+                        onClick={() => setCurrency(sym)}
+                        className={`py-3 rounded-xl border-2 font-bold text-lg transition-all ${currency === sym
+                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 text-slate-600 dark:text-slate-400'
+                            }`}
+                    >
+                        {sym}
+                    </button>
+                ))}
+            </div>
 
-                                {/* Step indicators */}
-                                <div className="flex justify-center gap-2 pt-6 px-6">
-                                    {STEPS.map((step, index) => {
-                                        const Icon = step.icon;
-                                        const isComplete = index < currentStep;
-                                        const isCurrent = index === currentStep;
-                                        return (
-                                            <div
-                                                key={step.id}
-                                                className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${isComplete
-                                                        ? 'bg-green-100 text-green-600'
-                                                        : isCurrent
-                                                            ? 'bg-blue-100 text-blue-600'
-                                                            : 'bg-gray-100 text-gray-400'
-                                                    }`}
-                                            >
-                                                <Icon className="w-5 h-5" />
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-6">
-                                    {renderStep()}
-                                </div>
-
-                                {/* Navigation */}
-                                {STEPS[currentStep].id !== 'complete' && (
-                                    <div className="flex justify-between items-center px-6 pb-6">
-                                        <button
-                                            onClick={handleBack}
-                                            disabled={currentStep === 0}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentStep === 0
-                                                    ? 'text-gray-300 cursor-not-allowed'
-                                                    : 'text-gray-600 hover:bg-gray-100'
-                                                }`}
-                                        >
-                                            <ArrowLeftIcon className="w-4 h-4" />
-                                            Back
-                                        </button>
-                                        <button
-                                            onClick={handleNext}
-                                            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                        >
-                                            Next
-                                            <ArrowRightIcon className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )}
-                            </Dialog.Panel>
-                        </Transition.Child>
-                    </div>
-                </div>
-            </Dialog>
-        </Transition>
+            <Button variant="primary" size="lg" onClick={updateCurrency} disabled={loading} className="w-full">
+                {loading ? 'Saving...' : 'Continue'}
+            </Button>
+        </div>
     );
 }
 
-/**
- * Hook to check if user needs onboarding
- */
-export function useOnboarding() {
-    const [needsOnboarding, setNeedsOnboarding] = useState(false);
+// Step 3: Household
+function HouseholdStep({ onNext }) {
+    const queryClient = useQueryClient();
+    const [name, setName] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    React.useEffect(() => {
-        const complete = localStorage.getItem('principal_onboarding_complete');
-        const isNewUser = !complete;
-        setNeedsOnboarding(isNewUser);
-    }, []);
+    const onSkip = () => onNext();
 
-    const markComplete = () => {
-        localStorage.setItem('principal_onboarding_complete', 'true');
-        setNeedsOnboarding(false);
+    const addMember = async () => {
+        if (!name.trim()) return;
+        setLoading(true);
+        try {
+            await createMember({ name, color: '#ec4899', avatar: 'User' }); // Default pink for partner
+            await queryClient.invalidateQueries(['members']);
+            onNext();
+        } catch (e) {
+            console.error(e);
+            alert("Failed to add member.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const reset = () => {
-        localStorage.removeItem('principal_onboarding_complete');
-        setNeedsOnboarding(true);
-    };
+    return (
+        <div className="animate-fade-in-up space-y-6 w-full max-w-xs">
+            <div className="w-16 h-16 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center mx-auto text-pink-600 dark:text-pink-400">
+                <Users size={32} />
+            </div>
+            <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Add a Partner?</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                    Tracking finances with someone? Add their name to categorize spending easily.
+                </p>
+            </div>
 
-    return { needsOnboarding, markComplete, reset };
+            <div className="space-y-3">
+                <input
+                    type="text"
+                    placeholder="Partner's Name (Optional)"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none text-center"
+                />
+            </div>
+
+            <div className="space-y-3">
+                <Button variant="primary" size="lg" onClick={addMember} disabled={!name.trim() || loading} className="w-full">
+                    {loading ? 'Adding...' : 'Add & Continue'}
+                </Button>
+                <button onClick={onSkip} className="text-slate-400 hover:text-slate-600 text-sm font-medium transition">
+                    Skip / I'm Solo
+                </button>
+            </div>
+        </div>
+    );
 }
 
-export default OnboardingWizard;
+// Step 4: Connect
+function ConnectStep({ onFinish }) {
+    return (
+        <div className="animate-fade-in-up space-y-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 mx-auto">
+                <UploadCloud className="text-white" size={40} />
+            </div>
+            <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">You're All Set!</h2>
+                <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                    The best way to start is by importing your data. We support CSVs and bank statements.
+                </p>
+            </div>
+            <Button variant="primary" size="lg" onClick={onFinish} className="w-full max-w-xs">
+                Import Data Now <ArrowRight size={18} />
+            </Button>
+        </div>
+    );
+}
