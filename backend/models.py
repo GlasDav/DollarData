@@ -75,6 +75,10 @@ bucket_tags = Table(
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    __table_args__ = (
+        # Composite index for user date range queries (most common query pattern)
+        {'index': 'idx_transactions_user_date'},
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     date = Column(DateTime, index=True)

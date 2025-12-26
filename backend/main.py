@@ -7,6 +7,7 @@ load_dotenv()
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -68,6 +69,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         return response
 
+
+# === COMPRESSION ===
+# Compress responses > 500 bytes for faster network transfer
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # Add security headers middleware FIRST (middleware runs in reverse order, so this runs AFTER CORS)
 app.add_middleware(SecurityHeadersMiddleware)
