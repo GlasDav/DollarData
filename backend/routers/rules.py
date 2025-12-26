@@ -109,8 +109,8 @@ def update_rule(rule_id: int, rule: schemas.RuleCreate, db: Session = Depends(ge
 class RulePreviewRequest(schemas.BaseModel):
     """Request schema for previewing matching transactions."""
     keywords: str
-    min_amount: float = None
-    max_amount: float = None
+    min_amount: float | None = None
+    max_amount: float | None = None
     limit: int = 10
 
 
