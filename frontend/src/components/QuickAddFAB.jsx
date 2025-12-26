@@ -26,9 +26,9 @@ export default function QuickAddFAB() {
     };
 
     return (
-        <div className="fixed bottom-6 right-24 z-50 flex flex-col items-end" ref={menuRef}>
+        <div className="fixed bottom-6 right-24 z-50 flex flex-col items-end pointer-events-none" ref={menuRef}>
             {/* Menu Options */}
-            <div className={`transition-all duration-200 origin-bottom-right flex flex-col gap-3 mb-4 ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4 pointer-events-none'}`}>
+            <div className={`transition-all duration-200 origin-bottom-right flex flex-col gap-3 mb-4 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 translate-y-4 pointer-events-none'}`}>
 
                 <button
                     onClick={() => handleClick('/data-management')}
@@ -65,7 +65,7 @@ export default function QuickAddFAB() {
             {/* Main FAB */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-slate-800 dark:bg-white text-white dark:text-slate-900 rotate-45' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rotate-0 hover:scale-110'}`}
+                className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 pointer-events-auto ${isOpen ? 'bg-slate-800 dark:bg-white text-white dark:text-slate-900 rotate-45' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rotate-0 hover:scale-110'}`}
             >
                 <Plus size={28} strokeWidth={2.5} />
             </button>
