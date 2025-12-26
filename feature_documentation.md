@@ -168,7 +168,11 @@ Dedicated reporting section for deeper financial analysis.
 -   **Priority-Based**: Higher priority rules take precedence.
 -   **Amount Conditions**: Rules can filter by min/max amount thresholds.
 -   **Create from Transaction**: Quickly create a rule by clicking the 📘 icon on any transaction row.
--   **Rule Preview API**: Backend endpoint to preview which transactions would match a rule before saving.
+-   **Rule Preview** *(New)*: 
+    -   **Settings Page**: Preview button in the inline rule creation form shows matching transactions before saving.
+    -   **Create Rule Modal**: Preview button when creating rules from transactions shows how many existing transactions would match.
+    -   Displays match count and sample transactions (up to 5).
+    -   Shows helpful message when no transactions match ("This rule will apply to future imports").
 -   **Categorization Order**:
     1. Smart Rules (user-created, highest priority)
     2. Global Keywords (common merchant patterns)
