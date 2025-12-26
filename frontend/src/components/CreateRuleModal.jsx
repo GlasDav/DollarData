@@ -37,6 +37,11 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
     const [error, setError] = useState('');
     const [showPreview, setShowPreview] = useState(false);
 
+    // Preview state (simplified)
+    const [previewData, setPreviewData] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const [previewError, setPreviewError] = useState(null);
+
     // Reset form when transaction changes
     useEffect(() => {
         if (transaction) {
@@ -49,19 +54,10 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
             setMarkForReview(false);
             setError('');
             setShowPreview(false);
+            setPreviewData(null);
+            setPreviewError(null);
         }
     }, [transaction]);
-
-    const previewQuery = useQuery({
-        queryKey: ['rulePreview', keyword, minAmount, maxAmount],
-        queryFn: () => previewRule({
-            keywords: keyword,
-            min_amount: minAmount ? parseFloat(minAmount) : null,
-            max_amount: maxAmount ? parseFloat(maxAmount) : null
-        }),
-        enabled: false,
-        retry: false
-    });
 
     const createRuleMutation = useMutation({
         mutationFn: createRule,
@@ -92,9 +88,24 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
         });
     };
 
-    const handlePreview = () => {
+    const handlePreview = async () => {
+        if (!keyword.trim()) return;
         setShowPreview(true);
-        previewQuery.refetch();
+        setPreviewLoading(true);
+        setPreviewError(null);
+        try {
+            const data = await previewRule({
+                keywords: keyword,
+                min_amount: minAmount ? parseFloat(minAmount) : null,
+                max_amount: maxAmount ? parseFloat(maxAmount) : null
+            });
+            setPreviewData(data);
+        } catch (err) {
+            setPreviewError('Failed to load preview');
+            console.error('Preview error:', err);
+        } finally {
+            setPreviewLoading(false);
+        }
     };
 
     // ...
@@ -160,34 +171,39 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
                                     Preview: Matching Transactions
                                 </span>
                             </div>
-                            {previewQuery.isLoading && (
+                            {previewLoading && (
                                 <div className="flex items-center gap-2 text-sm text-slate-500">
                                     <Loader2 className="animate-spin" size={14} />
                                     Loading preview...
                                 </div>
                             )}
-                            {previewQuery.isError && (
-                                <p className="text-sm text-red-500">Failed to load preview</p>
+                            {previewError && (
+                                <p className="text-sm text-red-500">{previewError}</p>
                             )}
-                            {previewQuery.isSuccess && (
+                            {previewData && (
                                 <div>
                                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                                        <strong>{previewQuery.data.match_count}</strong> existing transactions would match this rule
+                                        <strong>{previewData.match_count}</strong> existing transactions would match this rule
                                     </p>
-                                    {previewQuery.data.sample_transactions?.length > 0 && (
+                                    {previewData.sample_transactions?.length > 0 && (
                                         <div className="max-h-32 overflow-y-auto space-y-1">
-                                            {previewQuery.data.sample_transactions.slice(0, 5).map((t, i) => (
+                                            {previewData.sample_transactions.slice(0, 5).map((t, i) => (
                                                 <div key={i} className="text-xs text-slate-500 dark:text-slate-400 flex justify-between">
                                                     <span className="truncate flex-1">{t.description}</span>
                                                     <span className="ml-2 font-medium">${Math.abs(t.amount).toFixed(2)}</span>
                                                 </div>
                                             ))}
-                                            {previewQuery.data.match_count > 5 && (
+                                            {previewData.match_count > 5 && (
                                                 <p className="text-xs text-slate-400 italic">
-                                                    ...and {previewQuery.data.match_count - 5} more
+                                                    ...and {previewData.match_count - 5} more
                                                 </p>
                                             )}
                                         </div>
+                                    )}
+                                    {previewData.match_count === 0 && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            No existing transactions match. This rule will apply to future imports.
+                                        </p>
                                     )}
                                 </div>
                             )}
