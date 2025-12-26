@@ -466,15 +466,13 @@ def process_transactions_preview_with_progress(
             bucket_dict = {
                 'id': bucket.id,
                 'name': bucket.name,
-                'group_id': bucket.group_id,
-                'period': bucket.period,
-                'is_income': bucket.is_income,
-                'is_standard': bucket.is_standard,
-                'description': bucket.description,
-                'target_amount': bucket.target_amount,
-                'display_order': getattr(bucket, 'display_order', 0),
-                'is_shared': getattr(bucket, 'is_shared', False),
-                'is_hidden': getattr(bucket, 'is_hidden', False)
+                'icon_name': bucket.icon_name,
+                'group': bucket.group,
+                'is_transfer': bucket.is_transfer,
+                'is_investment': bucket.is_investment,
+                'is_hidden': getattr(bucket, 'is_hidden', False),
+                'parent_id': bucket.parent_id,
+                'display_order': bucket.display_order,
             }
 
         preview_txn = {
