@@ -170,19 +170,19 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
                             {previewQuery.isSuccess && (
                                 <div>
                                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                                        <strong>{previewQuery.data.matching_count}</strong> existing transactions would match this rule
+                                        <strong>{previewQuery.data.match_count}</strong> existing transactions would match this rule
                                     </p>
-                                    {previewQuery.data.transactions?.length > 0 && (
+                                    {previewQuery.data.sample_transactions?.length > 0 && (
                                         <div className="max-h-32 overflow-y-auto space-y-1">
-                                            {previewQuery.data.transactions.slice(0, 5).map((t, i) => (
+                                            {previewQuery.data.sample_transactions.slice(0, 5).map((t, i) => (
                                                 <div key={i} className="text-xs text-slate-500 dark:text-slate-400 flex justify-between">
                                                     <span className="truncate flex-1">{t.description}</span>
                                                     <span className="ml-2 font-medium">${Math.abs(t.amount).toFixed(2)}</span>
                                                 </div>
                                             ))}
-                                            {previewQuery.data.matching_count > 5 && (
+                                            {previewQuery.data.match_count > 5 && (
                                                 <p className="text-xs text-slate-400 italic">
-                                                    ...and {previewQuery.data.matching_count - 5} more
+                                                    ...and {previewQuery.data.match_count - 5} more
                                                 </p>
                                             )}
                                         </div>

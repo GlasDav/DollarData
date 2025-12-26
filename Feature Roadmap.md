@@ -171,4 +171,40 @@
 
 ---
 
+## Phase 9: 🎯 Smart Rules Enhancement
+
+**Improve the rule creation experience with preview and testing capabilities.**
+
+### Core Features
+- [x] **Rule Preview** - Show matching transactions before creating a rule
+- [ ] **Rule Testing** - Dry-run rules against historical data
+- [ ] **Rule Suggestions** - AI-suggested rules based on transaction patterns
+
+---
+
+## Phase 10: 📱 Mobile App
+
+**Native iOS and Android apps using Capacitor wrapper.**
+
+### Core Features
+- [ ] **Capacitor Integration** - Wrap React app in native shells
+- [ ] **Push Notifications** - Bill reminders, budget alerts
+- [ ] **Biometric Auth** - Face ID / Fingerprint unlock
+- [ ] **App Store Deployment** - iOS App Store + Google Play
+
+---
+
+## Phase 11: 👨‍👩‍👧‍👦 Family Sharing
+
+**Multi-user household accounts with shared budgets.**
+
+### Core Features
+- [ ] **Invite Family Member** - Email invite to join household
+- [ ] **Separate Logins** - Each member has their own credentials
+- [ ] **Shared Data** - All members see same transactions, budgets, accounts
+- [ ] **Per-Member Spending Tracking** - Filter by who spent what
+- [ ] **Role Permissions** - Owner vs Member access levels
+
+---
+
 *Last Updated: December 2025*
