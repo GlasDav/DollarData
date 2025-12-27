@@ -205,7 +205,7 @@ export default function Transactions() {
     // Sort Header Component
     const SortHeader = ({ column, children, className = "" }) => (
         <th
-            className={`p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600 transition select-none ${className}`}
+            className={`px-3 py-3 font-semibold text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600 transition select-none ${className}`}
             onClick={() => handleSort(column)}
         >
             <div className="flex items-center gap-1">
@@ -322,11 +322,11 @@ export default function Transactions() {
                     />
                 </div>
             ) : (
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" >
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto" >
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                             <tr>
-                                <th className="p-4 w-12">
+                                <th className="px-3 py-3 w-12">
                                     <input
                                         type="checkbox"
                                         className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
@@ -336,7 +336,7 @@ export default function Transactions() {
                                 </th>
                                 <SortHeader column="date">Date</SortHeader>
                                 <SortHeader column="description">Description</SortHeader>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 relative">
+                                <th className="px-3 py-3 font-semibold text-sm text-slate-600 dark:text-slate-400 relative">
                                     <button
                                         onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
                                         className={`flex items-center gap-1 hover:text-indigo-600 transition ${categoryFilter ? 'text-indigo-600' : ''}`}
@@ -365,7 +365,7 @@ export default function Transactions() {
                                         </div>
                                     )}
                                 </th>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 relative">
+                                <th className="px-3 py-3 font-semibold text-sm text-slate-600 dark:text-slate-400 relative">
                                     <button
                                         onClick={() => setShowSpenderDropdown(!showSpenderDropdown)}
                                         className={`flex items-center gap-1 hover:text-indigo-600 transition ${spenderFilter ? 'text-indigo-600' : ''}`}
@@ -402,7 +402,7 @@ export default function Transactions() {
                                         </div>
                                     )}
                                 </th>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 w-24">Actions</th>
+                                <th className="px-3 py-3 font-semibold text-sm text-slate-600 dark:text-slate-400 w-24">Actions</th>
                                 <SortHeader column="amount" className="text-right">Amount</SortHeader>
                             </tr>
                         </thead>
@@ -434,7 +434,7 @@ export default function Transactions() {
                             ) : (
                                 transactions.map((txn) => (
                                     <tr key={txn.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
-                                        <td className="p-4">
+                                        <td className="px-3 py-3">
                                             <input
                                                 type="checkbox"
                                                 className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
@@ -442,10 +442,10 @@ export default function Transactions() {
                                                 onChange={() => toggleSelect(txn.id)}
                                             />
                                         </td>
-                                        <td className="p-4 text-sm text-slate-800 dark:text-slate-200 font-mono">
+                                        <td className="px-3 py-3 text-sm text-slate-800 dark:text-slate-200 font-mono">
                                             {new Date(txn.date).toLocaleDateString('en-AU')}
                                         </td>
-                                        <td className="p-4 text-sm text-slate-700 dark:text-slate-300 group/cell max-w-[300px]">
+                                        <td className="px-3 py-3 text-sm text-slate-700 dark:text-slate-300 group/cell max-w-[300px]">
                                             {editingId === txn.id ? (
                                                 <input
                                                     autoFocus
@@ -470,7 +470,7 @@ export default function Transactions() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="p-4">
+                                        <td className="px-3 py-3">
                                             <select
                                                 className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                                                 value={txn.bucket_id || ""}
@@ -482,7 +482,7 @@ export default function Transactions() {
                                                 ))}
                                             </select>
                                         </td>
-                                        <td className="p-4">
+                                        <td className="px-3 py-3">
                                             <select
                                                 className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                                                 value={txn.spender || "Joint"}
@@ -495,7 +495,7 @@ export default function Transactions() {
                                             </select>
                                         </td>
                                         {/* Actions Cell - Fixed Width */}
-                                        <td className="p-4 w-24">
+                                        <td className="px-3 py-3 w-24">
                                             <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={() => { setTransactionToSplit(txn); setSplitModalOpen(true); }}
@@ -551,7 +551,7 @@ export default function Transactions() {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className={`p-4 text-sm font-semibold text-right ${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
+                                        <td className={`px-3 py-3 text-sm font-semibold text-right ${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
                                             {txn.amount.toFixed(2)}
                                         </td>
                                     </tr>
