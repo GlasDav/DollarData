@@ -116,13 +116,17 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                                         </select>
                                     </div>
                                     <div className="col-span-3">
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={split.amount}
-                                            onChange={(e) => handleChange(idx, 'amount', parseFloat(e.target.value))}
-                                            className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm ${totalSplit !== originalAmount ? 'border-amber-300' : 'border-slate-200 dark:border-slate-600'}`}
-                                        />
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={split.amount}
+                                                onChange={(e) => handleChange(idx, 'amount', parseFloat(e.target.value) || 0)}
+                                                className={`w-full pl-7 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm text-right ${!isBalanced ? 'border-amber-300' : 'border-slate-200 dark:border-slate-600'}`}
+                                                placeholder="0.00"
+                                            />
+                                        </div>
                                     </div>
                                     <div className="col-span-1 text-center">
                                         {splits.length > 2 && (

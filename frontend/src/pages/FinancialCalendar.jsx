@@ -186,7 +186,8 @@ export default function FinancialCalendar() {
         // Days
         for (let d = 1; d <= daysInMonth; d++) {
             const dateObj = new Date(year, month, d);
-            const dateKey = new Date(dateObj.getTime() - (dateObj.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            // Format as YYYY-MM-DD without timezone adjustment
+            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
             const data = combinedData[dateKey]; // { txns: [], total: 0, hasProjected: bool }
             const isToday = new Date().toDateString() === dateObj.toDateString();

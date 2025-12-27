@@ -52,3 +52,13 @@ Tasks
         - Download account balances
         - Remove card access
         - Delete transactions
+
+Things to fix:
+- Stocks don't add to net asset allocation graph
+- Import stocks from CSV
+- Stock cost base 
+- Adding family member - typing slow
+- AI insights - can't ask for non-standard timeframes (how much did I spend in the past 75 days)
+- Can't see any transactions in the calendar
+- Splitting transactions - can't enter negatives, and UI is ugly
+- Insights error 
