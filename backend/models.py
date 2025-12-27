@@ -101,6 +101,7 @@ class Transaction(Base):
     transaction_hash = Column(String, index=True, nullable=True)  # Duplicate detection fingerprint
     assigned_to = Column(String, nullable=True)  # For partner review: "A", "B", or None (reviewed)
     tags = Column(String, nullable=True)  # Comma separated tags
+    notes = Column(String, nullable=True) # User entered notes
     
     account = relationship("Account")
 

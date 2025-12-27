@@ -126,8 +126,9 @@ class TransactionBase(BaseModel):
     external_id: Optional[str] = None
     account_id: Optional[int] = None
     tags: Optional[str] = None # New: Comma separated tags
+    notes: Optional[str] = None # User notes
     
-    @field_validator('description', 'spender', 'tags')
+    @field_validator('description', 'spender', 'tags', 'notes')
     @classmethod
     def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
         return sanitize_text(v, max_length=500) or ""
@@ -164,9 +165,12 @@ class TransactionConfirm(BaseModel):
     raw_description: Optional[str] = None
     amount: Optional[float] = None
     transaction_hash: Optional[str] = None
+    amount: Optional[float] = None
+    transaction_hash: Optional[str] = None
     category_confidence: Optional[float] = None
+    notes: Optional[str] = None
     
-    @field_validator('description', 'raw_description', 'spender', 'assigned_to', 'tags')
+    @field_validator('description', 'raw_description', 'spender', 'assigned_to', 'tags', 'notes')
     @classmethod
     def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
         return sanitize_text(v, max_length=500) if v else None
@@ -179,8 +183,10 @@ class TransactionUpdate(BaseModel):
     goal_id: Optional[int] = None
     assigned_to: Optional[str] = None  # For partner review: "A", "B", or None
     parent_transaction_id: Optional[int] = None
+    tags: Optional[str] = None
+    notes: Optional[str] = None
     
-    @field_validator('description', 'spender')
+    @field_validator('description', 'spender', 'tags', 'notes')
     @classmethod
     def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
         return sanitize_text(v, max_length=500) if v else None

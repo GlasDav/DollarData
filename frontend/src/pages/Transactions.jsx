@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getBuckets, getSettings, getGoals, deleteAllTransactions, getMembers } from '../services/api';
-import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X, BookPlus, UserCheck } from 'lucide-react';
+import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X, BookPlus, UserCheck, StickyNote } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
+import TransactionNoteModal from '../components/TransactionNoteModal';
 import SplitTransactionModal from '../components/SplitTransactionModal';
 import CreateRuleModal from '../components/CreateRuleModal';
 import EmptyState from '../components/EmptyState';
@@ -34,6 +35,8 @@ export default function Transactions() {
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [splitModalOpen, setSplitModalOpen] = useState(false);
     const [transactionToSplit, setTransactionToSplit] = useState(null);
+    const [noteModalOpen, setNoteModalOpen] = useState(false);
+    const [transactionForNote, setTransactionForNote] = useState(null);
     const [ruleModalOpen, setRuleModalOpen] = useState(false);
     const [transactionForRule, setTransactionForRule] = useState(null);
     const [assignDropdownId, setAssignDropdownId] = useState(null);  // ID of txn showing assign dropdown
@@ -287,6 +290,13 @@ export default function Transactions() {
                 }}
             />
 
+            {/* Note Modal */}
+            <TransactionNoteModal
+                isOpen={noteModalOpen}
+                onClose={() => setNoteModalOpen(false)}
+                transaction={transactionForNote}
+            />
+
             {/* Create Rule Modal */}
             <CreateRuleModal
                 isOpen={ruleModalOpen}
@@ -493,6 +503,13 @@ export default function Transactions() {
                                                     title="Split Transaction"
                                                 >
                                                     <Split size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => { setTransactionForNote(txn); setNoteModalOpen(true); }}
+                                                    className={`p-1.5 rounded transition ${txn.notes ? 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30' : 'text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30'}`}
+                                                    title={txn.notes || "Add Note"}
+                                                >
+                                                    <StickyNote size={14} className={txn.notes ? "fill-yellow-600/20" : ""} />
                                                 </button>
                                                 <button
                                                     onClick={() => { setTransactionForRule(txn); setRuleModalOpen(true); }}

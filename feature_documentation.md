@@ -45,6 +45,10 @@ Dedicated reporting section for deeper financial analysis.
 ## 3. Core Banking
 ### Transactions
 -   **Comprehensive List**: View all transactions with dates, descriptions, categories, and amounts.
+-   **Transaction Notes** *(New)*:
+    -   Add personal notes to any transaction (e.g., "Dinner with Sarah", "Warranty expires 2026").
+    -   Visual indicator (sticky note icon) shows which transactions have notes.
+    -   Editable via modal.
 -   **Split Transactions**: Ability to split a single transaction into multiple categories (accessible via hover/select).
 -   **Filtering & Sorting**: Sort by date, amount, or filter by specific criteria.
 

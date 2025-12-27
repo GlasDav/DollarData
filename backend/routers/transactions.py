@@ -104,6 +104,8 @@ def update_transaction(
         txn.description = update.description
     if update.spender is not None:
         txn.spender = update.spender
+    if update.notes is not None:
+        txn.notes = update.notes
     # Handle assigned_to - check if field was provided (even if empty string or None)
     # Empty string means "clear the assignment"
     if update.assigned_to is not None:
