@@ -18,15 +18,15 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
     useEffect(() => {
         if (transaction) {
             setSplits([
-                { description: transaction.description, amount: transaction.amount, bucket_id: transaction.bucket_id || '' },
-                { description: '', amount: 0, bucket_id: '' }
+                { description: transaction.description, amount: String(transaction.amount), bucket_id: transaction.bucket_id || '' },
+                { description: '', amount: '', bucket_id: '' }
             ]);
             setError(null);
         }
     }, [transaction]);
 
     const handleAddRow = () => {
-        setSplits([...splits, { description: '', amount: 0, bucket_id: '' }]);
+        setSplits([...splits, { description: '', amount: '', bucket_id: '' }]);
     };
 
     const handleRemoveRow = (index) => {
@@ -41,7 +41,13 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
         setSplits(newSplits);
     };
 
-    const totalSplit = splits.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+    // Parse amounts only for calculations (handles empty strings and partial input like "-")
+    const parseAmount = (val) => {
+        const num = parseFloat(val);
+        return isNaN(num) ? 0 : num;
+    };
+
+    const totalSplit = splits.reduce((sum, item) => sum + parseAmount(item.amount), 0);
     const originalAmount = transaction ? transaction.amount : 0;
     const remaining = originalAmount - totalSplit;
 
@@ -55,7 +61,12 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
         }
 
         try {
-            await api.splitTransaction(transaction.id, splits);
+            // Convert string amounts to numbers before submitting
+            const splitsWithNumbers = splits.map(s => ({
+                ...s,
+                amount: parseAmount(s.amount)
+            }));
+            await api.splitTransaction(transaction.id, splitsWithNumbers);
             onSplitSuccess();
             onClose();
         } catch (err) {
@@ -119,10 +130,10 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                                         <div className="relative">
                                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
                                             <input
-                                                type="number"
-                                                step="0.01"
+                                                type="text"
+                                                inputMode="decimal"
                                                 value={split.amount}
-                                                onChange={(e) => handleChange(idx, 'amount', parseFloat(e.target.value) || 0)}
+                                                onChange={(e) => handleChange(idx, 'amount', e.target.value)}
                                                 className={`w-full pl-7 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm text-right ${!isBalanced ? 'border-amber-300' : 'border-slate-200 dark:border-slate-600'}`}
                                                 placeholder="0.00"
                                             />

@@ -500,12 +500,12 @@ export default function Transactions() {
                                                 >
                                                     <BookPlus size={14} />
                                                 </button>
-                                                {userSettings?.is_couple_mode && (
+                                                {members.length > 0 && (
                                                     <div className="relative">
                                                         <button
                                                             onClick={() => setAssignDropdownId(assignDropdownId === txn.id ? null : txn.id)}
                                                             className={`p-1.5 rounded transition ${txn.assigned_to ? 'text-orange-500 bg-orange-50 dark:bg-orange-900/30' : 'text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30'}`}
-                                                            title={txn.assigned_to ? `Assigned to ${txn.assigned_to === 'A' ? userSettings?.name_a : userSettings?.name_b}` : 'Assign for Review'}
+                                                            title={txn.assigned_to ? `Assigned to ${txn.assigned_to}` : 'Assign for Review'}
                                                         >
                                                             <UserCheck size={14} />
                                                         </button>
@@ -517,18 +517,16 @@ export default function Transactions() {
                                                                 >
                                                                     None
                                                                 </button>
-                                                                <button
-                                                                    onClick={() => { updateMutation.mutate({ id: txn.id, assigned_to: 'A' }); setAssignDropdownId(null); }}
-                                                                    className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'A' ? 'text-orange-600 font-medium' : ''}`}
-                                                                >
-                                                                    {userSettings?.name_a || 'Partner A'}
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => { updateMutation.mutate({ id: txn.id, assigned_to: 'B' }); setAssignDropdownId(null); }}
-                                                                    className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${txn.assigned_to === 'B' ? 'text-orange-600 font-medium' : ''}`}
-                                                                >
-                                                                    {userSettings?.name_b || 'Partner B'}
-                                                                </button>
+                                                                {members.map(member => (
+                                                                    <button
+                                                                        key={member.id}
+                                                                        onClick={() => { updateMutation.mutate({ id: txn.id, assigned_to: member.name }); setAssignDropdownId(null); }}
+                                                                        className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 ${txn.assigned_to === member.name ? 'text-orange-600 font-medium' : ''}`}
+                                                                    >
+                                                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: member.color }}></span>
+                                                                        {member.name}
+                                                                    </button>
+                                                                ))}
                                                             </div>
                                                         )}
                                                     </div>
