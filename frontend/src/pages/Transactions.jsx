@@ -7,6 +7,7 @@ import SplitTransactionModal from '../components/SplitTransactionModal';
 import CreateRuleModal from '../components/CreateRuleModal';
 import EmptyState from '../components/EmptyState';
 import Button from '../components/ui/Button';
+import { sortBucketsByGroup } from '../utils/bucketUtils';
 
 // Debounce hook
 function useDebounce(value, delay) {
@@ -342,7 +343,7 @@ export default function Transactions() {
                                             >
                                                 All Categories
                                             </button>
-                                            {buckets.map(b => (
+                                            {sortBucketsByGroup(buckets).map(b => (
                                                 <button
                                                     key={b.id}
                                                     onClick={() => { setCategoryFilter(b.id); setShowCategoryDropdown(false); }}
@@ -466,7 +467,7 @@ export default function Transactions() {
                                                 onChange={(e) => updateMutation.mutate({ id: txn.id, bucket_id: parseInt(e.target.value) })}
                                             >
                                                 <option value="">Uncategorized</option>
-                                                {buckets.map(b => (
+                                                {sortBucketsByGroup(buckets).map(b => (
                                                     <option key={b.id} value={b.id}>{b.name}</option>
                                                 ))}
                                             </select>

@@ -3,6 +3,7 @@ import { Dialog } from '@headlessui/react';
 import { X, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import * as api from '../services/api';
+import { sortBucketsByGroup } from '../utils/bucketUtils';
 
 export default function SplitTransactionModal({ isOpen, onClose, transaction, onSplitSuccess }) {
     const [splits, setSplits] = useState([]);
@@ -121,7 +122,7 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                                             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm"
                                         >
                                             <option value="">Select Category...</option>
-                                            {buckets.map(b => (
+                                            {sortBucketsByGroup(buckets).map(b => (
                                                 <option key={b.id} value={b.id}>{b.name}</option>
                                             ))}
                                         </select>

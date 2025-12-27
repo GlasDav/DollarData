@@ -4,6 +4,7 @@ import { Listbox, Transition } from '@headlessui/react';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2, UserCheck, Download, Calendar, LineChart } from 'lucide-react';
 import api, { getMembers } from '../services/api';
 import ConnectBank from '../components/ConnectBank';
+import { sortBucketsByGroup } from '../utils/bucketUtils';
 
 
 const uploadFile = async ({ file, spender }) => {
@@ -755,7 +756,7 @@ export default function Ingest() {
                                                 onChange={(e) => handleCategoryChange(txn.id, e.target.value)}
                                             >
                                                 <option value="">Uncategorized</option>
-                                                {buckets.map(b => (
+                                                {sortBucketsByGroup(buckets).map(b => (
                                                     <option key={b.id} value={b.id}>
                                                         {b.name}
                                                     </option>

@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getBuckets, getSettings, getMembers } from '../services/api';
 import { CheckCircle, XCircle, Clock, Users, ArrowRight } from 'lucide-react';
+import { sortBucketsByGroup } from '../utils/bucketUtils';
 
 export default function Review() {
     const queryClient = useQueryClient();
@@ -110,7 +111,7 @@ export default function Review() {
                         })}
                     >
                         <option value="">Uncategorized</option>
-                        {buckets.map(b => (
+                        {sortBucketsByGroup(buckets).map(b => (
                             <option key={b.id} value={b.id}>{b.name}</option>
                         ))}
                     </select>
