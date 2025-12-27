@@ -354,7 +354,6 @@ export default function Transactions() {
                                         </div>
                                     )}
                                 </th>
-                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Goal</th>
                                 <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 relative">
                                     <button
                                         onClick={() => setShowSpenderDropdown(!showSpenderDropdown)}
@@ -469,18 +468,6 @@ export default function Transactions() {
                                                 <option value="">Uncategorized</option>
                                                 {buckets.map(b => (
                                                     <option key={b.id} value={b.id}>{b.name}</option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className="p-4">
-                                            <select
-                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                                                value={txn.goal_id || ""}
-                                                onChange={(e) => updateMutation.mutate({ id: txn.id, goal_id: e.target.value ? parseInt(e.target.value) : null })}
-                                            >
-                                                <option value="">-</option>
-                                                {goals.map(g => (
-                                                    <option key={g.id} value={g.id}>{g.name}</option>
                                                 ))}
                                             </select>
                                         </td>
