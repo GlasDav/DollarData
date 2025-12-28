@@ -158,6 +158,7 @@
 - [ ] **Inline Transaction Editing** - Edit fields directly in table rows
 - [x] **Visual Budget Progress Bars** - Color-coded spent vs limit indicators
 - [x] **Drag-and-Drop Categories** - Reorder categories visually with @dnd-kit
+- [x] **Budget Progress Tab** - Detailed performance view with history charts, trends, and member breakdown
 
 ### Polish & Delight
 - [x] **Micro-Animations** - Framer Motion for smooth transitions

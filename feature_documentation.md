@@ -401,6 +401,20 @@ Dedicated reporting section for deeper financial analysis.
 -   **Leave/Remove**: Members can leave; owners can remove members.
 -   **Settings Location**: Settings → Family Sharing.
 
+## 18. Budget Progress Tab *(New)*
+-   **Performance Score**: Gamified 0-100 score based on budget adherence.
+-   **Visual Progress Cards**:
+    -   Color-coded progress bars (Green/Amber/Red) for each category.
+    -   **History Charts**: 6-month interactive bar chart showing spending trends.
+    -   **Trend Indicators**: Percentage comparison vs historical average.
+-   **Member Breakdown**:
+    -   See exactly how much each household member spent per category.
+    -   Individual progress bars showing each member's spending vs their limit.
+    -   "Joint" spending is automatically handled and included in totals but excluded from the member list.
+-   **Filters**:
+    -   Filter by specific Member to see only their spending impact.
+    -   Adjust history lookback (3, 6, or 12 months).
+
 ---
 
 *Note: Family Sharing creates a "Household" container for all financial data. Existing users automatically get a personal household on first access. "Members" (spender profiles) are separate from Family Sharing users - they're labels for tracking who spent money, while Family Sharing allows actual separate logins.*

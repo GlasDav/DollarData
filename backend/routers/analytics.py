@@ -1157,7 +1157,293 @@ def get_networth_projection(
     return projection
 
 
+# --- Budget Progress (comprehensive view with history and member breakdown) ---
+
+@router.get("/budget-progress")
+def get_budget_progress(
+    months: int = Query(6, ge=1, le=12, description="Months of history for sparklines"),
+    spender: str = Query(default="Combined", description="Filter by spender"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Get comprehensive budget progress data for all categories.
+    Includes current month spending, N months history, per-member breakdown, and trend.
+    """
+    user = current_user
+    today = date.today()
+    
+    # Current month range
+    current_start = today.replace(day=1)
+    if today.month == 12:
+        current_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        current_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    
+    # History start (N months back)
+    history_start = (current_start - timedelta(days=months * 30)).replace(day=1)
+    
+    # Fetch all buckets (tree structure flattened)
+    buckets = db.query(models.BudgetBucket).filter(
+        models.BudgetBucket.user_id == user.id,
+        models.BudgetBucket.is_transfer == False,
+        models.BudgetBucket.is_hidden == False
+    ).all()
+    
+    if not buckets:
+        return {"period": {}, "score": 0, "summary": {}, "categories": []}
+    
+    bucket_ids = [b.id for b in buckets]
+    bucket_map = {b.id: b for b in buckets}
+    
+    # Fetch household members for breakdown
+    members = db.query(models.HouseholdMember).filter(
+        models.HouseholdMember.user_id == user.id
+    ).order_by(models.HouseholdMember.id).all()
+    member_names = {m.name: m.id for m in members}
+    member_colors = {m.name: m.color for m in members}
+    
+    # Create spender -> member name mapping
+    # The Transaction.spender field stores old values like "User A", "User B"
+    # Map them to actual member names
+    spender_to_member = {}
+    legacy_names = ["User A", "User B"]  # Old default names
+    for i, legacy_name in enumerate(legacy_names):
+        if i < len(members):
+            spender_to_member[legacy_name] = members[i].name
+    # Also map Joint and actual member names
+    spender_to_member["Joint"] = "Joint"
+    for m in members:
+        spender_to_member[m.name] = m.name
+    
+    # Fetch per-member limits for all buckets
+    all_limits = db.query(models.BudgetLimit).filter(
+        models.BudgetLimit.bucket_id.in_(bucket_ids)
+    ).all()
+    
+    # Map: bucket_id -> member_id -> limit_amount
+    bucket_member_limits = {}
+    member_id_to_name = {m.id: m.name for m in members}
+    for limit in all_limits:
+        if limit.bucket_id not in bucket_member_limits:
+            bucket_member_limits[limit.bucket_id] = {}
+        if limit.member_id and limit.member_id in member_id_to_name:
+            member_name = member_id_to_name[limit.member_id]
+            bucket_member_limits[limit.bucket_id][member_name] = limit.amount
+    
+    
+    # ===== CURRENT MONTH SPENDING =====
+    current_query = db.query(
+        models.Transaction.bucket_id,
+        models.Transaction.spender,
+        func.sum(models.Transaction.amount)
+    ).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.bucket_id.in_(bucket_ids),
+        models.Transaction.date >= current_start,
+        models.Transaction.date <= current_end,
+        models.Transaction.amount < 0  # Expenses only
+    )
+    
+    if spender != "Combined":
+        current_query = current_query.filter(models.Transaction.spender == spender)
+    
+    current_results = current_query.group_by(
+        models.Transaction.bucket_id, 
+        models.Transaction.spender
+    ).all()
+    
+    # Aggregate by bucket and by member (using mapped names to avoid duplicates)
+    bucket_spent = {}  # bucket_id -> total
+    bucket_by_member = {}  # bucket_id -> {mapped_member_name: amount}
+    
+    for bid, spndr, total in current_results:
+        if bid is None:
+            continue
+        amt = abs(total) if total else 0
+        bucket_spent[bid] = bucket_spent.get(bid, 0) + amt
+        
+        # Map raw spender to actual member name BEFORE aggregating
+        mapped_name = spender_to_member.get(spndr, spndr) if spndr else "Unknown"
+        
+        if bid not in bucket_by_member:
+            bucket_by_member[bid] = {}
+        bucket_by_member[bid][mapped_name] = bucket_by_member[bid].get(mapped_name, 0) + amt
+    
+    # ===== HISTORY (last N months) =====
+    history_query = db.query(
+        models.Transaction.bucket_id,
+        extract('year', models.Transaction.date).label('year'),
+        extract('month', models.Transaction.date).label('month'),
+        func.sum(models.Transaction.amount)
+    ).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.bucket_id.in_(bucket_ids),
+        models.Transaction.date >= history_start,
+        models.Transaction.date < current_start,  # Exclude current month
+        models.Transaction.amount < 0
+    )
+    
+    if spender != "Combined":
+        history_query = history_query.filter(models.Transaction.spender == spender)
+    
+    history_results = history_query.group_by(
+        models.Transaction.bucket_id, 'year', 'month'
+    ).all()
+    
+    # Build history map: bucket_id -> [{month_name, amount}, ...]
+    bucket_history = {}
+    for bid, yr, mo, total in history_results:
+        if bid is None:
+            continue
+        if bid not in bucket_history:
+            bucket_history[bid] = {}
+        key = f"{int(yr)}-{int(mo):02d}"
+        bucket_history[bid][key] = abs(total) if total else 0
+    
+    # Generate month labels for sparkline
+    month_labels = []
+    current = history_start
+    while current < current_start:
+        month_labels.append({
+            "key": current.strftime("%Y-%m"),
+            "label": current.strftime("%b")
+        })
+        if current.month == 12:
+            current = current.replace(year=current.year + 1, month=1)
+        else:
+            current = current.replace(month=current.month + 1)
+    
+    # ===== BUILD CATEGORY DATA =====
+    categories = []
+    on_track = 0
+    over_budget = 0
+    under_budget = 0
+    total_saved = 0.0
+    
+    for b in buckets:
+        # Skip income buckets
+        if b.group == "Income":
+            continue
+            
+        spent = bucket_spent.get(b.id, 0)
+        limit = sum(l.amount for l in b.limits) if b.limits else 0
+        
+        # Calculate percentage
+        if limit > 0:
+            percent = (spent / limit) * 100
+        else:
+            percent = 0 if spent == 0 else 100
+        
+        # Status
+        if limit == 0:
+            status = "no_limit"
+        elif spent > limit:
+            status = "over"
+            over_budget += 1
+        elif spent > limit * 0.9:
+            status = "warning"
+            on_track += 1
+        else:
+            status = "on_track"
+            on_track += 1
+            if limit > 0:
+                total_saved += (limit - spent)
+        
+        # Build history array for sparkline
+        history = []
+        hist_amounts = []
+        for ml in month_labels:
+            amt = bucket_history.get(b.id, {}).get(ml["key"], 0)
+            history.append({
+                "month": ml["label"],
+                "amount": round(amt, 2)
+            })
+            if amt > 0:
+                hist_amounts.append(amt)
+        
+        # Calculate trend vs average (or vs last month)
+        trend = 0
+        if hist_amounts:
+            avg_hist = sum(hist_amounts) / len(hist_amounts)
+            if avg_hist > 0:
+                trend = round(((spent - avg_hist) / avg_hist) * 100, 1)
+        
+        # Member breakdown - names are already mapped during aggregation
+        by_member = []
+        member_data = bucket_by_member.get(b.id, {})
+        total_for_pct = sum(member_data.values()) or 1
+        per_member_limits = bucket_member_limits.get(b.id, {})
+        
+        for member_name, amt in sorted(member_data.items(), key=lambda x: -x[1]):
+            # Skip "Joint" in member breakdown as it's not a specific person
+            if member_name == "Joint":
+                continue
+                
+            # Get this member's specific limit (if set)
+            member_limit = per_member_limits.get(member_name, 0)
+            if member_limit == 0:
+                # If no per-member limit, show as share of total limit
+                member_limit = limit / max(1, len(members)) if members else limit
+            
+            # Calculate member's percent of their limit
+            member_percent = (amt / member_limit * 100) if member_limit > 0 else 0
+            
+            by_member.append({
+                "name": member_name,
+                "amount": round(amt, 2),
+                "percent": round((amt / total_for_pct) * 100, 1),  # % of total spent
+                "limit": round(member_limit, 2),
+                "limit_percent": round(member_percent, 1),  # % of their individual limit
+                "color": member_colors.get(member_name, "#6366f1")
+            })
+        
+        categories.append({
+            "id": b.id,
+            "name": b.name,
+            "icon": b.icon_name,
+            "group": b.group,
+            "limit": round(limit, 2),
+            "spent": round(spent, 2),
+            "remaining": round(max(0, limit - spent), 2),
+            "percent": round(percent, 1),
+            "status": status,
+            "trend": trend,
+            "history": history,
+            "by_member": by_member
+        })
+    
+    # Sort: over budget first, then by percent descending
+    categories.sort(key=lambda x: (-1 if x["status"] == "over" else 0, -x["percent"]))
+    
+    # Calculate overall score (0-100)
+    total_cats = on_track + over_budget
+    if total_cats > 0:
+        base_score = int((on_track / total_cats) * 100)
+    else:
+        base_score = 100
+    
+    # Bonus for savings and penalize for overspending
+    score = min(100, max(0, base_score))
+    
+    return {
+        "period": {
+            "start": current_start.isoformat(),
+            "end": current_end.isoformat(),
+            "label": current_start.strftime("%B %Y")
+        },
+        "score": score,
+        "summary": {
+            "on_track": on_track,
+            "over_budget": over_budget,
+            "total_saved": round(total_saved, 2)
+        },
+        "categories": categories
+    }
+
+
 # --- Category History (for budget planning) ---
+
 
 @router.get("/category-history/{bucket_id}")
 def get_category_history(
