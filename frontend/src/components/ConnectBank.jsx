@@ -63,15 +63,17 @@ export default function ConnectBank({ onConnectSuccess }) {
             // Build the callback URL (where Basiq will redirect after consent)
             const callbackUrl = `${window.location.origin}/basiq-callback`;
 
-            // Build consent URL with token and optional parameters
-            // Note: Check Basiq docs for exact parameter names they support
+            // Basiq Connect v3 requires these parameters
             const params = new URLSearchParams({
                 token: tokenData.access_token,
-                // Add a state parameter to help track the connection
-                state: Date.now().toString()
+                callback_url: callbackUrl,
+                // Optional: customize the UI
+                mobile: 'false',
+                // Optional: institution_id to pre-select a bank
             });
 
-            const consentUrl = `${BASIQ_CONSENT_URL}?${params.toString()}`;
+            // Basiq Connect UI endpoint
+            const consentUrl = `https://consent.basiq.io/connect?${params.toString()}`;
 
             // Store callback info in sessionStorage for reference
             sessionStorage.setItem('basiq_callback_url', callbackUrl);
