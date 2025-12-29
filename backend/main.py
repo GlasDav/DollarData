@@ -69,8 +69,56 @@ limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="Principal Finance API",
-    description="Personal finance management API",
-    version="1.0.0"
+    description="""
+## Personal Finance Management API
+
+Comprehensive API for managing personal finances including:
+* **Authentication** - Secure login with JWT tokens and MFA support
+* **Transactions** - Track income and expenses with categorization
+* **Budgets** - Set and monitor budget goals by category
+* **Analytics** - Financial insights and spending trends
+* **Net Worth** - Track assets, liabilities, and investments
+* **Investments** - Portfolio tracking with real-time prices
+* **Goals** - Savings goals with progress tracking
+* **Subscriptions** - Recurring expense management
+
+### Features
+* 🔐 Secure authentication with refresh tokens
+* 📊 Real-time financial analytics
+* 📈 Investment portfolio tracking
+* 💰 Budget monitoring with alerts
+* 🏦 Bank account aggregation
+* 🤖 AI-powered transaction categorization
+* 👥 Family sharing & household management
+
+### Getting Started
+1. Register a new account at `/auth/register`
+2. Login to receive access tokens at `/auth/token`
+3. Use the access token in Authorization header: `Bearer <token>`
+4. Explore the interactive documentation below
+
+### Rate Limits
+- Default: 100 requests per minute per IP
+- Auth endpoints: 10 requests per minute
+- Sensitive operations: Custom limits apply
+    """,
+    version="1.0.0",
+    contact={
+        "name": "Principal Finance",
+        "email": "support@principal.finance",
+    },
+    license_info={
+        "name": "MIT",
+    },
+    openapi_tags=[
+        {"name": "auth", "description": "Authentication and user management"},
+        {"name": "transactions", "description": "Transaction operations"},
+        {"name": "budgets", "description": "Budget management"},
+        {"name": "analytics", "description": "Financial analytics and insights"},
+        {"name": "net-worth", "description": "Net worth and investment tracking"},
+        {"name": "goals", "description": "Financial goals"},
+        {"name": "subscriptions", "description": "Recurring expenses"},
+    ]
 )
 
 # Register rate limiter
