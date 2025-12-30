@@ -1,4 +1,4 @@
-# Session Handover - December 29, 2024
+# Session Handover - December 31, 2024
 
 ## What We Accomplished Today
 
@@ -42,6 +42,19 @@ Starting point: 25% → **Current: 80%**
 - Real mode blocked - needs vendor support
 - **Documented in**: `basiq_setup.md`
 
+### 4. Basiq Integration Enhancements ✅ (December 30-31, 2024)
+- ✅ Enhanced error logging with emoji markers (🔐 ✅ ❌ 📥 ⏳ 💳 📊)
+- ✅ Increased job polling timeout (20s → 60s)
+- ✅ Comprehensive error handling with user-friendly messages
+- ✅ Created diagnostic test scripts (`test_basiq.py`, `test_basiq.ps1`)
+- ✅ Validated API key working correctly
+- **Status**: Ready for production once redirect URL whitelisted in Basiq Dashboard
+
+### 5. Bug Fixes ✅ (December 30-31, 2024)
+- ✅ Fixed ampersand display in category names (`&amp;` → `&`)
+- ✅ Changed Pydantic validator to `mode='before'` to prevent double-escaping
+- ✅ Categories now display correctly: "Gas & Electricity", "Health & Wellness", etc.
+
 ---
 
 ## Current Application Status
@@ -71,19 +84,27 @@ Starting point: 25% → **Current: 80%**
 
 ## Files Modified Today
 
-### New Files Created
+### New Files Created (December 29, 2024)
 - `backend/docs/examples.py` - API request/response examples
 - `backend/middleware/request_id.py` - Request tracing
 - `backend/logging_config.py` - Structured logging
 - `frontend/public/logo.svg` - Custom logo
 - `frontend/src/test/utils/formatting.test.js` - Utility tests
 
-### Modified Files
+### New Files Created (December 30-31, 2024)
+- `backend/test_basiq.py` - Python diagnostic script for Basiq API testing
+- `backend/test_basiq.ps1` - PowerShell test script for Basiq token validation
+
+### Modified Files (December 29, 2024)
 - `backend/main.py` - Enhanced API metadata, logging, middleware
 - `frontend/vite.config.js` - Performance optimizations
 - `frontend/eslint.config.js` - No-console rule
 - `frontend/src/App.jsx` - Logo integration
 - `frontend/src/components/ConnectBank.jsx` - Basiq troubleshooting
+
+### Modified Files (December 30-31, 2024)
+- `backend/services/basiq.py` - Enhanced logging with emoji markers, better error handling, 60s timeout
+- `backend/schemas.py` - Fixed Pydantic validator to prevent HTML entity double-escaping
 
 ---
 
@@ -92,9 +113,13 @@ Starting point: 25% → **Current: 80%**
 **All changes committed and pushed to GitHub** ✅
 
 Recent commits:
-1. Production readiness to 80% (API docs, performance, tests)
-2. Logo updates
-3. Basiq integration documentation
+1. Production readiness to 80% (API docs, performance, tests) - Dec 29
+2. Logo updates - Dec 29
+3. Basiq integration documentation - Dec 29
+4. Fix ampersand display and enhance Basiq integration (commit d70fefb) - Dec 30-31
+   - Enhanced Basiq service logging
+   - Fixed HTML entity escaping bug
+   - Added diagnostic test scripts
 
 **Branch**: `main`
 
