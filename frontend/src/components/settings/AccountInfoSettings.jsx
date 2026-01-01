@@ -189,7 +189,8 @@ export default function AccountSettings() {
 
     const updateHouseholdMutation = useMutation({
         mutationFn: async (data) => {
-            const res = await api.put('/household', data);
+            // Trailing slash added to prevent 307 redirect which can cause 405 error
+            const res = await api.put('/household/', data);
             return res.data;
         },
         onSuccess: () => {
@@ -240,7 +241,8 @@ export default function AccountSettings() {
     };
 
     const handleCreateHousehold = () => {
-        const name = prompt('Enter a name for your household:', 'My Family');
+        const defaultName = (user?.name || user?.email?.split('@')[0] || 'My') + "'s Household";
+        const name = prompt('Enter a name for your household:', defaultName);
         if (name && name.trim()) {
             createHouseholdMutation.mutate(name.trim());
         }
