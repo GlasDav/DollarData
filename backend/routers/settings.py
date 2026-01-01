@@ -210,7 +210,9 @@ def get_buckets_tree(db: Session = Depends(get_db), current_user: models.User = 
             "is_rollover": getattr(bucket, 'is_rollover', False),
             "is_transfer": getattr(bucket, 'is_transfer', False),
             "is_investment": getattr(bucket, 'is_investment', False),
+            "is_investment": getattr(bucket, 'is_investment', False),
             "is_hidden": getattr(bucket, 'is_hidden', False),
+            "is_group_budget": getattr(bucket, 'is_group_budget', False), # Added missing field
             "group": bucket.group,
             "parent_id": getattr(bucket, 'parent_id', None),
             "display_order": getattr(bucket, 'display_order', 0),
