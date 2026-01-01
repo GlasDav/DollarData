@@ -47,4 +47,9 @@ def get_db():
         db.rollback()
         raise
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            # If closing fails (e.g. transaction aborted), likely due to previous error.
+            # Suppress this so the original error surfaces.
+            pass
