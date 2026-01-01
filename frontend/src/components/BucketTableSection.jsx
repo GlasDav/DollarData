@@ -184,6 +184,10 @@ export default function BucketTableSection({
                                 ) : (
                                     <th className="p-3 w-28">Limit</th>
                                 )}
+                                {/* Total Column - always show if there are members */}
+                                {members.length > 0 && (
+                                    <th className="p-3 w-28 text-center">Total</th>
+                                )}
                                 <th className="p-3 w-16 text-center">Shared</th>
                                 <th className="p-3 w-20 text-center">Rollover</th>
                                 <th className="p-3">Tags</th>

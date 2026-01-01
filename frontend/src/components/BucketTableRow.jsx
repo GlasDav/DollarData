@@ -165,8 +165,19 @@ export default function BucketTableRow({
     const getChildrenSumWithRecursion = (node, memberId) => {
         if (!node.children || node.children.length === 0) return 0;
         return node.children.reduce((sum, child) => {
-            const childAmount = (child.limits?.find(l => l.member_id === memberId)?.amount || 0);
-            return sum + childAmount;
+            if (memberId === 'shared') {
+                // Sum children's shared limits (member_id === 'shared')
+                const sharedLimit = child.limits?.find(l => l.member_id === 'shared')?.amount || 0;
+                return sum + sharedLimit;
+            } else if (memberId === 'all') {
+                // Sum ALL member limits for each child
+                const childTotal = (child.limits || []).reduce((t, l) => t + (l.amount || 0), 0);
+                return sum + childTotal;
+            } else {
+                // Sum specific member's limit
+                const childAmount = child.limits?.find(l => l.member_id === memberId)?.amount || 0;
+                return sum + childAmount;
+            }
         }, 0);
     };
 
@@ -280,12 +291,17 @@ export default function BucketTableRow({
                 </div>
             </td>
 
-            {/* Dynamic Member Columns - Single field for shared, multiple for individual */}
+            {/* Dynamic Member Columns + Total Column */}
             {bucket.is_shared ? (
-                // SHARED: Single budget column spanning all member columns
+                // SHARED: Hide individual member columns, show editable Total
                 <>
+                    {members.length > 0 && members.map(member => (
+                        <td key={member.id} className="p-2 w-28">
+                            <div className="text-center text-slate-300 dark:text-slate-600 text-xs">—</div>
+                        </td>
+                    ))}
                     {members.length > 0 && (
-                        <td className="p-2" colSpan={members.length}>
+                        <td className="p-2 w-28">
                             <div className="relative">
                                 <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-xs ${isParent && !bucket.is_group_budget ? 'text-slate-300' : 'text-slate-400'}`}>{currencySymbol}</span>
                                 <input
@@ -294,15 +310,14 @@ export default function BucketTableRow({
                                     className={`w-full pl-6 pr-2 py-1 text-sm border rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition
                                         ${isParent && !bucket.is_group_budget
                                             ? 'bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 border-transparent cursor-default font-medium italic'
-                                            : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 focus:border-indigo-500'
+                                            : 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500'
                                         }
                                     `}
                                     value={isParent && !bucket.is_group_budget
-                                        ? getChildrenSumWithRecursion(bucket, -1) // Sum children's shared limits
-                                        : (localLimits[-1] || localLimits[members[0]?.id] || 0)}
-                                    onChange={(e) => handleLimitChange(-1, e.target.value)}
-                                    onBlur={() => !(isParent && !bucket.is_group_budget) && handleLimitBlur(-1)}
-                                    placeholder="Shared limit"
+                                        ? getChildrenSumWithRecursion(bucket, 'shared')
+                                        : (localLimits['shared'] ?? '')}
+                                    onChange={(e) => handleLimitChange('shared', e.target.value)}
+                                    onBlur={() => !(isParent && !bucket.is_group_budget) && handleLimitBlur('shared')}
                                 />
                             </div>
                         </td>
@@ -314,56 +329,71 @@ export default function BucketTableRow({
                     )}
                 </>
             ) : (
-                // NOT SHARED: Individual budget per member
-                members.length > 0 ? (
-                    members.map(member => {
-                        // Logic for Value Display & Editable State
-                        let displayValue = localLimits[member.id] || 0;
-                        let isEditable = true;
-                        let isDerived = false;
+                // NOT SHARED: Individual budget per member + Total column
+                <>
+                    {members.length > 0 ? (
+                        members.map(member => {
+                            let displayValue = localLimits[member.id] ?? '';
+                            let isEditable = true;
+                            let isDerived = false;
 
-                        if (isParent) {
-                            if (bucket.is_group_budget) {
-                                displayValue = localLimits[member.id] || 0;
-                                isEditable = true;
+                            if (isParent) {
+                                if (bucket.is_group_budget) {
+                                    displayValue = localLimits[member.id] ?? '';
+                                    isEditable = true;
+                                } else {
+                                    displayValue = getChildrenSumWithRecursion(bucket, member.id);
+                                    isEditable = false;
+                                    isDerived = true;
+                                }
                             } else {
-                                displayValue = getChildrenSumWithRecursion(bucket, member.id);
-                                isEditable = false;
-                                isDerived = true;
+                                if (parentIsGroupBudget) {
+                                    isEditable = false;
+                                }
                             }
-                        } else {
-                            if (parentIsGroupBudget) {
-                                isEditable = false;
-                            }
-                        }
 
-                        return (
-                            <td key={member.id} className="p-2 w-28">
-                                <div className="relative">
-                                    <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-xs ${!isEditable ? 'text-slate-300' : 'text-slate-400'}`}>{currencySymbol}</span>
-                                    <input
-                                        type="number"
-                                        disabled={!isEditable}
-                                        className={`w-full pl-6 pr-2 py-1 text-sm border rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition
-                                            ${!isEditable
-                                                ? 'bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 border-transparent cursor-default font-medium'
-                                                : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 focus:border-indigo-500'
-                                            }
-                                            ${isDerived ? 'italic' : ''}
-                                        `}
-                                        value={displayValue}
-                                        onChange={(e) => handleLimitChange(member.id, e.target.value)}
-                                        onBlur={() => isEditable && handleLimitBlur(member.id)}
-                                    />
+                            return (
+                                <td key={member.id} className="p-2 w-28">
+                                    <div className="relative">
+                                        <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-xs ${!isEditable ? 'text-slate-300' : 'text-slate-400'}`}>{currencySymbol}</span>
+                                        <input
+                                            type="number"
+                                            disabled={!isEditable}
+                                            className={`w-full pl-6 pr-2 py-1 text-sm border rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition
+                                                ${!isEditable
+                                                    ? 'bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 border-transparent cursor-default font-medium'
+                                                    : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 focus:border-indigo-500'
+                                                }
+                                                ${isDerived ? 'italic' : ''}
+                                            `}
+                                            value={displayValue}
+                                            onChange={(e) => handleLimitChange(member.id, e.target.value)}
+                                            onBlur={() => isEditable && handleLimitBlur(member.id)}
+                                        />
+                                    </div>
+                                </td>
+                            );
+                        })
+                    ) : (
+                        <td className="p-2 w-28">
+                            <span className="text-xs text-slate-400">Loading...</span>
+                        </td>
+                    )}
+                    {/* Total Column - Read-only sum of member budgets */}
+                    {members.length > 0 && (
+                        <td className="p-2 w-28">
+                            <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-300">{currencySymbol}</span>
+                                <div className="w-full pl-6 pr-2 py-1 text-sm text-slate-400 dark:text-slate-500 font-medium italic">
+                                    {isParent && !bucket.is_group_budget
+                                        ? getChildrenSumWithRecursion(bucket, 'all')
+                                        : members.reduce((sum, m) => sum + (parseFloat(localLimits[m.id]) || 0), 0)
+                                    }
                                 </div>
-                            </td>
-                        );
-                    })
-                ) : (
-                    <td className="p-2 w-28">
-                        <span className="text-xs text-slate-400">Loading...</span>
-                    </td>
-                )
+                            </div>
+                        </td>
+                    )}
+                </>
             )}
 
             <td className="p-2 w-16 text-center">
