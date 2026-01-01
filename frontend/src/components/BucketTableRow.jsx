@@ -161,11 +161,18 @@ export default function BucketTableRow({
     };
 
     const handleAddSubCategory = () => {
+        // Calculate display_order to place at bottom of parent's children
+        const siblings = bucket.children || [];
+        const maxOrder = siblings.length > 0
+            ? Math.max(...siblings.map(c => c.display_order || 0))
+            : -1;
+
         createBucketMutation.mutate({
             name: "New Sub-Category",
             group: bucket.group,
             parent_id: bucket.id,
-            is_shared: bucket.is_shared
+            is_shared: bucket.is_shared,
+            display_order: maxOrder + 1
         });
         if (!isExpanded) onToggleExpand();
     };
