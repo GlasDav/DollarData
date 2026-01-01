@@ -17,7 +17,13 @@ router = APIRouter(
 
 @router.get("/user", response_model=schemas.User)
 def get_user_settings(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
-    user = current_user
+    # Eager load buckets and nested relationships to prevent PendingRollbackError during serialization
+    # if the session state is fragile (e.g. after a recovered error).
+    user = db.query(models.User).options(
+        joinedload(models.User.buckets).joinedload(models.BudgetBucket.tags),
+        joinedload(models.User.buckets).joinedload(models.BudgetBucket.limits)
+    ).filter(models.User.id == current_user.id).first()
+    
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
