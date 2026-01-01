@@ -179,23 +179,31 @@ export default function AccountSettings() {
 
     const createHouseholdMutation = useMutation({
         mutationFn: async (name) => {
-            const res = await api.post('/household', { name });
+            // Using PUT as it auto-creates if missing, effectively "Creating" with a name
+            const res = await api.put('/household/', { name });
             return res.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['household']);
+            // Reload to ensure state is fresh
+            window.location.reload();
         },
     });
 
     const updateHouseholdMutation = useMutation({
         mutationFn: async (data) => {
+            console.log("Updating household with data:", data);
             // Trailing slash added to prevent 307 redirect which can cause 405 error
             const res = await api.put('/household/', data);
+            console.log("Update response:", res.data);
             return res.data;
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
+            console.log("Update success:", data);
             queryClient.invalidateQueries(['household']);
             setEditingName(false);
+            // Force reload to ensure fresh data if cache is sticky
+            window.location.reload();
         },
         onError: (error) => {
             console.error("Failed to update household:", error);
