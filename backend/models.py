@@ -42,6 +42,7 @@ class BudgetBucket(Base):
     is_investment = Column(Boolean, default=False)  # Investment buckets excluded from expenses but shown in Sankey
     is_hidden = Column(Boolean, default=False)  # Hide category from budget view
     is_one_off = Column(Boolean, default=False)  # One-off items excluded from forecasting (tax, large purchases)
+    is_group_budget = Column(Boolean, default=False) # If True, budget is set at group level; children are summed/ignored
     group = Column(String, default="Discretionary") # 'Discretionary' (Wants) or 'Non-Discretionary' (Needs)
     
     # Hierarchy Fields

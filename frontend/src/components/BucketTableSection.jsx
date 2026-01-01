@@ -127,7 +127,7 @@ export default function BucketTableSection({
         }
     };
 
-    const renderRows = (nodes, depth = 0) => {
+    const renderRows = (nodes, depth = 0, parentIsGroupBudget = false) => {
         return nodes.map((bucket, index) => (
             <React.Fragment key={bucket.id}>
                 <BucketTableRow
@@ -145,8 +145,9 @@ export default function BucketTableSection({
                     onMoveBucket={onMoveBucket}
                     isFirst={index === 0}
                     isLast={index === nodes.length - 1}
+                    parentIsGroupBudget={parentIsGroupBudget}
                 />
-                {expandedIds.has(bucket.id) && bucket.children && renderRows(bucket.children, depth + 1)}
+                {expandedIds.has(bucket.id) && bucket.children && renderRows(bucket.children, depth + 1, bucket.is_group_budget)}
             </React.Fragment>
         ));
     };

@@ -57,6 +57,7 @@ class BudgetBucketBase(BaseModel):
     group: str = "Discretionary"
     is_rollover: bool = False
     is_shared: bool = False  # Shared between household members
+    is_group_budget: bool = False # If True, budget is set at group level
     is_transfer: bool = False  # Transfer buckets excluded from spending analytics
     is_investment: bool = False  # Investment buckets excluded from expenses but shown in Sankey
     is_hidden: bool = False  # Hidden from budget view

@@ -22,6 +22,7 @@ def run_migrations(engine: Engine):
             columns_to_add = [
                 ("icon_name", "VARCHAR DEFAULT 'Wallet'"),
                 ("is_shared", "BOOLEAN DEFAULT False"), # Added missing column
+                ("is_group_budget", "BOOLEAN DEFAULT False"), # Added new column
                 ("is_rollover", "BOOLEAN DEFAULT 0"),
                 ("is_transfer", "BOOLEAN DEFAULT 0"),
                 ("is_investment", "BOOLEAN DEFAULT 0"),

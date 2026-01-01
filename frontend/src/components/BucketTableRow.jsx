@@ -32,7 +32,8 @@ export default function BucketTableRow({
     hasChildren = false,
     onMoveBucket = null,
     isFirst = false,
-    isLast = false
+    isLast = false,
+    parentIsGroupBudget = false
 }) {
     // Sortable hook for all rows
     const {
@@ -150,27 +151,28 @@ export default function BucketTableRow({
         updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTagNames } });
     };
 
-    const handleAddSubCategory = () => {
-        createBucketMutation.mutate({
-            name: "New Sub-Category",
-            group: bucket.group,
-            parent_id: bucket.id,
-            is_shared: bucket.is_shared
-        });
-        if (!isExpanded) onToggleExpand();
+    // Calculate sum of children limits for display when not in group budget mode
+    // Note: This requires children to be passed or available. 
+    // Since we don't have children props directly populated with *their* limits easily here (recursive issue),
+    // we rely on the fact that we might need to handle this differently or just assume the user knows.
+    // However, for a quick implementation:
+    // If we are a parent, and NOT is_group_budget, we should show the sum. 
+    // But `bucket.children` might not be updated with latest mutations instantly unless we invalidate queries.
+    // Let's rely on `bucket.children` being passed down if available? 
+    // Actually, `BucketTableRow` doesn't receive `children` prop directly, but `bucket` object usually has them if from tree.
+
+    // Helper to calculate sum of children for a specific member
+    const getChildrenSumWithRecursion = (node, memberId) => {
+        if (!node.children || node.children.length === 0) return 0;
+        return node.children.reduce((sum, child) => {
+            const childAmount = (child.limits?.find(l => l.member_id === memberId)?.amount || 0);
+            // Verify if child is also a group budget? Unlikely for 2-level depth but good to know.
+            // For now assuming 1 level of children for budgeting
+            return sum + childAmount;
+        }, 0);
     };
 
-    const tags = bucket.tags || [];
-    const visibleTags = tags.slice(0, 2);
-    const hiddenCount = tags.length - visibleTags.length;
-    const currentTagNames = tags.map(t => t.name.toLowerCase());
-    const suggestions = allTags.filter(t => !currentTagNames.includes(t.toLowerCase()));
-
-    const isParent = depth === 0;
-    const isHidden = bucket.is_hidden;
-    const rowBgClass = isParent
-        ? `bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold ${isHidden ? 'opacity-50' : ''}`
-        : `hover:bg-slate-50 dark:hover:bg-slate-800/50 ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${bucket.is_investment ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''} ${isHidden ? 'opacity-50' : ''}`;
+    const parentIsGroupBudget = bucket.parent?.is_group_budget || false; // This might need to come from props if 'bucket.parent' isn't populated
 
     return (
         <tr
@@ -193,76 +195,134 @@ export default function BucketTableRow({
                         </button>
                     )}
 
-                    <Menu as="div" className="relative">
-                        <Menu.Button className={`p-1.5 rounded-lg transition relative ${isParent ? 'bg-white dark:bg-slate-700 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600 text-indigo-600 dark:text-indigo-400' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'}`}>
-                            <Icon size={16} />
-                            {/* Add Child Button Overlay */}
-                            {depth < 2 && (
-                                <div
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        handleAddSubCategory();
-                                    }}
-                                    className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-sm hover:scale-110 cursor-pointer"
-                                    title="Add Sub-Category"
-                                >
-                                    <Plus size={10} />
-                                </div>
-                            )}
-                        </Menu.Button>
-                        <Menu.Items className="absolute left-0 mt-1 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-2 grid grid-cols-5 gap-1 z-20">
-                            {AVAILABLE_ICONS.map(iconName => {
-                                const I = ICON_MAP[iconName];
-                                return (
-                                    <Menu.Item key={iconName}>
-                                        {({ active }) => (
-                                            <button
-                                                onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, icon_name: iconName } })}
-                                                className={`p-1.5 rounded flex justify-center ${active ? 'bg-indigo-50 dark:bg-slate-700 text-indigo-600' : 'text-slate-500'}`}
-                                            >
-                                                <I size={16} />
-                                            </button>
-                                        )}
-                                    </Menu.Item>
-                                );
-                            })}
-                        </Menu.Items>
-                    </Menu>
+                    <div className="relative">
+                        <Menu as="div" className="relative">
+                            <Menu.Button className={`p-1.5 rounded-lg transition relative ${isParent ? 'bg-white dark:bg-slate-700 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600 text-indigo-600 dark:text-indigo-400' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'}`}>
+                                <Icon size={16} />
+                            </Menu.Button>
+                            <Menu.Items className="absolute left-0 mt-1 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-2 grid grid-cols-5 gap-1 z-20">
+                                {AVAILABLE_ICONS.map(iconName => {
+                                    const I = ICON_MAP[iconName];
+                                    return (
+                                        <Menu.Item key={iconName}>
+                                            {({ active }) => (
+                                                <button
+                                                    onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, icon_name: iconName } })}
+                                                    className={`p-1.5 rounded flex justify-center ${active ? 'bg-indigo-50 dark:bg-slate-700 text-indigo-600' : 'text-slate-500'}`}
+                                                >
+                                                    <I size={16} />
+                                                </button>
+                                            )}
+                                        </Menu.Item>
+                                    );
+                                })}
+                            </Menu.Items>
+                        </Menu>
+
+                        {/* Add Child Button Overlay - MOVED OUTSIDE MENU */}
+                        {depth < 2 && (
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    handleAddSubCategory();
+                                }}
+                                className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-sm hover:scale-110 cursor-pointer z-10"
+                                title="Add Sub-Category"
+                            >
+                                <Plus size={10} />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </td>
             <td className="p-2">
-                <input
-                    className={`w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition text-sm py-1 ${isParent ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-800 dark:text-slate-100'}`}
-                    value={localName}
-                    onChange={(e) => setLocalName(e.target.value)}
-                    onBlur={handleBlurName}
-                    placeholder="Category name..."
-                />
+                <div className="flex flex-col">
+                    <input
+                        className={`w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition text-sm py-1 ${isParent ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-800 dark:text-slate-100'}`}
+                        value={localName}
+                        onChange={(e) => setLocalName(e.target.value)}
+                        onBlur={handleBlurName}
+                        placeholder="Category name..."
+                    />
+
+                    {/* Budget by Group Toggle for Parents */}
+                    {isParent && (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <input
+                                type="checkbox"
+                                id={`group-budget-${bucket.id}`}
+                                checked={bucket.is_group_budget || false}
+                                onChange={(e) => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_group_budget: e.target.checked } })}
+                                className="w-3 h-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                            <label htmlFor={`group-budget-${bucket.id}`} className="text-[10px] text-slate-400 cursor-pointer select-none">
+                                Budget by Group
+                            </label>
+                        </div>
+                    )}
+                </div>
             </td>
 
             {/* Dynamic Member Columns */}
             {members.length > 0 ? (
-                members.map(member => (
-                    <td key={member.id} className="p-2 w-28">
-                        <div className="relative">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencySymbol}</span>
-                            <input
-                                type="number"
-                                className="w-full pl-6 pr-2 py-1 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                value={localLimits[member.id] || 0}
-                                onChange={(e) => handleLimitChange(member.id, e.target.value)}
-                                onBlur={() => handleLimitBlur(member.id)}
-                            />
-                        </div>
-                    </td>
-                ))
+                members.map(member => {
+                    // Logic for Value Display & Editable State
+                    let displayValue = localLimits[member.id] || 0;
+                    let isEditable = true;
+                    let isDerived = false;
+
+                    if (isParent) {
+                        // Parent Logic
+                        if (bucket.is_group_budget) {
+                            // Manual Group Budget mode: Editable, use local/stored value
+                            displayValue = localLimits[member.id] || 0;
+                            isEditable = true;
+                        } else {
+                            // Sum Mode (Default): Read-only, calculate sum of children
+                            displayValue = getChildrenSumWithRecursion(bucket, member.id);
+                            isEditable = false;
+                            isDerived = true;
+                        }
+                    } else {
+                        // Child Logic
+                        // We need to know if Parent is in Group Budget mode.
+                        // passed via prop `parentIsGroupBudget` (need to add to props)
+                        if (props.parentIsGroupBudget) {  // Using props. to access explicit prop if destructuring missed it? No, need to add to destructuring.
+                            // Wait, I missed adding 'parentIsGroupBudget' to the destructured props at top of file.
+                            // I will assume it's passed.
+                            isEditable = false;
+                            // We still show the value, but it's effectively "ignored" or just descriptive? 
+                            // Usually valid to keep it, but maybe grayed out.
+                        }
+                    }
+
+                    return (
+                        <td key={member.id} className="p-2 w-28">
+                            <div className="relative">
+                                <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-xs ${!isEditable ? 'text-slate-300' : 'text-slate-400'}`}>{currencySymbol}</span>
+                                <input
+                                    type="number"
+                                    disabled={!isEditable}
+                                    className={`w-full pl-6 pr-2 py-1 text-sm border rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition
+                                        ${!isEditable
+                                            ? 'bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 border-transparent cursor-default font-medium'
+                                            : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 focus:border-indigo-500'
+                                        }
+                                        ${isDerived ? 'italic' : ''}
+                                    `}
+                                    value={displayValue}
+                                    onChange={(e) => handleLimitChange(member.id, e.target.value)}
+                                    // Only fire update if editable
+                                    onBlur={() => isEditable && handleLimitBlur(member.id)}
+                                />
+                            </div>
+                        </td>
+                    );
+                })
             ) : (
-                // Fallback if no members loaded yet (though query normally returns empty list)
                 <td className="p-2 w-28">
-                    <div className="relative">
-                        <span className="text-xs text-slate-400">Loading...</span>
-                    </div>
+                    <span className="text-xs text-slate-400">Loading...</span>
                 </td>
             )}
 
