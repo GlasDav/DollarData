@@ -196,6 +196,10 @@ export default function AccountSettings() {
             queryClient.invalidateQueries(['household']);
             setEditingName(false);
         },
+        onError: (error) => {
+            console.error("Failed to update household:", error);
+            alert("Failed to update household name. Please try again.");
+        }
     });
 
     const inviteMemberMutation = useMutation({
@@ -423,11 +427,13 @@ export default function AccountSettings() {
                                                     if (e.key === 'Escape') setEditingName(false);
                                                 }}
                                                 className="flex-1 px-3 py-1.5 border border-purple-300 dark:border-purple-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                placeholder="Household name"
                                                 autoFocus
                                             />
                                             <button
                                                 onClick={handleSaveName}
-                                                className="p-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition"
+                                                disabled={updateHouseholdMutation.isPending || !householdName.trim()}
+                                                className={`p-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition ${updateHouseholdMutation.isPending || !householdName.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 title="Save"
                                             >
                                                 <Check size={16} />
@@ -441,20 +447,20 @@ export default function AccountSettings() {
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2">
-                                            <div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
                                                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">{household.name}</h3>
-                                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                                    {Math.max(household.members?.length || 0, 1)} member{(household.members?.length || 1) !== 1 ? 's' : ''}
-                                                </p>
+                                                <button
+                                                    onClick={startEditingName}
+                                                    className="p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition"
+                                                    title="Rename household"
+                                                >
+                                                    <Edit2 size={14} />
+                                                </button>
                                             </div>
-                                            <button
-                                                onClick={startEditingName}
-                                                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition"
-                                                title="Edit household name"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                                {Math.max(household.members?.length || 0, 1)} member{(household.members?.length || 1) !== 1 ? 's' : ''} with shared access
+                                            </p>
                                         </div>
                                     )}
                                 </div>
