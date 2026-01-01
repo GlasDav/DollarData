@@ -28,6 +28,19 @@ services:
     networks:
       - principal-network
 
+  # Frontend React App
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - principal-network
+
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
