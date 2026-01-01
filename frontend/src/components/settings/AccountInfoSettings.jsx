@@ -356,13 +356,13 @@ export default function AccountSettings() {
 
                 {!household ? (
                     <div className="space-y-6">
-                        {/* Household Members (Spenders) - Show even without household sharing */}
+                        {/* Spending Profiles - Show even without household sharing */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <div>
-                                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Household Members</h3>
+                                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Spending Profiles</h3>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                        People in your household for budget tracking
+                                        Track spending by person (e.g., you, partner, kids)
                                     </p>
                                 </div>
                                 <button
@@ -445,7 +445,7 @@ export default function AccountSettings() {
                                             <div>
                                                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">{household.name}</h3>
                                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                                    {household.members?.length || 0} member{household.members?.length !== 1 ? 's' : ''}
+                                                    {Math.max(household.members?.length || 0, 1)} member{(household.members?.length || 1) !== 1 ? 's' : ''}
                                                 </p>
                                             </div>
                                             <button
@@ -470,10 +470,10 @@ export default function AccountSettings() {
                             </div>
                         </div>
 
-                        {/* Members List */}
+                        {/* Shared Access List */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Members</h3>
+                                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Shared Access</h3>
                                 <button
                                     onClick={() => {
                                         const email = prompt('Enter email address to invite:');
@@ -487,6 +487,25 @@ export default function AccountSettings() {
                             </div>
 
                             <div className="space-y-2">
+                                {/* Always show current user first */}
+                                {(!household.members || !household.members.some(m => m.id === user.id)) && (
+                                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                                                <User size={16} className="text-purple-600 dark:text-purple-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                                                    {user.email}
+                                                    <span className="ml-2 text-xs text-slate-400">(You)</span>
+                                                </p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                    Owner
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 {household.members?.map((member) => (
                                     <div
                                         key={member.id}
@@ -504,7 +523,7 @@ export default function AccountSettings() {
                                                     )}
                                                 </p>
                                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                    {member.role || 'Member'}
+                                                    {member.id === user.id ? 'Owner' : (member.role || 'Member')}
                                                 </p>
                                             </div>
                                         </div>
@@ -525,13 +544,13 @@ export default function AccountSettings() {
                             </div>
                         </div>
 
-                        {/* Household Members (Spenders) Section */}
+                        {/* Spending Profiles Section */}
                         <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                             <div className="flex items-center justify-between mb-3">
                                 <div>
-                                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Household Members</h3>
+                                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Spending Profiles</h3>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                        People in your household for budget tracking
+                                        Track spending by person (e.g., you, partner, kids)
                                     </p>
                                 </div>
                                 <button
