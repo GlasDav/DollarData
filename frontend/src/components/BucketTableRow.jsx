@@ -286,7 +286,7 @@ export default function BucketTableRow({
                 <>
                     {members.length > 0 && (
                         <td className="p-2" colSpan={members.length}>
-                            <div className="relative max-w-[120px]">
+                            <div className="relative">
                                 <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-xs ${isParent && !bucket.is_group_budget ? 'text-slate-300' : 'text-slate-400'}`}>{currencySymbol}</span>
                                 <input
                                     type="number"
