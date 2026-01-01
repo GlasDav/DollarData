@@ -64,7 +64,7 @@ from .routers import (
 Base.metadata.create_all(bind=engine)
 
 # Run auto-migrations for schema updates
-from .migrations import run_migrations
+from .auto_migrate import run_migrations
 run_migrations(engine)
 
 # === RATE LIMITER ===
