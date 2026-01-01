@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
-    Bell, Shield, Users, Landmark, Tag, BookPlus, Save,
+    Bell, Shield, Landmark, Tag, BookPlus, Save,
     Settings as SettingsIcon, Moon, Sun, DollarSign, Key, UserCircle
 } from 'lucide-react';
 
@@ -9,7 +9,6 @@ import {
 import AccountInfoSettings from '../components/settings/AccountInfoSettings';
 import NotificationsSettings from '../components/settings/NotificationsSettings';
 import SecuritySettings from '../components/settings/SecuritySettings';
-import MembersSettings from '../components/settings/MembersSettings';
 import AccountsSettings from '../components/settings/AccountsSettings';
 import CategoriesSettings from '../components/settings/CategoriesSettings';
 import RulesSettings from '../components/settings/RulesSettings';
@@ -27,7 +26,6 @@ export default function Settings() {
         { id: 'account', label: 'Account', icon: UserCircle, component: AccountInfoSettings },
         { id: 'notifications', label: 'Notifications', icon: Bell, component: NotificationsSettings },
         { id: 'security', label: 'Security', icon: Shield, component: SecuritySettings },
-        { id: 'members', label: 'Members', icon: Users, component: MembersSettings },
         { id: 'accounts', label: 'Accounts', icon: Landmark, component: AccountsSettings },
         { id: 'categories', label: 'Categories', icon: Tag, component: CategoriesSettings },
         { id: 'rules', label: 'Rules', icon: BookPlus, component: RulesSettings },

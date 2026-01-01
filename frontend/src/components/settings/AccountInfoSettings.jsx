@@ -1,8 +1,143 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { User, Mail, Calendar, Shield, Users, Plus, Trash2, Copy, Check, Home, Edit2, X } from 'lucide-react';
-import api from '../../services/api';
+import api, { getMembers, createMember, updateMember, deleteMember } from '../../services/api';
+
+// Preset color palette for member colors
+const COLOR_PALETTE = [
+    '#ef4444', // Red
+    '#f97316', // Orange
+    '#f59e0b', // Amber
+    '#10b981', // Emerald
+    '#14b8a6', // Teal
+    '#3b82f6', // Blue
+    '#6366f1', // Indigo
+    '#8b5cf6', // Violet
+    '#ec4899', // Pink
+];
+
+const ColorPicker = ({ currentColor, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    backgroundColor: currentColor || '#6366f1',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    cursor: 'pointer',
+                    padding: 0,
+                }}
+                title="Change member color"
+            />
+
+            {isOpen && (
+                <>
+                    <div
+                        style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                        onClick={() => setIsOpen(false)}
+                    />
+                    <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        marginTop: '8px',
+                        padding: '8px',
+                        backgroundColor: 'var(--color-slate-800, #1e293b)',
+                        border: '1px solid var(--color-slate-700, #334155)',
+                        borderRadius: '8px',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        zIndex: 50,
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '6px',
+                        width: '102px',
+                    }}>
+                        {COLOR_PALETTE.map((color) => (
+                            <button
+                                key={color}
+                                type="button"
+                                onClick={() => {
+                                    onChange(color);
+                                    setIsOpen(false);
+                                }}
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    backgroundColor: color,
+                                    border: currentColor === color ? '2px solid white' : 'none',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                }}
+                                title={color}
+                            />
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
+// Member Card with editable name and color
+const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation, isOnlyMember }) => {
+    const [localName, setLocalName] = useState(member.name);
+
+    useEffect(() => {
+        setLocalName(member.name);
+    }, [member.name]);
+
+    const handleNameBlur = () => {
+        if (localName !== member.name && localName.trim()) {
+            updateMemberMutation.mutate({ id: member.id, data: { ...member, name: localName.trim() } });
+        }
+    };
+
+    return (
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+            <div className="flex items-center gap-3 flex-1">
+                <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                    style={{ backgroundColor: member.color || '#6366f1' }}
+                >
+                    {member.name.charAt(0).toUpperCase()}
+                </div>
+                <input
+                    className="font-medium text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 outline-none transition px-1 flex-1 text-sm"
+                    value={localName}
+                    onChange={(e) => setLocalName(e.target.value)}
+                    onBlur={handleNameBlur}
+                    onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+                />
+            </div>
+            <div className="flex items-center gap-2">
+                <ColorPicker
+                    currentColor={member.color}
+                    onChange={(color) => updateMemberMutation.mutate({ id: member.id, data: { ...member, color } })}
+                />
+                {!isOnlyMember && (
+                    <button
+                        onClick={() => {
+                            if (confirm("Delete this member? Budget limits associated with them will be removed.")) {
+                                deleteMemberMutation.mutate(member.id);
+                            }
+                        }}
+                        className="text-slate-400 hover:text-red-500 transition p-1"
+                        title="Delete member"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
 
 export default function AccountSettings() {
     const { user } = useAuth();
@@ -18,6 +153,28 @@ export default function AccountSettings() {
             const res = await api.get('/household');
             return res.data;
         },
+    });
+
+    // Fetch spender members (household members for budget tracking)
+    const { data: spenderMembers = [] } = useQuery({
+        queryKey: ['members'],
+        queryFn: getMembers,
+    });
+
+    // Spender member mutations
+    const createSpenderMemberMutation = useMutation({
+        mutationFn: createMember,
+        onSuccess: () => queryClient.invalidateQueries(['members']),
+    });
+
+    const updateSpenderMemberMutation = useMutation({
+        mutationFn: updateMember,
+        onSuccess: () => queryClient.invalidateQueries(['members']),
+    });
+
+    const deleteSpenderMemberMutation = useMutation({
+        mutationFn: deleteMember,
+        onSuccess: () => queryClient.invalidateQueries(['members']),
     });
 
     const createHouseholdMutation = useMutation({
@@ -198,19 +355,56 @@ export default function AccountSettings() {
                 </div>
 
                 {!household ? (
-                    <div className="text-center py-8">
-                        <Home size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">No Household Yet</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                            Create a household to share budgets and collaborate with family members
-                        </p>
-                        <button
-                            onClick={handleCreateHousehold}
-                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition flex items-center gap-2 mx-auto"
-                        >
-                            <Plus size={18} />
-                            Create Household
-                        </button>
+                    <div className="space-y-6">
+                        {/* Household Members (Spenders) - Show even without household sharing */}
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Household Members</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        People in your household for budget tracking
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => createSpenderMemberMutation.mutate({ name: "New Member", color: "#6366f1", avatar: "User" })}
+                                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
+                                >
+                                    <Plus size={14} />
+                                    Add Member
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                {spenderMembers.map((member) => (
+                                    <MemberCard
+                                        key={member.id}
+                                        member={member}
+                                        updateMemberMutation={updateSpenderMemberMutation}
+                                        deleteMemberMutation={deleteSpenderMemberMutation}
+                                        isOnlyMember={spenderMembers.length <= 1}
+                                    />
+                                ))}
+                                {spenderMembers.length === 0 && (
+                                    <p className="text-sm text-slate-400 italic py-3 text-center bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                                        No members yet. Add a member to track individual spending.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Invite Others Section */}
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                                Want to share your budget with other users? Create a household to collaborate with family members.
+                            </p>
+                            <button
+                                onClick={handleCreateHousehold}
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition flex items-center gap-2"
+                            >
+                                <Plus size={18} />
+                                Create Household
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-6">
@@ -328,6 +522,42 @@ export default function AccountSettings() {
                                         )}
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Household Members (Spenders) Section */}
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Household Members</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        People in your household for budget tracking
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => createSpenderMemberMutation.mutate({ name: "New Member", color: "#6366f1", avatar: "User" })}
+                                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
+                                >
+                                    <Plus size={14} />
+                                    Add Member
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                {spenderMembers.map((member) => (
+                                    <MemberCard
+                                        key={member.id}
+                                        member={member}
+                                        updateMemberMutation={updateSpenderMemberMutation}
+                                        deleteMemberMutation={deleteSpenderMemberMutation}
+                                        isOnlyMember={spenderMembers.length <= 1}
+                                    />
+                                ))}
+                                {spenderMembers.length === 0 && (
+                                    <p className="text-sm text-slate-400 italic py-3 text-center">
+                                        No members yet. Add a member to track individual spending.
+                                    </p>
+                                )}
                             </div>
                         </div>
 

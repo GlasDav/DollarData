@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { decodeNamesInTree } from '../utils/textUtils';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -80,12 +81,14 @@ export const updateSettings = async (settings) => {
 
 export const getBuckets = async () => {
     const response = await api.get('/settings/buckets');
-    return response.data;
+    // Decode HTML entities in bucket names
+    return decodeNamesInTree(response.data);
 };
 
 export const getBucketsTree = async () => {
     const response = await api.get('/settings/buckets/tree');
-    return response.data;
+    // Decode HTML entities in category names (fixes &amp; display issue)
+    return decodeNamesInTree(response.data);
 };
 
 export const getTags = async () => {
