@@ -25,7 +25,7 @@ const ColorPicker = ({ currentColor, onChange }) => {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-8 h-8 rounded-full shadow-sm border-2 border-white dark:border-slate-600 hover:scale-105 transition-transform cursor-pointer"
+                className="w-6 h-6 rounded-full shadow-sm border-2 border-white dark:border-slate-600 hover:scale-105 transition-transform cursor-pointer"
                 style={{ backgroundColor: currentColor || '#6366f1' }}
                 title="Change member color"
             />
@@ -49,7 +49,7 @@ const ColorPicker = ({ currentColor, onChange }) => {
                                     onChange(color);
                                     setIsOpen(false);
                                 }}
-                                className="w-8 h-8 rounded-full hover:scale-110 transition-transform relative group"
+                                className="w-6 h-6 rounded-full hover:scale-110 transition-transform relative group"
                                 style={{ backgroundColor: color }}
                                 title={color}
                             >

@@ -125,7 +125,7 @@ function Layout() {
       {/* Sidebar */}
       <div className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
         {/* Logo */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-700">
+        <div className="h-[72px] px-4 border-b border-slate-100 dark:border-slate-700 flex items-center">
           <div className="flex items-center gap-2.5">
             <img src="/logo.svg" alt="Principal Finance" className="w-10 h-10" />
             <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Principal</h1>
