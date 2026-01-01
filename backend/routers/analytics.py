@@ -245,6 +245,10 @@ def get_analytics_history(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    import logging
+    logger = logging.getLogger("backend.analytics")
+    logger.info(f"History Request: {start_date} to {end_date} for {current_user.email}")
+
     try:
         s_date = datetime.fromisoformat(start_date)
         e_date = datetime.fromisoformat(end_date)
@@ -320,12 +324,20 @@ def get_analytics_history(
         buckets_query = buckets_query.filter(models.BudgetBucket.id.in_(subtree_ids))
     elif group:
         buckets_query = buckets_query.filter(models.BudgetBucket.group == group)
-        
-    relevant_buckets = buckets_query.all()
-    monthly_limit_total = sum(sum(l.amount for l in b.limits) for b in relevant_buckets)
     
-    # Pre-fetch relevant buckets IDs for txn filtering
+    # OPTIMIZATION: Use SQL aggregation instead of Python N+1 loop
+    # This was likely causing timeouts with many buckets
+    relevant_buckets = buckets_query.all()
     relevant_bucket_ids = [b.id for b in relevant_buckets]
+
+    if not relevant_bucket_ids:
+        monthly_limit_total = 0.0
+    else:
+        monthly_limit_total = db.query(func.sum(models.BudgetLimit.amount))\
+            .filter(models.BudgetLimit.bucket_id.in_(relevant_bucket_ids))\
+            .scalar() or 0.0
+    
+    logger.info(f"Optimized Limit Calc: {monthly_limit_total} across {len(relevant_bucket_ids)} buckets")
     
     history_data = []
     
@@ -351,18 +363,8 @@ def get_analytics_history(
         if bucket_id or bucket_ids or group:
              query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
         
-        # Note: If no filters, we include ALL expenses, even unassigned? 
-        # Typically "Performance vs Budget" implies comparing against budgeted buckets.
-        # But "Total" usually means "Total Spending".
-        # Let's align: matching buckets only.
-        if not bucket_id and not bucket_ids and not group:
-             # If "Total", maybe we want everything?
-             # For now, let's keep it simple: Filter by ALL known buckets to match Limits.
-             # Or just raw total. 
-             # Let's use raw total for Spending, but Limit is sum of buckets.
-             # This highlights "Unbudgeted" spending which is good to see.
-             pass
-
+        # Note: If no filters, we include ALL expenses to match "Total Spending" paradigm
+        
         # Exclude Transfers from History too
         query = query.filter(
             ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
@@ -378,6 +380,7 @@ def get_analytics_history(
             "spent": spent
         })
         
+    logger.info(f"History calculation complete. Returning {len(history_data)} months.")
     return history_data
         
 
