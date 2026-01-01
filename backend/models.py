@@ -286,7 +286,7 @@ class BudgetLimit(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     bucket_id = Column(Integer, ForeignKey("budget_buckets.id"))
-    member_id = Column(Integer, ForeignKey("household_members.id"))
+    member_id = Column(Integer, ForeignKey("household_members.id"), nullable=True)  # NULL = shared limit
     amount = Column(Float, default=0.0)
     
     bucket = relationship("BudgetBucket")

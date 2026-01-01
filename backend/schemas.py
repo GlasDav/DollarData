@@ -37,7 +37,7 @@ class Tag(TagBase):
 
 # Budget Limits (Forward declaration for buckets)
 class BudgetLimitBase(BaseModel):
-    member_id: int
+    member_id: Optional[int] = None  # None = shared limit for whole household
     amount: float
 
 class BudgetLimitCreate(BudgetLimitBase):

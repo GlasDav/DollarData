@@ -55,10 +55,13 @@ export default function BucketTableRow({
     const [localName, setLocalName] = useState(bucket.name || '');
 
     // Initialize limits state from bucket.limits or default to empty
-    // We map member_id -> amount for easier lookup
+    // Map member_id -> amount, using '_shared_' key for null member_id
     const [localLimits, setLocalLimits] = useState(() => {
         const limitsMap = {};
-        (bucket.limits || []).forEach(l => limitsMap[l.member_id] = l.amount);
+        (bucket.limits || []).forEach(l => {
+            const key = l.member_id === null ? '_shared_' : l.member_id;
+            limitsMap[key] = l.amount;
+        });
         return limitsMap;
     });
 
@@ -71,7 +74,10 @@ export default function BucketTableRow({
     useEffect(() => {
         setLocalName(bucket.name || '');
         const limitsMap = {};
-        (bucket.limits || []).forEach(l => limitsMap[l.member_id] = l.amount);
+        (bucket.limits || []).forEach(l => {
+            const key = l.member_id === null ? '_shared_' : l.member_id;
+            limitsMap[key] = l.amount;
+        });
         setLocalLimits(limitsMap);
     }, [bucket.name, bucket.limits]);
 
@@ -83,17 +89,20 @@ export default function BucketTableRow({
     // Handle Limit Blur (Save)
     const handleLimitBlur = (memberId) => {
         const val = parseFloat(localLimits[memberId]) || 0;
+        // Convert '_shared_' key to null for backend
+        const apiMemberId = memberId === '_shared_' ? null : memberId;
+
         // Construct new limits array
         const currentLimits = bucket.limits || [];
-        const otherLimits = currentLimits.filter(l => l.member_id !== memberId);
+        const otherLimits = currentLimits.filter(l => l.member_id !== apiMemberId);
 
         // Only update if changed
-        const oldVal = currentLimits.find(l => l.member_id === memberId)?.amount || 0;
+        const oldVal = currentLimits.find(l => l.member_id === apiMemberId)?.amount || 0;
 
         if (val !== oldVal) {
             const newLimits = [
                 ...otherLimits,
-                { member_id: memberId, amount: val }
+                { member_id: apiMemberId, amount: val }
             ];
             updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, limits: newLimits } });
         }
@@ -165,9 +174,9 @@ export default function BucketTableRow({
     const getChildrenSumWithRecursion = (node, memberId) => {
         if (!node.children || node.children.length === 0) return 0;
         return node.children.reduce((sum, child) => {
-            if (memberId === -1) {
-                // Sum children's shared limits (member_id === -1)
-                const sharedLimit = child.limits?.find(l => l.member_id === -1)?.amount || 0;
+            if (memberId === null) {
+                // Sum children's shared limits (member_id === null)
+                const sharedLimit = child.limits?.find(l => l.member_id === null)?.amount || 0;
                 return sum + sharedLimit;
             } else if (memberId === 'all') {
                 // Sum ALL member limits for each child
@@ -314,10 +323,10 @@ export default function BucketTableRow({
                                         }
                                     `}
                                     value={isParent && !bucket.is_group_budget
-                                        ? getChildrenSumWithRecursion(bucket, -1)
-                                        : (localLimits[-1] ?? '')}
-                                    onChange={(e) => handleLimitChange(-1, e.target.value)}
-                                    onBlur={() => !(isParent && !bucket.is_group_budget) && handleLimitBlur(-1)}
+                                        ? getChildrenSumWithRecursion(bucket, null)
+                                        : (localLimits['_shared_'] ?? '')}
+                                    onChange={(e) => handleLimitChange('_shared_', e.target.value)}
+                                    onBlur={() => !(isParent && !bucket.is_group_budget) && handleLimitBlur('_shared_')}
                                 />
                             </div>
                         </td>
