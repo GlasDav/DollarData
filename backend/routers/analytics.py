@@ -748,6 +748,23 @@ def get_anomalies(
     return anomalies
 
 
+
+@router.get("/transactions/stats")
+def get_transaction_stats(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Get high-level statistics about transactions.
+    Used for achievements and dashboard summaries.
+    """
+    total_count = db.query(models.Transaction).filter(
+        models.Transaction.user_id == current_user.id
+    ).count()
+    
+    return {"total_count": total_count}
+
+
 @router.get("/sankey")
 def get_sankey_data(
     start_date: str = Query(..., description="ISO Date string"), 
