@@ -1,183 +1,119 @@
-# Session Handover - December 31, 2024
+# Session Handover - January 2, 2026
 
 ## What We Accomplished Today
 
-### 🎉 Major Achievement: 80% Production Ready!
+### 🎯 Main Feature: Discretionary/Non-Discretionary Category Toggle
 
-Starting point: 25% → **Current: 80%**
+Implemented a user interface element allowing budget categories to be classified as "Discretionary" (Wants) or "Non-Discretionary" (Needs) directly from the Settings > Categories page.
 
 ---
 
 ## Completed Work
 
-### 1. Production Readiness Improvements ✅
+### 1. Category Group Toggle ✅
+- **Inline Pill/Badge**: Added clickable toggle next to category names
+- **Color-coded**: Green for "Wants" (Discretionary), Amber for "Needs" (Non-Discretionary)
+- **Smart Visibility**:
+  - Hidden for Income categories and their children
+  - Hidden for parent groups unless "Budget by Group" is enabled
+  - Shown for all child expense categories
+- **Parent Group Inheritance**: Uses `parentGroup` prop to correctly identify children under Income parents
 
-**Week 1 Items** (Previously completed):
-- Environment validation with SECRET_KEY checks
-- Sentry error monitoring integration
-- Database connection pooling
-- Console.log cleanup
-- Currency bug fix (A$ → AUD)
+### 2. Cross-Parent Category Drag & Drop ✅
+- Categories can now be dragged **between** different parent categories (not just reordered within)
+- Moved categories automatically inherit the new parent's `group` value
+- Backend already supported `parent_id` changes; only frontend logic needed updating
 
-**Week 2 Items** (Completed today):
-- ✅ Frontend testing infrastructure (Vitest + React Testing Library)
-- ✅ 21 passing tests (was 0)
-- ✅ ESLint no-console rule
-- ✅ Security audit (0 vulnerabilities)
-- ✅ Enhanced logging with request IDs
-- ✅ Structured JSON logging
+### 3. Settings Page UI Fixes ✅
+- **Sticky Sidebar**: Settings sidebar now stays fixed in viewport (matches main sidebar behavior)
+- **Viewport Height**: Uses `h-[calc(100vh-72px)]` to match main sidebar exactly
+- **Removed Nested Scrollbars**: Content scrolls independently while sidebar stays fixed
 
-**Week 3 Items** (Completed today):
-- ✅ API documentation enhancement (comprehensive Swagger UI)
-- ✅ Performance optimization (code splitting, bundle optimization)
-- ✅ Additional utility tests
+### 4. Hide from Budget Button Fix ✅
+- Fixed mutation to send full bucket object (`{ ...bucket, is_hidden: !bucket.is_hidden }`)
+- Added amber background + icon when category is hidden for clear visual indicator
+- Widened action column to prevent clipping
 
-### 2. Visual Updates ✅
-- ✅ Created custom SVG logo (ascending growth bars design)
-- ✅ Updated sidebar to use new logo
+### 5. VPS Deployment Workflow ✅
+- Created `.agent/workflows/deploy.md` with server connection details
+- Added to `.gitignore` to keep credentials secure
+- **Server Details**:
+  - Host: 43.224.182.196 (Binary Lane VPS)
+  - App Path: `/opt/principal`
+  - Stack: Docker Compose (frontend, backend, postgres, redis)
 
-### 3. Basiq Integration Investigation ⏸️
-- Attempted multiple integration approaches
-- Mock mode fully working
-- Real mode blocked - needs vendor support
-- **Documented in**: `basiq_setup.md`
+---
 
-### 4. Basiq Integration Enhancements ✅ (December 30-31, 2024)
-- ✅ Enhanced error logging with emoji markers (🔐 ✅ ❌ 📥 ⏳ 💳 📊)
-- ✅ Increased job polling timeout (20s → 60s)
-- ✅ Comprehensive error handling with user-friendly messages
-- ✅ Created diagnostic test scripts (`test_basiq.py`, `test_basiq.ps1`)
-- ✅ Validated API key working correctly
-- **Status**: Ready for production once redirect URL whitelisted in Basiq Dashboard
+## Files Modified
 
-### 5. Bug Fixes ✅ (December 30-31, 2024)
-- ✅ Fixed ampersand display in category names (`&amp;` → `&`)
-- ✅ Changed Pydantic validator to `mode='before'` to prevent double-escaping
-- ✅ Categories now display correctly: "Gas & Electricity", "Health & Wellness", etc.
+### Frontend
+| File | Changes |
+|------|---------|
+| `BucketTableRow.jsx` | Added group toggle pill, parentGroup prop, fixed hide button mutation |
+| `BucketTableSection.jsx` | Added parentGroup prop passing, cross-parent drag logic |
+| `Settings.jsx` | Fixed sticky sidebar with viewport-based height |
+
+### Project Configuration
+| File | Changes |
+|------|---------|
+| `.agent/workflows/deploy.md` | NEW - VPS deployment workflow with credentials |
+| `.gitignore` | Added `.agent/` to protect credentials |
+
+---
+
+## Git Commits (Today)
+
+1. `d71d48f` - Add inline group toggle for budget categories
+2. `5999ce0` - Hide group toggle for Income and parent categories without Budget by Group
+3. `654b416` - Fix: Hide group toggle for Income children using parentGroup prop
+4. `2fe255f` - Fix: Make settings sidebar sticky when scrolling
+5. `d41e6c8` - Feature: Enable dragging subcategories between parent categories
+6. `db5c68c` - UI: Keep hide button visible when category is hidden
+7. `8f42697` - Fix: Settings sidebar alignment, scrolling, and hide button visibility
+8. `727eebb` - Fix: Settings sticky sidebar with proper viewport height
+9. `51556eb` - Fix: Send full bucket object when toggling is_hidden
+
+**All pushed to `main` branch** ✅
+
+---
+
+## Deployment
+
+### Deploy to VPS:
+```bash
+ssh root@43.224.182.196
+# Password in Binary Lane dashboard or .agent/workflows/deploy.md
+
+cd /opt/principal && git pull origin main && docker compose down && docker compose up -d --build
+```
+
+### Quick One-Liner:
+```bash
+cd /opt/principal && git pull origin main && docker compose down && docker compose up -d --build
+```
 
 ---
 
 ## Current Application Status
 
-### Production Metrics
-- **Tests**: 21 passing
-- **Security**: 0 vulnerabilities  
-- **API Docs**: Comprehensive at `/docs`
-- **Logging**: Structured with request IDs
-- **Performance**: Code-split bundles
-- **Logo**: Custom SVG
-
 ### What's Working
-- ✅ All core features
-- ✅ Frontend testing infrastructure
-- ✅ Mock Basiq integration
-- ✅ Enhanced logging
-- ✅ Production-ready builds
+- ✅ Group toggle shows correct state (Wants/Needs)
+- ✅ Toggle hidden for Income categories
+- ✅ Cross-parent category drag & drop
+- ✅ Hide button shows amber when active
+- ✅ Settings sidebar stays fixed during scroll
 
-### What Needs Attention
-- ⏸️ Real Basiq integration (needs vendor support - email support@basiq.io)
-- 📝 Optional: More tests (currently 21, target 40%+ coverage)
-- 📝 Optional: E2E testing
-- 📝 Optional: Deployment guides
+### Backend Notes
+- **No backend changes required** - `group` field already exists in `BudgetBucket` model
+- Backend update endpoint already supports all necessary fields
 
 ---
 
-## Files Modified Today
+## Known Issues / Future Improvements
 
-### New Files Created (December 29, 2024)
-- `backend/docs/examples.py` - API request/response examples
-- `backend/middleware/request_id.py` - Request tracing
-- `backend/logging_config.py` - Structured logging
-- `frontend/public/logo.svg` - Custom logo
-- `frontend/src/test/utils/formatting.test.js` - Utility tests
-
-### New Files Created (December 30-31, 2024)
-- `backend/test_basiq.py` - Python diagnostic script for Basiq API testing
-- `backend/test_basiq.ps1` - PowerShell test script for Basiq token validation
-
-### Modified Files (December 29, 2024)
-- `backend/main.py` - Enhanced API metadata, logging, middleware
-- `frontend/vite.config.js` - Performance optimizations
-- `frontend/eslint.config.js` - No-console rule
-- `frontend/src/App.jsx` - Logo integration
-- `frontend/src/components/ConnectBank.jsx` - Basiq troubleshooting
-
-### Modified Files (December 30-31, 2024)
-- `backend/services/basiq.py` - Enhanced logging with emoji markers, better error handling, 60s timeout
-- `backend/schemas.py` - Fixed Pydantic validator to prevent HTML entity double-escaping
-
----
-
-## Git Status
-
-**All changes committed and pushed to GitHub** ✅
-
-Recent commits:
-1. Production readiness to 80% (API docs, performance, tests) - Dec 29
-2. Logo updates - Dec 29
-3. Basiq integration documentation - Dec 29
-4. Fix ampersand display and enhance Basiq integration (commit d70fefb) - Dec 30-31
-   - Enhanced Basiq service logging
-   - Fixed HTML entity escaping bug
-   - Added diagnostic test scripts
-
-**Branch**: `main`
-
----
-
-## Next Session Recommendations
-
-### Option 1: Continue Production Readiness (20% remaining)
-**Time**: 4-6 hours  
-**Tasks**:
-- Write auth flow tests
-- Transaction component tests
-- Budget CRUD tests
-- API documentation examples
-- Deployment guides
-
-**Result**: 90-95% production ready
-
-### Option 2: Return to Feature Development
-**Recommended**: Build features while infrastructure is solid
-
-From [Feature Roadmap.md](file:///c:/Users/David%20Glasser/OneDrive/Documents/Projects/Principal/Feature%20Roadmap.md):
-- Phase 7: Tax Optimization Tools
-- Phase 10: Enhanced Analytics & Forecasting
-
-### Option 3: Deploy to Staging
-**Tasks**:
-- Set up staging environment
-- Deploy using Docker
-- Invite beta testers
-- Gather feedback
-
----
-
-## Open Items / Blockers
-
-### Basiq Integration ⏸️
-- **Status**: Mock mode working, real mode blocked
-- **Blocker**: Needs Basiq vendor support
-- **Action**: Contact support@basiq.io with API key and application ID
-- **Documentation**: See `basiq_setup.md`
-- **Impact**: Low (mock mode is production-ready for development)
-
----
-
-## Important Documentation
-
-### Artifacts Created
-- `task.md` - Task checklist
-- `implementation_plan.md` - Technical plans
-- `walkthrough.md` - Completed work summary
-- `production_readiness_audit.md` - Initial audit
-- `basiq_setup.md` - Basiq integration docs
-- `next_steps.md` - Options for moving forward
-
-### Project Documentation
-- `feature_documentation.md` - Updated with Testing & DevOps section
-- `Feature Roadmap.md` - Shows completed phases
+### Minor Items
+1. **Subcategory Group Inheritance**: When adding a new subcategory under Income, verify the `group: "Income"` is being set correctly (frontend passes it, but double-check DB)
+2. **Settings Sidebar Alignment**: May need minor tweaks if header height changes
 
 ---
 
@@ -185,10 +121,9 @@ From [Feature Roadmap.md](file:///c:/Users/David%20Glasser/OneDrive/Documents/Pr
 
 ```bash
 # Start development servers
-cd frontend
-npm run dev
+cd frontend && npm run dev
 
-# New terminal
+# Backend (new terminal)
 cd backend
 venv\Scripts\activate  # Windows
 python -m uvicorn backend.main:app --reload
@@ -198,47 +133,16 @@ python -m uvicorn backend.main:app --reload
 - Frontend: http://localhost:5173
 - Backend: http://localhost:8000
 - API Docs: http://localhost:8000/docs
-
----
-
-## Key Numbers
-
-- **Production Readiness**: 80%
-- **Tests**: 21 passing
-- **Files Changed**: 23 files
-- **Commits**: 6 today
-- **Time**: ~12 hours total production work
-- **Vulnerabilities**: 0
+- Production: https://principal-finance (or VPS IP)
 
 ---
 
 ## Summary
 
-Excellent session! Took the application from 25% to **80% production ready**. 
+Productive session focused on UI/UX improvements for budget category management:
+- **Group Toggle**: Users can now easily classify categories as Discretionary/Non-Discretionary
+- **Drag & Drop**: Categories can be reorganized across parent groups
+- **Settings UI**: Fixed scrolling issues and sidebar alignment
+- **Deployment**: Created reusable workflow for VPS deployments
 
-**Core wins**:
-- Testing infrastructure in place
-- Security hardened
-- Performance optimized  
-- Documentation comprehensive
-- Zero vulnerabilities
-- Professional logo
-
-**Ready for**: Staging deployment or continued feature development
-
-**Basiq integration**: Can be completed later with vendor support (mock mode works great for now)
-
----
-
-## Questions to Consider Next Session
-
-1. Deploy to staging for real-world testing?
-2. Continue with Phase 7 (Tax Tools) or Phase 10 (Analytics)?
-3. Write more tests to reach 40%+ coverage?
-4. Set up E2E testing with Playwright?
-
-**Recommendation**: Return to feature development. Infrastructure is solid! 🎉
-
----
-
-**Great work today!** 🚀
+All changes pushed to GitHub and ready for deployment. 🚀

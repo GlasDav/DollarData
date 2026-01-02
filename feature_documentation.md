@@ -167,6 +167,17 @@ Dedicated reporting section for deeper financial analysis.
     -   Inline editing for all fields (click to edit).
 -   **Categories & Groups**: Manage high-level groups (Income, Discretionary, Non-Discretionary).
 -   **Buckets**: Create and edit specific spending buckets (e.g., Groceries, Rent) within groups.
+-   **Group Toggle (Wants/Needs)** *(New)*:
+    -   Inline clickable pill next to each category name.
+    -   Toggle between "Wants" (Discretionary, green) and "Needs" (Non-Discretionary, amber).
+    -   Hidden for Income categories and their children.
+    -   Only visible for parent groups with "Budget by Group" enabled.
+-   **Cross-Parent Drag & Drop** *(New)*:
+    -   Drag subcategories between different parent categories.
+    -   Moved categories automatically inherit the new parent's group.
+-   **Hide from Budget** *(New)*:
+    -   Toggle visibility of categories in budget view.
+    -   Hidden categories show amber background icon for clear indication.
 -   **Couple Mode Features**:
     -   Separate limit columns for each partner.
     -   Shared toggle to combine limits for joint expenses.
