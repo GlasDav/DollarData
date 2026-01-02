@@ -38,7 +38,7 @@ export default function Settings() {
     return (
         <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-slate-50 dark:bg-slate-900">
             {/* Sidebar */}
-            <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+            <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col sticky top-0 h-full">
                 <div className="p-6">
                     <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <SettingsIcon className="text-indigo-600" />
