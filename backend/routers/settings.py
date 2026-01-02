@@ -394,6 +394,8 @@ def update_bucket(bucket_id: int, bucket: schemas.BudgetBucketCreate, db: Sessio
     db_bucket.icon_name = bucket.icon_name
     db_bucket.is_shared = bucket.is_shared
     db_bucket.is_rollover = bucket.is_rollover
+    db_bucket.is_hidden = bucket.is_hidden
+    db_bucket.is_group_budget = bucket.is_group_budget
     db_bucket.group = bucket.group
     db_bucket.target_amount = bucket.target_amount
     db_bucket.target_date = bucket.target_date

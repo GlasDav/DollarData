@@ -1,6 +1,6 @@
 Tasks
 Transactions
-    - Allow user to leave a note on a transaction - action button
+    - Allow user to leave a note on a transaction - action button (pending Basiq integration)
     - Show upcoming recurring transactions in the budget cards as hashed or unfilled - to signifiy that it hasn't been spent yet but it's coming, so it reduces the effective available budget
 
 Integrations
@@ -12,16 +12,17 @@ Commercialisation
     - Referral links
 
 Budget
-    - Revamp the budget setting process - need to be able to see a history for each category somehow
-    - Smart rules should have its own tab in the budget page
-
+    - Revamp the budget setting process
+    
 Net Worth
     - Default superannuation account
+
 
 General UI/UX
     - Ability to toggle on/off dashboard widgets
     - Colour-coded sankey diagram, which should be moved to reports page
     - Ability to add emoji to categories for visual appeal
+    - Settings sidebar
 
 Account & Settings
     - Invite family member - sends them an email to create their own login for the same account
