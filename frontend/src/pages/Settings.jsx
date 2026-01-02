@@ -64,23 +64,19 @@ export default function Settings() {
                     ))}
                 </nav>
 
-                {/* Footer Controls - mt-auto pushes to bottom to align with main sidebar */}
-                <div className="mt-auto p-3 border-t border-slate-200 dark:border-slate-700 space-y-1">
-                    <div className="flex items-center justify-between px-3 py-2">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">Appearance</span>
-                        <button
-                            onClick={toggleTheme}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition"
-                            title="Toggle Theme"
-                        >
-                            {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
-                        </button>
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">Currency</span>
-                        <div className="flex items-center gap-1 text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
-                            <DollarSign size={12} /> AUD
-                        </div>
+                {/* Footer Controls - structure matches main sidebar footer exactly */}
+                <div className="mt-auto p-3 border-t border-slate-100 dark:border-slate-700">
+                    <button
+                        onClick={toggleTheme}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 w-full transition-all duration-200 mb-1"
+                    >
+                        {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+                        Appearance
+                    </button>
+                    <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 w-full">
+                        <DollarSign size={18} />
+                        <span className="flex-1">Currency</span>
+                        <span className="text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">AUD</span>
                     </div>
                 </div>
             </aside>

@@ -13,8 +13,9 @@ import os
 bind = os.getenv("BIND", "0.0.0.0:8000")
 
 # Number of worker processes
-# Rule of thumb: 2-4 workers per CPU core
-workers = int(os.getenv("WORKERS", multiprocessing.cpu_count() * 2 + 1))
+# Using 1 worker to ensure in-memory job store works across requests
+# For multi-worker scaling, migrate job store to Redis
+workers = int(os.getenv("WORKERS", 1))
 
 # Worker class - use uvicorn for async support
 worker_class = "uvicorn.workers.UvicornWorker"
