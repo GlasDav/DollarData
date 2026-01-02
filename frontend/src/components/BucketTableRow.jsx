@@ -543,8 +543,8 @@ export default function BucketTableRow({
                         onClick={() => {
                             updateBucketMutation.mutate({ id: bucket.id, data: { is_hidden: !bucket.is_hidden } });
                         }}
-                        className={`transition ${bucket.is_hidden
-                            ? 'text-amber-500 opacity-100'
+                        className={`p-1 rounded transition ${bucket.is_hidden
+                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
                             : 'text-slate-300 hover:text-amber-500 opacity-0 group-hover:opacity-100'
                             }`}
                         title={bucket.is_hidden ? 'Show in budget' : 'Hide from budget'}
