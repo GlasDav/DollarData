@@ -73,7 +73,7 @@ const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSel
                     >
                         <option value="">Select Category...</option>
                         <optgroup label="Income">
-                            {buckets?.filter(b => b.group === 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            {buckets?.filter(b => b.group === 'Income' && b.name !== 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                         </optgroup>
                         <optgroup label="Non-Discretionary (Needs)">
                             {buckets?.filter(b => b.group === 'Non-Discretionary').sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -287,7 +287,7 @@ export default function RulesSection({ buckets }) {
                         >
                             <option value="">Select Category...</option>
                             <optgroup label="Income">
-                                {buckets?.filter(b => b.group === 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
+                                {buckets?.filter(b => b.group === 'Income' && b.name !== 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
                                     <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
                             </optgroup>

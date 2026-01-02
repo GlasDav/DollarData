@@ -34,14 +34,17 @@ export default function MultiSelectCategoryFilter({ categories = [], selectedIds
 
     const flattened = flattenAndSort(categories);
 
-    // Group categories
+    // Group categories, excluding the "Income" parent category (group header is sufficient)
+    const grouped = flattened
+        .filter(cat => !(cat.name === 'Income' && cat.group === 'Income' && cat.depth === 0))
+        .reduce((acc, cat) => {
+            const group = cat.group || 'Other';
+            if (!acc[group]) acc[group] = [];
+            acc[group].push(cat);
+            return acc;
+        }, {});
+
     const groupOrder = { 'Income': 1, 'Non-Discretionary': 2, 'Discretionary': 3, 'Transfer': 4 };
-    const grouped = flattened.reduce((acc, cat) => {
-        const group = cat.group || 'Other';
-        if (!acc[group]) acc[group] = [];
-        acc[group].push(cat);
-        return acc;
-    }, {});
 
     // Sort groups and categories within groups
     const sortedGroups = Object.keys(grouped).sort((a, b) => {
