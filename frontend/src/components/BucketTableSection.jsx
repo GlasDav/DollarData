@@ -83,47 +83,77 @@ export default function BucketTableSection({
         return ids;
     };
 
-    // Handle drag end - reorder buckets (works for both roots and children)
+    // Handle drag end - reorder buckets and support cross-parent moves
     const handleDragEnd = (event) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
-        // Find the bucket and its siblings (either roots or within a parent)
-        const findBucketAndSiblings = (nodes, parentId = null) => {
+        // Find bucket and its context (siblings, parent) by ID
+        const findBucketContext = (nodes, targetId, parentId = null, parentBucket = null) => {
             for (let i = 0; i < nodes.length; i++) {
-                if (nodes[i].id === active.id) {
-                    return { siblings: nodes, index: i, parentId };
+                if (nodes[i].id === targetId) {
+                    return { siblings: nodes, index: i, parentId, parentBucket };
                 }
                 if (nodes[i].children && nodes[i].children.length > 0) {
-                    const result = findBucketAndSiblings(nodes[i].children, nodes[i].id);
+                    const result = findBucketContext(nodes[i].children, targetId, nodes[i].id, nodes[i]);
                     if (result) return result;
                 }
             }
             return null;
         };
 
-        const activeResult = findBucketAndSiblings(roots);
-        if (!activeResult) return;
+        const activeContext = findBucketContext(roots, active.id);
+        const overContext = findBucketContext(roots, over.id);
 
-        const { siblings } = activeResult;
-        const oldIndex = siblings.findIndex(b => b.id === active.id);
-        const newIndex = siblings.findIndex(b => b.id === over.id);
+        if (!activeContext || !overContext) return;
 
-        // Only allow reordering within same parent group
-        if (oldIndex === -1 || newIndex === -1) return;
+        const sameParent = activeContext.parentId === overContext.parentId;
 
-        // Build new order array with updated display_order values
-        const reordered = [...siblings];
-        const [movedItem] = reordered.splice(oldIndex, 1);
-        reordered.splice(newIndex, 0, movedItem);
+        if (sameParent) {
+            // Same parent: just reorder within siblings
+            const { siblings } = activeContext;
+            const oldIndex = siblings.findIndex(b => b.id === active.id);
+            const newIndex = siblings.findIndex(b => b.id === over.id);
 
-        const orderUpdates = reordered.map((bucket, idx) => ({
-            id: bucket.id,
-            display_order: idx
-        }));
+            if (oldIndex === -1 || newIndex === -1) return;
 
-        if (onReorderBuckets) {
-            onReorderBuckets(orderUpdates);
+            const reordered = [...siblings];
+            const [movedItem] = reordered.splice(oldIndex, 1);
+            reordered.splice(newIndex, 0, movedItem);
+
+            const orderUpdates = reordered.map((bucket, idx) => ({
+                id: bucket.id,
+                display_order: idx
+            }));
+
+            if (onReorderBuckets) {
+                onReorderBuckets(orderUpdates);
+            }
+        } else {
+            // Different parent: move to new parent
+            const activeBucket = activeContext.siblings[activeContext.index];
+            const newParentId = overContext.parentId; // Parent of the 'over' item
+            const newParentBucket = overContext.parentBucket;
+
+            // Get the new parent's group (or keep current if moving to root)
+            const newGroup = newParentBucket?.group || activeBucket.group;
+
+            // Calculate new display_order (insert after the 'over' item)
+            const overIndex = overContext.siblings.findIndex(b => b.id === over.id);
+            const newDisplayOrder = overIndex + 1;
+
+            // Update the bucket's parent_id, group, and display_order
+            if (updateBucketMutation) {
+                updateBucketMutation.mutate({
+                    id: activeBucket.id,
+                    data: {
+                        ...activeBucket,
+                        parent_id: newParentId,
+                        group: newGroup,
+                        display_order: newDisplayOrder
+                    }
+                });
+            }
         }
     };
 
