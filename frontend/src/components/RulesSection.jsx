@@ -72,7 +72,15 @@ const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSel
                         onChange={(e) => setLocalBucketId(e.target.value)}
                     >
                         <option value="">Select Category...</option>
-                        {buckets?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        <optgroup label="Income">
+                            {buckets?.filter(b => b.group === 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </optgroup>
+                        <optgroup label="Non-Discretionary (Needs)">
+                            {buckets?.filter(b => b.group === 'Non-Discretionary').sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </optgroup>
+                        <optgroup label="Discretionary (Wants)">
+                            {buckets?.filter(b => b.group === 'Discretionary' || !b.group).sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </optgroup>
                     </select>
                 </div>
                 <div className="col-span-4 md:col-span-2 flex items-center gap-2">
@@ -278,9 +286,21 @@ export default function RulesSection({ buckets }) {
                             onChange={(e) => setBucketId(e.target.value)}
                         >
                             <option value="">Select Category...</option>
-                            {buckets?.map(b => (
-                                <option key={b.id} value={b.id}>{b.name}</option>
-                            ))}
+                            <optgroup label="Income">
+                                {buckets?.filter(b => b.group === 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </optgroup>
+                            <optgroup label="Non-Discretionary (Needs)">
+                                {buckets?.filter(b => b.group === 'Non-Discretionary').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </optgroup>
+                            <optgroup label="Discretionary (Wants)">
+                                {buckets?.filter(b => b.group === 'Discretionary' || !b.group).sort((a, b) => a.name.localeCompare(b.name)).map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </optgroup>
                         </select>
                     </div>
                     <div className="w-[100px]">

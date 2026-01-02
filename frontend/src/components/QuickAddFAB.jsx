@@ -26,7 +26,7 @@ export default function QuickAddFAB() {
     };
 
     return (
-        <div className="fixed bottom-6 right-24 z-50 flex flex-col items-end pointer-events-none" ref={menuRef}>
+        <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end pointer-events-none" ref={menuRef}>
             {/* Menu Options */}
             <div className={`transition-all duration-200 origin-bottom-right flex flex-col gap-3 mb-4 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 translate-y-4 pointer-events-none'}`}>
 
