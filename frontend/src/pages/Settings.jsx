@@ -16,8 +16,8 @@ import DataSettings from '../components/settings/DataSettings';
 import ApiKeysSettings from '../components/settings/ApiKeysSettings';
 
 /**
- * Settings Page with Sidebar Navigation
- * Uses sticky sidebar that stays fixed within the viewport
+ * Settings Page with Fixed Sidebar Navigation
+ * Sidebar uses fixed positioning to align footer border with main sidebar
  */
 export default function Settings() {
     const { theme, toggleTheme } = useTheme();
@@ -37,10 +37,10 @@ export default function Settings() {
     const ActiveComponent = tabs.find(t => t.id === activeTab)?.component || AccountInfoSettings;
 
     return (
-        <div className="flex bg-slate-50 dark:bg-slate-900 min-h-full">
-            {/* Sidebar - sticky to stay in view while content scrolls */}
-            <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 sticky top-0 h-[calc(100vh-72px)] flex flex-col">
-                {/* Header - simple padding, no fixed height since we're already below main app header */}
+        <>
+            {/* Sidebar - fixed position starting at main sidebar width, top at header height */}
+            <aside className="fixed left-64 top-[72px] bottom-0 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10">
+                {/* Header */}
                 <div className="p-4 border-b border-slate-100 dark:border-slate-700">
                     <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <SettingsIcon className="text-indigo-600" />
@@ -85,12 +85,12 @@ export default function Settings() {
                 </div>
             </aside>
 
-            {/* Content Area */}
-            <main className="flex-1 p-6 md:p-8">
+            {/* Content Area - add left margin to account for fixed sidebar */}
+            <main className="ml-64 flex-1 p-6 md:p-8 bg-slate-50 dark:bg-slate-900 min-h-[calc(100vh-72px)]">
                 <div className="max-w-4xl mx-auto">
                     <ActiveComponent />
                 </div>
             </main>
-        </div>
+        </>
     );
 }
