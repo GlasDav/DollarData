@@ -51,7 +51,14 @@ export default function MultiSelectCategoryFilter({ categories = [], selectedIds
     });
 
     sortedGroups.forEach(group => {
-        grouped[group].sort((a, b) => a.name.localeCompare(b.name));
+        // Sort: parents (depth 0) first alphabetically, then children (depth > 0) by parent then alphabetically
+        grouped[group].sort((a, b) => {
+            // Depth 0 items (no parent) should come before depth > 0 items
+            if (a.depth === 0 && b.depth > 0) return -1;
+            if (a.depth > 0 && b.depth === 0) return 1;
+            // Within same depth, sort alphabetically
+            return a.name.localeCompare(b.name);
+        });
     });
 
     const toggleCategory = (id) => {
