@@ -72,6 +72,8 @@ Implemented a user interface element allowing budget categories to be classified
 7. `8f42697` - Fix: Settings sidebar alignment, scrolling, and hide button visibility
 8. `727eebb` - Fix: Settings sticky sidebar with proper viewport height
 9. `51556eb` - Fix: Send full bucket object when toggling is_hidden
+10. `3d1389d` - docs: Update HANDOVER.md and feature_documentation.md
+11. `2f3bc29` - Fix: Add is_hidden to backend update, align Settings footer
 
 **All pushed to `main` branch** ✅
 
