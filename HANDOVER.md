@@ -1,46 +1,46 @@
-# Session Handover - January 2, 2026
+# Session Handover - January 2, 2026 (Evening Session)
 
-## What We Accomplished Today
+## What We Accomplished This Session
 
-### 🎯 Main Feature: Discretionary/Non-Discretionary Category Toggle
+### 🎯 Focus: UI Polish & Bug Fixes
 
-Implemented a user interface element allowing budget categories to be classified as "Discretionary" (Wants) or "Non-Discretionary" (Needs) directly from the Settings > Categories page.
+Fixed several UI alignment issues and resolved a critical CSV import bug.
 
 ---
 
 ## Completed Work
 
-### 1. Category Group Toggle ✅
-- **Inline Pill/Badge**: Added clickable toggle next to category names
-- **Color-coded**: Green for "Wants" (Discretionary), Amber for "Needs" (Non-Discretionary)
-- **Smart Visibility**:
-  - Hidden for Income categories and their children
-  - Hidden for parent groups unless "Budget by Group" is enabled
-  - Shown for all child expense categories
-- **Parent Group Inheritance**: Uses `parentGroup` prop to correctly identify children under Income parents
+### 1. Settings Sidebar Alignment ✅
+- **Problem**: Horizontal divider lines between main sidebar and Settings sidebar weren't aligned
+- **Solution**: Changed Settings sidebar to use `fixed` positioning with `left-64 top-[72px] bottom-0`
+- **Footer Matching**: Matched Settings footer structure exactly to main sidebar (same classes, icon sizes, margins)
 
-### 2. Cross-Parent Category Drag & Drop ✅
-- Categories can now be dragged **between** different parent categories (not just reordered within)
-- Moved categories automatically inherit the new parent's `group` value
-- Backend already supported `parent_id` changes; only frontend logic needed updating
+### 2. CSV Import "Job not found" Fix ✅
+- **Root Cause**: Gunicorn was spawning multiple workers (`CPU * 2 + 1`), each with separate memory
+- **Issue**: Job created on Worker 1, status check hit Worker 2 = "Job not found"
+- **Solution**: Set workers to 1 in `gunicorn.conf.py` (line 17)
+- **Future**: For multi-worker scaling, migrate job store to Redis
 
-### 3. Settings Page UI Fixes ✅
-- **Sticky Sidebar**: Settings sidebar now stays fixed in viewport (matches main sidebar behavior)
-- **Viewport Height**: Uses `h-[calc(100vh-72px)]` to match main sidebar exactly
-- **Removed Nested Scrollbars**: Content scrolls independently while sidebar stays fixed
+### 3. Hierarchical Category Dropdowns ✅
+- **Changed**: Rules page and Import page category dropdowns now group by **parent category** instead of flat groups
+- **Pattern**: Matches Reports page filter structure
+- **Implementation**:
+  - Added `renderCategoryOptions()` helper function
+  - Parent categories become optgroup labels
+  - Child categories appear as options under their parent
+  - Income parent hidden, children shown under "Income" optgroup
 
-### 4. Hide from Budget Button Fix ✅
-- Fixed mutation to send full bucket object (`{ ...bucket, is_hidden: !bucket.is_hidden }`)
-- Added amber background + icon when category is hidden for clear visual indicator
-- Widened action column to prevent clipping
+### 4. Add google-generativeai Dependency ✅
+- Added `google-generativeai==0.8.5` to `backend/requirements.txt`
+- Required for AI-powered transaction categorization
 
-### 5. VPS Deployment Workflow ✅
-- Created `.agent/workflows/deploy.md` with server connection details
-- Added to `.gitignore` to keep credentials secure
-- **Server Details**:
-  - Host: 43.224.182.196 (Binary Lane VPS)
-  - App Path: `/opt/principal`
-  - Stack: Docker Compose (frontend, backend, postgres, redis)
+### 5. Import Page Category Dropdown Sorting ✅
+- Previously grouped by Income/Needs/Wants (flat)
+- Now grouped hierarchically by parent category (tree structure)
+
+### 6. FAB Button Stacking ✅
+- Quick Add and AI Chatbot buttons now stack vertically (bottom-right corner)
+- Prevents content overlap and improves accessibility
 
 ---
 
@@ -49,31 +49,31 @@ Implemented a user interface element allowing budget categories to be classified
 ### Frontend
 | File | Changes |
 |------|---------|
-| `BucketTableRow.jsx` | Added group toggle pill, parentGroup prop, fixed hide button mutation |
-| `BucketTableSection.jsx` | Added parentGroup prop passing, cross-parent drag logic |
-| `Settings.jsx` | Fixed sticky sidebar with viewport-based height |
+| `Settings.jsx` | Fixed positioning for sidebar alignment |
+| `RulesSection.jsx` | Added `renderCategoryOptions` helper, hierarchical dropdown |
+| `RulesSettings.jsx` | Pass `treeBuckets` prop to RulesSection |
+| `DataManagement.jsx` | Hierarchical dropdown, fetch bucketsTree instead of flat |
+| `QuickAddFAB.jsx` | Stack FAB buttons vertically |
 
-### Project Configuration
+### Backend
 | File | Changes |
 |------|---------|
-| `.agent/workflows/deploy.md` | NEW - VPS deployment workflow with credentials |
-| `.gitignore` | Added `.agent/` to protect credentials |
+| `gunicorn.conf.py` | Set workers to 1 (fix job store issue) |
+| `requirements.txt` | Added google-generativeai==0.8.5 |
 
 ---
 
-## Git Commits (Today)
+## Git Commits (This Session)
 
-1. `d71d48f` - Add inline group toggle for budget categories
-2. `5999ce0` - Hide group toggle for Income and parent categories without Budget by Group
-3. `654b416` - Fix: Hide group toggle for Income children using parentGroup prop
-4. `2fe255f` - Fix: Make settings sidebar sticky when scrolling
-5. `d41e6c8` - Feature: Enable dragging subcategories between parent categories
-6. `db5c68c` - UI: Keep hide button visible when category is hidden
-7. `8f42697` - Fix: Settings sidebar alignment, scrolling, and hide button visibility
-8. `727eebb` - Fix: Settings sticky sidebar with proper viewport height
-9. `51556eb` - Fix: Send full bucket object when toggling is_hidden
-10. `3d1389d` - docs: Update HANDOVER.md and feature_documentation.md
-11. `2f3bc29` - Fix: Add is_hidden to backend update, align Settings footer
+1. `401a959` - UI fixes: Stack FAB buttons vertically, align sidebar dividers, group Rules dropdown
+2. `fc4396a` - Fix: Sort parent categories before children in dropdown filter
+3. `4e86df9` - Fix: Auto-parent new Income categories under Income parent category
+4. `df49dd5` - Hide Income parent category from dropdown menus
+5. `041d0eb` - Fix: Align Settings footer to bottom with mt-auto, add google-generativeai dependency
+6. `f95e810` - Fix: Settings sidebar header, grouped category dropdown in DataManagement
+7. `e208dd3` - Fix: Rewrite Settings sidebar with fixed positioning, align footer borders
+8. `a7b4201` - Fix: Single gunicorn worker for job store, match sidebar footer styles exactly
+9. `435e6ed` - Group category dropdowns by parent category in Rules and Import pages
 
 **All pushed to `main` branch** ✅
 
@@ -83,39 +83,34 @@ Implemented a user interface element allowing budget categories to be classified
 
 ### Deploy to VPS:
 ```bash
-ssh root@43.224.182.196
-# Password in Binary Lane dashboard or .agent/workflows/deploy.md
-
 cd /opt/principal && git pull origin main && docker compose down && docker compose up -d --build
 ```
 
-### Quick One-Liner:
-```bash
-cd /opt/principal && git pull origin main && docker compose down && docker compose up -d --build
-```
+**Note**: The `--build` flag is required because we added a new Python dependency (`google-generativeai`).
 
 ---
 
 ## Current Application Status
 
 ### What's Working
-- ✅ Group toggle shows correct state (Wants/Needs)
-- ✅ Toggle hidden for Income categories
-- ✅ Cross-parent category drag & drop
-- ✅ Hide button shows amber when active
-- ✅ Settings sidebar stays fixed during scroll
+- ✅ Settings sidebar perfectly aligns with main sidebar
+- ✅ CSV import works (single worker ensures job store consistency)
+- ✅ Category dropdowns show hierarchical parent-child structure
+- ✅ AI categorization dependency installed
+- ✅ FAB buttons don't overlap content
 
-### Backend Notes
-- **No backend changes required** - `group` field already exists in `BudgetBucket` model
-- Backend update endpoint already supports all necessary fields
+### Architecture Note
+- **Gunicorn Workers**: Currently set to 1 worker for job store reliability
+- **Scaling**: For multi-worker production, migrate `_job_store` to Redis
+- **Performance**: Single worker is fine for typical single-user usage
 
 ---
 
 ## Known Issues / Future Improvements
 
 ### Minor Items
-1. **Subcategory Group Inheritance**: When adding a new subcategory under Income, verify the `group: "Income"` is being set correctly (frontend passes it, but double-check DB)
-2. **Settings Sidebar Alignment**: May need minor tweaks if header height changes
+1. **Multi-worker Support**: Job store uses in-memory dict; needs Redis for horizontal scaling
+2. **Category Dropdown**: Consider adding visual indentation for nested categories
 
 ---
 
@@ -135,16 +130,16 @@ python -m uvicorn backend.main:app --reload
 - Frontend: http://localhost:5173
 - Backend: http://localhost:8000
 - API Docs: http://localhost:8000/docs
-- Production: https://principal-finance (or VPS IP)
+- Production: VPS at 43.224.182.196
 
 ---
 
 ## Summary
 
-Productive session focused on UI/UX improvements for budget category management:
-- **Group Toggle**: Users can now easily classify categories as Discretionary/Non-Discretionary
-- **Drag & Drop**: Categories can be reorganized across parent groups
-- **Settings UI**: Fixed scrolling issues and sidebar alignment
-- **Deployment**: Created reusable workflow for VPS deployments
+Focused session on UI polish and critical bug fixes:
+- **Sidebar Alignment**: Pixel-perfect alignment using fixed positioning
+- **CSV Import**: Fixed multi-worker job store issue by reducing to 1 worker
+- **Hierarchical Dropdowns**: Rules and Import pages now show parent-child category structure
+- **AI Dependency**: Added google-generativeai for AI categorization
 
-All changes pushed to GitHub and ready for deployment. 🚀
+All changes pushed to GitHub and deployed. 🚀

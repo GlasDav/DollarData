@@ -190,6 +190,11 @@ Dedicated reporting section for deeper financial analysis.
 -   **Keyword Matching**: Rules match transaction descriptions to categories.
 -   **Priority-Based**: Higher priority rules take precedence.
 -   **Amount Conditions**: Rules can filter by min/max amount thresholds.
+-   **Hierarchical Category Dropdown** *(New)*:
+    -   Category dropdowns group by parent category (not flat groups).
+    -   Parent categories become optgroup labels.
+    -   Child categories appear nested under their parent.
+    -   Matches Reports page filter structure.
 -   **Create from Transaction**: Quickly create a rule by clicking the 📘 icon on any transaction row.
 -   **Rule Preview** *(New)*: 
     -   **Settings Page**: Preview button in the inline rule creation form shows matching transactions before saving.
