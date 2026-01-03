@@ -263,7 +263,7 @@ export default function Reports() {
                         <div className="h-10 w-full bg-slate-100 dark:bg-slate-700 animate-pulse rounded-lg"></div>
                     ) : categoriesError ? (
                         <div className="text-xs text-red-500 border border-red-200 bg-red-50 p-2 rounded break-all">
-                            {categoriesError.message ? `Error: ${categoriesError.message}` : `Error: ${JSON.stringify(categoriesError)}`}
+                            {categoriesErrorDetails?.message ? `Error: ${categoriesErrorDetails.message}` : `Error: ${JSON.stringify(categoriesErrorDetails)}`}
                         </div>
                     ) : (
                         <>
