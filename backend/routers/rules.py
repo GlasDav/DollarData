@@ -278,7 +278,11 @@ def run_rules(
         
         rule = categorizer.apply_rules(clean_desc, rules, amount=txn.amount)
         
-        if rule and (txn.bucket_id is None or rule.bucket_id != txn.bucket_id):
+        if rule and (
+            txn.bucket_id is None or 
+            rule.bucket_id != txn.bucket_id or 
+            (rule.assign_to and rule.assign_to != txn.spender)
+        ):
             txn.bucket_id = rule.bucket_id
             
             # Apply Tags if present
