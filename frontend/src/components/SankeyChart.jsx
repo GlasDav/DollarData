@@ -181,9 +181,24 @@ const SankeyChart = ({ data }) => {
         const gradientId = `linkGradient${index}`;
         const width = Math.max(linkWidth || 1, 2);
 
-        // Get colors from source and target nodes
-        const sourceNode = sanitizedData.nodes[payload.source];
-        const targetNode = sanitizedData.nodes[payload.target];
+        // Recharts Sankey passes source/target as objects with nested node data
+        // payload.source and payload.target contain { node: {...nodeData} } or just the node data directly
+        const getNodeFromPayload = (nodeRef) => {
+            if (!nodeRef) return null;
+            // Could be { node: {...} } or direct node object or just an index
+            if (typeof nodeRef === 'object') {
+                return nodeRef.node || nodeRef;
+            }
+            // If it's an index, look it up
+            if (typeof nodeRef === 'number') {
+                return sanitizedData.nodes[nodeRef];
+            }
+            return null;
+        };
+
+        const sourceNode = getNodeFromPayload(payload.source);
+        const targetNode = getNodeFromPayload(payload.target);
+
         const sourceColor = getNodeColor(sourceNode?.name, sourceNode?.group);
         const targetColor = getNodeColor(targetNode?.name, targetNode?.group);
 
