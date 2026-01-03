@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api, { getMembers } from '../services/api';
+import api, { getMembers, getBucketsTree } from '../services/api';
 import { Download, RefreshCw, Filter, Calendar as CalendarIcon, PieChart, BarChart2 } from 'lucide-react';
 import { ComposedChart, Bar, Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import MultiSelectCategoryFilter from '../components/MultiSelectCategoryFilter';
@@ -52,7 +52,7 @@ export default function Reports() {
     // Fetch Categories Tree for Filter
     const bucketsQuery = useQuery({
         queryKey: ['buckets'], // Match Budget.jsx for cache sharing
-        queryFn: api.getBucketsTree,
+        queryFn: getBucketsTree,
         staleTime: 30 * 60 * 1000, // 30 minutes - categories rarely change
     });
 
