@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from .. import models, schemas, auth
 from ..database import get_db
 
@@ -245,9 +245,11 @@ class RuleSuggestion(schemas.BaseModel):
     """A suggested rule based on transaction patterns."""
     keywords: str
     suggested_category: str
+    suggested_bucket_id: Optional[int] = None  # For direct rule creation
     sample_transactions: List[TransactionPreview]
     match_count: int
     reason: str
+    source: str = "uncategorized"  # "uncategorized" or "categorized"
 
 
 class RuleSuggestionsResponse(schemas.BaseModel):
@@ -261,23 +263,22 @@ def get_rule_suggestions(
     current_user: models.User = Depends(auth.get_current_user)
 ):
     """
-    Get AI-suggested rules based on uncategorized or frequently-occurring transaction patterns.
-    Analyzes transaction descriptions to find common patterns that could become rules.
+    Get AI-suggested rules based on transaction patterns.
+    Analyzes:
+    1. Uncategorized transactions (patterns that need rules)
+    2. Recently categorized transactions (patterns the user has manually set)
     """
     from collections import Counter
+    from datetime import datetime, timedelta
     import re
     
-    # Get uncategorized transactions
-    uncategorized = db.query(models.Transaction).filter(
-        models.Transaction.user_id == current_user.id,
-        models.Transaction.bucket_id == None
-    ).limit(200).all()
-    
-    # Get user's buckets for category suggestions
+    # Get user's buckets
     buckets = db.query(models.BudgetBucket).filter(
         models.BudgetBucket.user_id == current_user.id
     ).all()
     bucket_names = [b.name for b in buckets]
+    bucket_by_id = {b.id: b for b in buckets}
+    bucket_by_name = {b.name.lower(): b for b in buckets}
     
     # Get existing rule keywords to avoid duplicates
     existing_rules = db.query(models.CategorizationRule).filter(
@@ -288,23 +289,80 @@ def get_rule_suggestions(
         for kw in rule.keywords.split(","):
             existing_keywords.add(kw.strip().lower())
     
-    # Extract common merchant/keyword patterns from uncategorized transactions
     from ..services.categorizer import Categorizer
     categorizer = Categorizer()
     
-    # Clean descriptions and extract potential keywords
-    cleaned_descs = []
-    for txn in uncategorized:
-        clean = categorizer.clean_description(txn.raw_description or txn.description).lower()
-        cleaned_descs.append((txn, clean))
+    suggestions = []
     
-    # Find repeated patterns (words appearing 3+ times across different transactions)
+    # === 1. ANALYZE RECENTLY CATEGORIZED TRANSACTIONS ===
+    # Look for patterns in user's manual categorizations (last 30 days)
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    categorized_txns = db.query(models.Transaction).filter(
+        models.Transaction.user_id == current_user.id,
+        models.Transaction.bucket_id.isnot(None),
+        models.Transaction.is_verified == True,
+        models.Transaction.date >= thirty_days_ago
+    ).limit(500).all()
+    
+    # Group by cleaned description + bucket combination
+    pattern_counts = Counter()  # (clean_desc_word, bucket_id) -> count
+    pattern_to_txns = {}  # (clean_desc_word, bucket_id) -> [transactions]
+    
+    for txn in categorized_txns:
+        clean = categorizer.clean_description(txn.raw_description or txn.description).lower()
+        # Extract first meaningful word (likely merchant name)
+        words = re.findall(r'\b[a-z]{3,}\b', clean)
+        if words:
+            keyword = words[0]  # Primary keyword
+            if keyword not in existing_keywords and len(keyword) >= 4:
+                key = (keyword, txn.bucket_id)
+                pattern_counts[key] += 1
+                if key not in pattern_to_txns:
+                    pattern_to_txns[key] = []
+                pattern_to_txns[key].append(txn)
+    
+    # Create suggestions for categorized patterns (3+ occurrences)
+    for (keyword, bucket_id), count in pattern_counts.most_common(10):
+        if count < 3:
+            continue
+        
+        bucket = bucket_by_id.get(bucket_id)
+        if not bucket:
+            continue
+        
+        sample_txns = pattern_to_txns[(keyword, bucket_id)][:3]
+        
+        suggestions.append(RuleSuggestion(
+            keywords=keyword,
+            suggested_category=bucket.name,
+            suggested_bucket_id=bucket_id,
+            sample_transactions=[
+                TransactionPreview(
+                    id=t.id,
+                    date=t.date.isoformat() if t.date else "",
+                    description=t.description,
+                    amount=t.amount
+                ) for t in sample_txns
+            ],
+            match_count=count,
+            reason=f"You've categorized {count} transactions with '{keyword}' as {bucket.name}",
+            source="categorized"
+        ))
+    
+    # === 2. ANALYZE UNCATEGORIZED TRANSACTIONS ===
+    uncategorized = db.query(models.Transaction).filter(
+        models.Transaction.user_id == current_user.id,
+        models.Transaction.bucket_id == None
+    ).limit(200).all()
+    
+    # Extract common patterns from uncategorized
     word_counter = Counter()
     word_to_txns = {}
     
-    for txn, clean_desc in cleaned_descs:
-        # Extract meaningful words (3+ chars, not just numbers)
-        words = set(re.findall(r'\b[a-z]{3,}\b', clean_desc))
+    for txn in uncategorized:
+        clean = categorizer.clean_description(txn.raw_description or txn.description).lower()
+        words = set(re.findall(r'\b[a-z]{3,}\b', clean))
         for word in words:
             if word not in existing_keywords and len(word) >= 4:
                 word_counter[word] += 1
@@ -312,56 +370,56 @@ def get_rule_suggestions(
                     word_to_txns[word] = []
                 word_to_txns[word].append(txn)
     
-    # Get top patterns (appearing 3+ times)
-    suggestions = []
+    # Common keyword -> category mappings for suggestions
+    category_hints = {
+        "grocery": "Groceries", "supermarket": "Groceries", "coles": "Groceries", "woolworths": "Groceries",
+        "uber": "Transport", "lyft": "Transport", "fuel": "Transport", "petrol": "Transport",
+        "netflix": "Entertainment", "spotify": "Entertainment", "disney": "Entertainment",
+        "restaurant": "Dining Out", "cafe": "Dining Out", "coffee": "Dining Out",
+        "pharmacy": "Health", "chemist": "Health", "medical": "Health",
+        "insurance": "Insurance", "electricity": "Utilities", "gas": "Utilities", "water": "Utilities",
+    }
+    
     for keyword, count in word_counter.most_common(10):
         if count < 3:
             continue
         
         sample_txns = word_to_txns[keyword][:3]
         
-        # Simple heuristic: suggest a category based on the keyword
-        suggested_cat = None
-        keyword_lower = keyword.lower()
-        
-        # Common keyword -> category mappings
-        category_hints = {
-            "grocery": "Groceries", "supermarket": "Groceries", "coles": "Groceries", "woolworths": "Groceries",
-            "uber": "Transport", "lyft": "Transport", "fuel": "Transport", "petrol": "Transport",
-            "netflix": "Entertainment", "spotify": "Entertainment", "disney": "Entertainment",
-            "restaurant": "Dining Out", "cafe": "Dining Out", "coffee": "Dining Out",
-            "pharmacy": "Health", "chemist": "Health", "medical": "Health",
-            "insurance": "Insurance", "electricity": "Utilities", "gas": "Utilities", "water": "Utilities",
-        }
-        
+        # Try to suggest a category
+        suggested_bucket = None
         for hint_kw, hint_cat in category_hints.items():
-            if hint_kw in keyword_lower:
-                # Check if user has this category
-                for bucket in bucket_names:
-                    if hint_cat.lower() in bucket.lower() or bucket.lower() in hint_cat.lower():
-                        suggested_cat = bucket
-                        break
-                break
+            if hint_kw in keyword.lower():
+                bucket = bucket_by_name.get(hint_cat.lower())
+                if bucket:
+                    suggested_bucket = bucket
+                    break
         
-        # Default to first bucket if no match
-        if not suggested_cat and bucket_names:
-            suggested_cat = bucket_names[0]
+        # Check if already suggested from categorized patterns
+        already_suggested = any(s.keywords == keyword for s in suggestions)
+        if already_suggested:
+            continue
         
-        if suggested_cat:
-            suggestions.append(RuleSuggestion(
-                keywords=keyword,
-                suggested_category=suggested_cat,
-                sample_transactions=[
-                    TransactionPreview(
-                        id=t.id,
-                        date=t.date.isoformat() if t.date else "",
-                        description=t.description,
-                        amount=t.amount
-                    ) for t in sample_txns
-                ],
-                match_count=count,
-                reason=f"Found {count} uncategorized transactions containing '{keyword}'"
-            ))
+        suggestions.append(RuleSuggestion(
+            keywords=keyword,
+            suggested_category=suggested_bucket.name if suggested_bucket else (bucket_names[0] if bucket_names else "Unknown"),
+            suggested_bucket_id=suggested_bucket.id if suggested_bucket else None,
+            sample_transactions=[
+                TransactionPreview(
+                    id=t.id,
+                    date=t.date.isoformat() if t.date else "",
+                    description=t.description,
+                    amount=t.amount
+                ) for t in sample_txns
+            ],
+            match_count=count,
+            reason=f"Found {count} uncategorized transactions containing '{keyword}'",
+            source="uncategorized"
+        ))
     
-    return {"suggestions": suggestions[:5]}  # Return top 5 suggestions
+    # Sort: categorized patterns first (more reliable), then by count
+    suggestions.sort(key=lambda s: (s.source != "categorized", -s.match_count))
+    
+    return {"suggestions": suggestions[:8]}  # Return top 8 suggestions
+
 

@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from '../../services/api';
 import RulesSection from '../RulesSection';
-import { Lightbulb, Plus, Loader2 } from 'lucide-react';
+import { Lightbulb, Plus, Loader2, X, Edit2, Sparkles, History } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
 const API_URL = API_BASE_URL;
@@ -17,8 +17,217 @@ const getRuleSuggestions = async () => {
     return response.json();
 };
 
+// Recursive category options renderer
+const renderCategoryOptions = (nodes, level = 0) => {
+    if (!nodes) return null;
+    return nodes.map(node => (
+        <React.Fragment key={node.id}>
+            <option value={node.id}>
+                {level > 0 ? '— '.repeat(level) : ''}{node.name}
+            </option>
+            {node.children && renderCategoryOptions(node.children, level + 1)}
+        </React.Fragment>
+    ));
+};
+
+// Edit Suggestion Modal Component
+function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClose, onSave, isPending }) {
+    const [keywords, setKeywords] = useState(suggestion.keywords);
+    const [bucketId, setBucketId] = useState(suggestion.suggested_bucket_id || '');
+    const [priority, setPriority] = useState(0);
+    const [minAmount, setMinAmount] = useState('');
+    const [maxAmount, setMaxAmount] = useState('');
+    const [applyTags, setApplyTags] = useState('');
+    const [markForReview, setMarkForReview] = useState(false);
+    const [assignTo, setAssignTo] = useState('');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!keywords.trim() || !bucketId) return;
+
+        onSave({
+            keywords: keywords.trim(),
+            bucket_id: parseInt(bucketId),
+            priority: parseInt(priority) || 0,
+            min_amount: minAmount ? parseFloat(minAmount) : null,
+            max_amount: maxAmount ? parseFloat(maxAmount) : null,
+            apply_tags: applyTags.trim() || null,
+            mark_for_review: markForReview,
+            assign_to: assignTo || null
+        });
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Edit & Create Rule</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded">
+                        <X size={20} className="text-slate-400" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                    {/* Suggestion info */}
+                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-400">
+                        <p className="font-medium">{suggestion.reason}</p>
+                        <p className="text-xs mt-1 flex items-center gap-1">
+                            {suggestion.source === 'categorized' ? (
+                                <><History size={12} /> Based on your categorizations</>
+                            ) : (
+                                <><Sparkles size={12} /> Based on uncategorized patterns</>
+                            )}
+                        </p>
+                    </div>
+
+                    {/* Keywords */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Keywords</label>
+                        <input
+                            type="text"
+                            value={keywords}
+                            onChange={(e) => setKeywords(e.target.value)}
+                            placeholder="e.g. woolworths, uber"
+                            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                        <p className="text-xs text-slate-400 mt-1">Edit to clean up or combine keywords</p>
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                        <select
+                            value={bucketId}
+                            onChange={(e) => setBucketId(e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                        >
+                            <option value="">Select Category...</option>
+                            {renderCategoryOptions(treeBuckets)}
+                        </select>
+                    </div>
+
+                    {/* Amount Range */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Min Amount $</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={minAmount}
+                                onChange={(e) => setMinAmount(e.target.value)}
+                                placeholder="0"
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Max Amount $</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={maxAmount}
+                                onChange={(e) => setMaxAmount(e.target.value)}
+                                placeholder="∞"
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Priority & Tags */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Priority</label>
+                            <input
+                                type="number"
+                                value={priority}
+                                onChange={(e) => setPriority(e.target.value)}
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Apply Tags</label>
+                            <input
+                                type="text"
+                                value={applyTags}
+                                onChange={(e) => setApplyTags(e.target.value)}
+                                placeholder="e.g. Tax-Deductible"
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Assign To & Mark for Review */}
+                    <div className="flex items-center gap-4">
+                        {members.length > 0 && (
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Assign To</label>
+                                <select
+                                    value={assignTo}
+                                    onChange={(e) => setAssignTo(e.target.value)}
+                                    className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                >
+                                    <option value="">Joint (default)</option>
+                                    {members.map(m => (
+                                        <option key={m.id} value={m.name}>{m.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 pt-6">
+                            <input
+                                type="checkbox"
+                                id="modalMarkForReview"
+                                checked={markForReview}
+                                onChange={(e) => setMarkForReview(e.target.checked)}
+                                className="w-4 h-4 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500"
+                            />
+                            <label htmlFor="modalMarkForReview" className="text-sm text-slate-600 dark:text-slate-300">
+                                Mark for Review
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* Sample Transactions */}
+                    {suggestion.sample_transactions?.length > 0 && (
+                        <div className="pt-2">
+                            <p className="text-xs font-medium text-slate-500 mb-2">Sample Matches:</p>
+                            <div className="space-y-1 max-h-24 overflow-y-auto">
+                                {suggestion.sample_transactions.map((t, i) => (
+                                    <div key={i} className="text-xs text-slate-500 flex justify-between bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded">
+                                        <span className="truncate">{t.description}</span>
+                                        <span className="font-medium ml-2">${Math.abs(t.amount).toFixed(2)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={!keywords.trim() || !bucketId || isPending}
+                            className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isPending ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                            Create Rule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 export default function RulesSettings() {
     const queryClient = useQueryClient();
+    const [editingSuggestion, setEditingSuggestion] = useState(null);
 
     // Queries
     const { data: userSettings, isLoading: sL } = useQuery({ queryKey: ['settings'], queryFn: api.getSettings });
@@ -56,6 +265,7 @@ export default function RulesSettings() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rules'] });
             queryClient.invalidateQueries({ queryKey: ['ruleSuggestions'] });
+            setEditingSuggestion(null);
         }
     });
 
@@ -81,41 +291,33 @@ export default function RulesSettings() {
                         <span className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">{suggestions.length}</span>
                     </div>
                     <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
-                        Based on patterns in your uncategorized transactions
+                        Based on patterns in your transactions. Click to edit before creating.
                     </p>
                     <div className="space-y-2">
-                        {suggestions.map((suggestion, idx) => {
-                            const bucket = flatBuckets.find(b => b.name.toLowerCase() === suggestion.suggested_category.toLowerCase());
-                            return (
-                                <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-lg p-3 border border-amber-100 dark:border-slate-700">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-sm font-medium text-slate-800 dark:text-slate-200">{suggestion.keywords}</span>
-                                            <span className="text-slate-400">→</span>
-                                            <span className="text-sm text-indigo-600 dark:text-indigo-400">{suggestion.suggested_category}</span>
-                                        </div>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{suggestion.reason}</p>
+                        {suggestions.map((suggestion, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-lg p-3 border border-amber-100 dark:border-slate-700">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-sm font-medium text-slate-800 dark:text-slate-200">{suggestion.keywords}</span>
+                                        <span className="text-slate-400">→</span>
+                                        <span className="text-sm text-indigo-600 dark:text-indigo-400">{suggestion.suggested_category}</span>
+                                        {suggestion.source === 'categorized' && (
+                                            <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                <History size={10} /> Your pattern
+                                            </span>
+                                        )}
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            if (bucket) {
-                                                createRuleMutation.mutate({
-                                                    keywords: suggestion.keywords,
-                                                    bucket_id: bucket.id,
-                                                    priority: 0
-                                                });
-                                            }
-                                        }}
-                                        disabled={!bucket || createRuleMutation.isPending}
-                                        className="ml-4 flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title={bucket ? "Create this rule" : "Category not found"}
-                                    >
-                                        <Plus size={14} />
-                                        Add Rule
-                                    </button>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{suggestion.reason}</p>
                                 </div>
-                            );
-                        })}
+                                <button
+                                    onClick={() => setEditingSuggestion(suggestion)}
+                                    className="ml-4 flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition"
+                                >
+                                    <Edit2 size={14} />
+                                    Edit & Add
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
@@ -128,6 +330,19 @@ export default function RulesSettings() {
             )}
 
             <RulesSection buckets={flatBuckets} treeBuckets={buckets} members={members} />
+
+            {/* Edit Suggestion Modal */}
+            {editingSuggestion && (
+                <EditSuggestionModal
+                    suggestion={editingSuggestion}
+                    buckets={flatBuckets}
+                    treeBuckets={buckets}
+                    members={members}
+                    onClose={() => setEditingSuggestion(null)}
+                    onSave={(ruleData) => createRuleMutation.mutate(ruleData)}
+                    isPending={createRuleMutation.isPending}
+                />
+            )}
         </div>
     );
 }
