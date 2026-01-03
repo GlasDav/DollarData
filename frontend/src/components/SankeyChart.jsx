@@ -46,6 +46,13 @@ const CATEGORY_COLORS = {
 
 // Get color for a node, with fallback
 const getNodeColor = (name, group) => {
+    // Null safety check
+    if (!name) {
+        if (group === 'Non-Discretionary') return '#F97316';
+        if (group === 'Discretionary') return '#8B5CF6';
+        return '#6366F1';
+    }
+
     // Check exact match first
     if (CATEGORY_COLORS[name]) {
         return CATEGORY_COLORS[name];
