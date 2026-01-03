@@ -1287,6 +1287,17 @@ def get_budget_progress(
     bucket_ids = [b.id for b in buckets]
     bucket_map = {b.id: b for b in buckets}
     
+    # Separate parent vs child buckets - only parent buckets will be shown as cards
+    parent_buckets = [b for b in buckets if b.parent_id is None]
+    child_buckets = [b for b in buckets if b.parent_id is not None]
+    
+    # Build parent -> children map for rollup
+    children_map = {}
+    for child in child_buckets:
+        if child.parent_id not in children_map:
+            children_map[child.parent_id] = []
+        children_map[child.parent_id].append(child)
+    
     # Fetch household members for breakdown
     members = db.query(models.HouseholdMember).filter(
         models.HouseholdMember.user_id == user.id
@@ -1424,14 +1435,27 @@ def get_budget_progress(
     under_budget = 0
     total_saved = 0.0
     
-    for b in buckets:
+    # Only iterate parent buckets - child spending/limits will be rolled up
+    for b in parent_buckets:
         # Skip income buckets
         if b.group == "Income":
             continue
-            
-        spent = bucket_spent.get(b.id, 0)
-        upcoming = bucket_upcoming.get(b.id, 0)
+        
+        # Get children for this parent
+        children = children_map.get(b.id, [])
+        child_ids = [c.id for c in children]
+        all_bucket_ids = [b.id] + child_ids
+        
+        # Roll up spent from parent + all children
+        spent = sum(bucket_spent.get(bid, 0) for bid in all_bucket_ids)
+        
+        # Roll up upcoming from parent + all children
+        upcoming = sum(bucket_upcoming.get(bid, 0) for bid in all_bucket_ids)
+        
+        # Roll up limit from parent + all children
         limit = sum(l.amount for l in b.limits) if b.limits else 0
+        for child in children:
+            limit += sum(l.amount for l in child.limits) if child.limits else 0
         
         # Calculate percentage
         if limit > 0:
@@ -1454,11 +1478,11 @@ def get_budget_progress(
             if limit > 0:
                 total_saved += (limit - spent)
         
-        # Build history array for sparkline
+        # Build history array for sparkline - aggregate parent + children
         history = []
         hist_amounts = []
         for ml in month_labels:
-            amt = bucket_history.get(b.id, {}).get(ml["key"], 0)
+            amt = sum(bucket_history.get(bid, {}).get(ml["key"], 0) for bid in all_bucket_ids)
             history.append({
                 "month": ml["label"],
                 "amount": round(amt, 2)
@@ -1473,19 +1497,30 @@ def get_budget_progress(
             if avg_hist > 0:
                 trend = round(((spent - avg_hist) / avg_hist) * 100, 1)
         
-        # Member breakdown - names are already mapped during aggregation
+        # Member breakdown - aggregate from parent + children
         by_member = []
-        member_data = bucket_by_member.get(b.id, {})
-        total_for_pct = sum(member_data.values()) or 1
-        per_member_limits = bucket_member_limits.get(b.id, {})
+        combined_member_data = {}
+        for bid in all_bucket_ids:
+            member_data = bucket_by_member.get(bid, {})
+            for member_name, amt in member_data.items():
+                combined_member_data[member_name] = combined_member_data.get(member_name, 0) + amt
         
-        for member_name, amt in sorted(member_data.items(), key=lambda x: -x[1]):
+        total_for_pct = sum(combined_member_data.values()) or 1
+        
+        # Aggregate per-member limits from parent + children
+        combined_member_limits = {}
+        for bid in all_bucket_ids:
+            per_member_limits = bucket_member_limits.get(bid, {})
+            for member_name, amt in per_member_limits.items():
+                combined_member_limits[member_name] = combined_member_limits.get(member_name, 0) + amt
+        
+        for member_name, amt in sorted(combined_member_data.items(), key=lambda x: -x[1]):
             # Skip "Joint" in member breakdown as it's not a specific person
             if member_name == "Joint":
                 continue
                 
-            # Get this member's specific limit (if set)
-            member_limit = per_member_limits.get(member_name, 0)
+            # Get this member's aggregated limit
+            member_limit = combined_member_limits.get(member_name, 0)
             if member_limit == 0:
                 # If no per-member limit, show as share of total limit
                 member_limit = limit / max(1, len(members)) if members else limit
@@ -1502,6 +1537,21 @@ def get_budget_progress(
                 "color": member_colors.get(member_name, "#6366f1")
             })
         
+        # Build children breakdown for drill-down (optional)
+        children_data = []
+        for child in children:
+            child_spent = bucket_spent.get(child.id, 0)
+            child_limit = sum(l.amount for l in child.limits) if child.limits else 0
+            if child_spent > 0 or child_limit > 0:
+                children_data.append({
+                    "id": child.id,
+                    "name": child.name,
+                    "spent": round(child_spent, 2),
+                    "limit": round(child_limit, 2),
+                    "percent": round((child_spent / child_limit * 100) if child_limit > 0 else 0, 1)
+                })
+        children_data.sort(key=lambda x: -x["spent"])
+        
         categories.append({
             "id": b.id,
             "name": b.name,
@@ -1515,7 +1565,8 @@ def get_budget_progress(
             "status": status,
             "trend": trend,
             "history": history,
-            "by_member": by_member
+            "by_member": by_member,
+            "children": children_data
         })
     
     # Sort: over budget first, then by percent descending
