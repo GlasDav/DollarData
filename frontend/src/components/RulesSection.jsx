@@ -7,7 +7,7 @@ import { API_BASE_URL } from '../config';
 const API_URL = API_BASE_URL;
 
 // Direct fetch for preview (not in api.js yet)
-const previewRule = async ({ keywords }) => {
+const previewRule = async ({ keywords, min_amount, max_amount }) => {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/settings/rules/preview`, {
         method: 'POST',
@@ -15,7 +15,7 @@ const previewRule = async ({ keywords }) => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ keywords })
+        body: JSON.stringify({ keywords, min_amount, max_amount })
     });
     if (!response.ok) throw new Error('Preview failed');
     return response.json();
@@ -64,17 +64,27 @@ const renderCategoryOptions = (treeBuckets) => {
     });
 };
 
-const RuleItem = ({ rule, buckets, treeBuckets, updateRuleMutation, deleteRuleMutation, isSelected, onToggleSelect }) => {
+const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation, deleteRuleMutation, isSelected, onToggleSelect }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localKeywords, setLocalKeywords] = useState(rule.keywords);
     const [localBucketId, setLocalBucketId] = useState(rule.bucket_id);
     const [localPriority, setLocalPriority] = useState(rule.priority);
+    const [localMinAmount, setLocalMinAmount] = useState(rule.min_amount || '');
+    const [localMaxAmount, setLocalMaxAmount] = useState(rule.max_amount || '');
+    const [localApplyTags, setLocalApplyTags] = useState(rule.apply_tags || '');
+    const [localMarkForReview, setLocalMarkForReview] = useState(rule.mark_for_review || false);
+    const [localAssignTo, setLocalAssignTo] = useState(rule.assign_to || '');
 
     useEffect(() => {
         if (!isEditing) {
             setLocalKeywords(rule.keywords);
             setLocalBucketId(rule.bucket_id);
             setLocalPriority(rule.priority);
+            setLocalMinAmount(rule.min_amount || '');
+            setLocalMaxAmount(rule.max_amount || '');
+            setLocalApplyTags(rule.apply_tags || '');
+            setLocalMarkForReview(rule.mark_for_review || false);
+            setLocalAssignTo(rule.assign_to || '');
         }
     }, [isEditing, rule]);
 
@@ -85,7 +95,12 @@ const RuleItem = ({ rule, buckets, treeBuckets, updateRuleMutation, deleteRuleMu
             data: {
                 keywords: cleanKeywords(localKeywords),
                 bucket_id: parseInt(localBucketId),
-                priority: parseInt(localPriority) || 0
+                priority: parseInt(localPriority) || 0,
+                min_amount: localMinAmount ? parseFloat(localMinAmount) : null,
+                max_amount: localMaxAmount ? parseFloat(localMaxAmount) : null,
+                apply_tags: localApplyTags.trim() || null,
+                mark_for_review: localMarkForReview,
+                assign_to: localAssignTo || null
             }
         });
         setIsEditing(false);
@@ -93,35 +108,92 @@ const RuleItem = ({ rule, buckets, treeBuckets, updateRuleMutation, deleteRuleMu
 
     if (isEditing) {
         return (
-            <div className="p-4 bg-indigo-50 dark:bg-slate-900 border-b border-indigo-100 dark:border-slate-700 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                <div className="hidden md:block md:col-span-1" />
-                <div className="col-span-12 md:col-span-5">
-                    <input
-                        className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
-                        value={localKeywords}
-                        onChange={(e) => setLocalKeywords(e.target.value)}
-                        placeholder="Keywords"
-                    />
+            <div className="p-4 bg-indigo-50 dark:bg-slate-900 border-b border-indigo-100 dark:border-slate-700 space-y-3">
+                {/* Row 1: Keywords, Category, Priority */}
+                <div className="grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-1" />
+                    <div className="col-span-5">
+                        <input
+                            className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
+                            value={localKeywords}
+                            onChange={(e) => setLocalKeywords(e.target.value)}
+                            placeholder="Keywords"
+                        />
+                    </div>
+                    <div className="col-span-4">
+                        <select
+                            className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
+                            value={localBucketId || ""}
+                            onChange={(e) => setLocalBucketId(e.target.value)}
+                        >
+                            <option value="">Select Category...</option>
+                            {renderCategoryOptions(treeBuckets)}
+                        </select>
+                    </div>
+                    <div className="col-span-2">
+                        <input
+                            type="number"
+                            className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white text-right"
+                            value={localPriority}
+                            onChange={(e) => setLocalPriority(e.target.value)}
+                            placeholder="Pri"
+                        />
+                    </div>
                 </div>
-                <div className="col-span-8 md:col-span-4">
-                    <select
-                        className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
-                        value={localBucketId || ""}
-                        onChange={(e) => setLocalBucketId(e.target.value)}
-                    >
-                        <option value="">Select Category...</option>
-                        {renderCategoryOptions(treeBuckets)}
-                    </select>
-                </div>
-                <div className="col-span-4 md:col-span-2 flex items-center gap-2">
-                    <input
-                        type="number"
-                        className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white text-right"
-                        value={localPriority}
-                        onChange={(e) => setLocalPriority(e.target.value)}
-                        placeholder="Pri"
-                    />
-                    <div className="flex gap-1 ml-auto">
+                {/* Row 2: Amount Range, Tags, Assign To, Mark for Review */}
+                <div className="grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-1" />
+                    <div className="col-span-2 flex items-center gap-1">
+                        <input
+                            type="number"
+                            step="0.01"
+                            className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
+                            value={localMinAmount}
+                            onChange={(e) => setLocalMinAmount(e.target.value)}
+                            placeholder="Min $"
+                        />
+                        <span className="text-slate-400">-</span>
+                        <input
+                            type="number"
+                            step="0.01"
+                            className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
+                            value={localMaxAmount}
+                            onChange={(e) => setLocalMaxAmount(e.target.value)}
+                            placeholder="Max $"
+                        />
+                    </div>
+                    <div className="col-span-3">
+                        <input
+                            className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
+                            value={localApplyTags}
+                            onChange={(e) => setLocalApplyTags(e.target.value)}
+                            placeholder="Apply Tags"
+                        />
+                    </div>
+                    {members.length > 0 && (
+                        <div className="col-span-2">
+                            <select
+                                className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
+                                value={localAssignTo}
+                                onChange={(e) => setLocalAssignTo(e.target.value)}
+                            >
+                                <option value="">Joint</option>
+                                {members.map(m => (
+                                    <option key={m.id} value={m.name}>{m.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    <div className="col-span-2 flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={localMarkForReview}
+                            onChange={(e) => setLocalMarkForReview(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 rounded"
+                        />
+                        <span className="text-xs text-slate-500">Review</span>
+                    </div>
+                    <div className={`${members.length > 0 ? 'col-span-2' : 'col-span-4'} flex justify-end gap-1`}>
                         <button onClick={handleSave} className="p-1 text-green-600 hover:bg-green-100 rounded">
                             <Save size={16} />
                         </button>
@@ -146,9 +218,21 @@ const RuleItem = ({ rule, buckets, treeBuckets, updateRuleMutation, deleteRuleMu
             </div>
             <div className="col-span-5 truncate font-medium text-slate-800 dark:text-slate-200 text-sm group-hover:text-indigo-600 transition-colors cursor-pointer" title={rule.keywords} onClick={() => setIsEditing(true)}>
                 {rule.keywords}
+                {/* Show indicators for additional settings */}
+                {(rule.min_amount || rule.max_amount) && (
+                    <span className="ml-2 text-xs text-slate-400 font-normal">
+                        ${rule.min_amount || 0}-${rule.max_amount || '∞'}
+                    </span>
+                )}
             </div>
-            <div className="col-span-4 truncate text-sm text-indigo-600 dark:text-indigo-400 font-medium">
+            <div className="col-span-4 truncate text-sm text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-2">
                 {buckets?.find(b => b.id === rule.bucket_id)?.name || "Unknown Bucket"}
+                {rule.assign_to && (
+                    <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">{rule.assign_to}</span>
+                )}
+                {rule.mark_for_review && (
+                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded">Review</span>
+                )}
             </div>
             <div className="col-span-2 flex justify-end items-center gap-3">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{rule.priority}</span>
@@ -163,11 +247,16 @@ const RuleItem = ({ rule, buckets, treeBuckets, updateRuleMutation, deleteRuleMu
     );
 };
 
-export default function RulesSection({ buckets, treeBuckets }) {
+export default function RulesSection({ buckets, treeBuckets, members = [] }) {
     const queryClient = useQueryClient();
     const [keyword, setKeyword] = useState("");
     const [bucketId, setBucketId] = useState("");
     const [priority, setPriority] = useState(0);
+    const [minAmount, setMinAmount] = useState("");
+    const [maxAmount, setMaxAmount] = useState("");
+    const [applyTags, setApplyTags] = useState("");
+    const [markForReview, setMarkForReview] = useState(false);
+    const [assignTo, setAssignTo] = useState("");
     const [runResult, setRunResult] = useState(null);
     const [selectedRules, setSelectedRules] = useState(new Set());
 
@@ -223,9 +312,20 @@ export default function RulesSection({ buckets, treeBuckets }) {
         createRuleMutation.mutate({
             keywords: cleanKeywords(keyword),
             bucket_id: parseInt(bucketId),
-            priority: parseInt(priority) || 0
+            priority: parseInt(priority) || 0,
+            min_amount: minAmount ? parseFloat(minAmount) : null,
+            max_amount: maxAmount ? parseFloat(maxAmount) : null,
+            apply_tags: applyTags.trim() || null,
+            mark_for_review: markForReview,
+            assign_to: assignTo || null
         });
         setPreviewData(null);
+        // Reset additional fields
+        setMinAmount("");
+        setMaxAmount("");
+        setApplyTags("");
+        setMarkForReview(false);
+        setAssignTo("");
     };
 
     const handlePreview = async () => {
@@ -233,7 +333,11 @@ export default function RulesSection({ buckets, treeBuckets }) {
         setPreviewLoading(true);
         setPreviewError(null);
         try {
-            const data = await previewRule({ keywords: keyword });
+            const data = await previewRule({
+                keywords: keyword,
+                min_amount: minAmount ? parseFloat(minAmount) : null,
+                max_amount: maxAmount ? parseFloat(maxAmount) : null
+            });
             setPreviewData(data);
         } catch (err) {
             setPreviewError('Failed to load preview');
@@ -297,37 +401,108 @@ export default function RulesSection({ buckets, treeBuckets }) {
             </div>
 
             <div id="add-rule-form" className="p-4 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
-                <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 items-end">
-                    <div className="flex-1 min-w-[200px]">
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Keywords</label>
-                        <input
-                            type="text"
-                            placeholder="e.g. Woolworths, Uber (comma separated)"
-                            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            value={keyword}
-                            onChange={(e) => setKeyword(e.target.value)}
-                        />
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Row 1: Keywords, Category, Priority */}
+                    <div className="flex flex-wrap gap-4 items-end">
+                        <div className="flex-1 min-w-[200px]">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Keywords</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Woolworths, Uber (comma separated)"
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                value={keyword}
+                                onChange={(e) => setKeyword(e.target.value)}
+                            />
+                        </div>
+                        <div className="w-[200px]">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Assign to Category</label>
+                            <select
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                value={bucketId}
+                                onChange={(e) => setBucketId(e.target.value)}
+                            >
+                                <option value="">Select Category...</option>
+                                {renderCategoryOptions(treeBuckets)}
+                            </select>
+                        </div>
+                        <div className="w-[80px]">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Priority</label>
+                            <input
+                                type="number"
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                value={priority}
+                                onChange={(e) => setPriority(e.target.value)}
+                            />
+                        </div>
                     </div>
-                    <div className="w-[200px]">
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Assign to Category</label>
-                        <select
-                            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            value={bucketId}
-                            onChange={(e) => setBucketId(e.target.value)}
-                        >
-                            <option value="">Select Category...</option>
-                            {renderCategoryOptions(treeBuckets)}
-                        </select>
+
+                    {/* Row 2: Amount Range, Tags, Member Assignment */}
+                    <div className="flex flex-wrap gap-4 items-end">
+                        <div className="flex items-end gap-2">
+                            <div className="w-[90px]">
+                                <label className="block text-xs font-semibold text-slate-500 mb-1">Min $</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0"
+                                    className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    value={minAmount}
+                                    onChange={(e) => setMinAmount(e.target.value)}
+                                />
+                            </div>
+                            <span className="text-slate-400 pb-2">—</span>
+                            <div className="w-[90px]">
+                                <label className="block text-xs font-semibold text-slate-500 mb-1">Max $</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="∞"
+                                    className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    value={maxAmount}
+                                    onChange={(e) => setMaxAmount(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[150px]">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Apply Tags</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Tax-Deductible"
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                value={applyTags}
+                                onChange={(e) => setApplyTags(e.target.value)}
+                            />
+                        </div>
+                        {members.length > 0 && (
+                            <div className="w-[150px]">
+                                <label className="block text-xs font-semibold text-slate-500 mb-1">Assign to</label>
+                                <select
+                                    className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    value={assignTo}
+                                    onChange={(e) => setAssignTo(e.target.value)}
+                                >
+                                    <option value="">Joint (default)</option>
+                                    {members.map(member => (
+                                        <option key={member.id} value={member.name}>{member.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 pb-1">
+                            <input
+                                type="checkbox"
+                                id="markForReview"
+                                checked={markForReview}
+                                onChange={(e) => setMarkForReview(e.target.checked)}
+                                className="w-4 h-4 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500"
+                            />
+                            <label htmlFor="markForReview" className="text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                Mark for Review
+                            </label>
+                        </div>
                     </div>
-                    <div className="w-[100px]">
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Priority</label>
-                        <input
-                            type="number"
-                            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            value={priority}
-                            onChange={(e) => setPriority(e.target.value)}
-                        />
-                    </div>
+
+                    {/* Row 3: Buttons */}
                     <div className="flex gap-2">
                         <button
                             type="button"
@@ -412,6 +587,7 @@ export default function RulesSection({ buckets, treeBuckets }) {
                         rule={rule}
                         buckets={buckets}
                         treeBuckets={treeBuckets}
+                        members={members}
                         updateRuleMutation={updateRuleMutation}
                         deleteRuleMutation={deleteRuleMutation}
                         isSelected={selectedRules.has(rule.id)}
