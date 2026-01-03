@@ -231,10 +231,17 @@ def preview_rule(
     }
 
 @router.post("/run", response_model=dict)
-def run_rules(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+def run_rules(
+    overwrite_verified: bool = False,
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
     """
     Re-applies all categorization rules to existing transactions.
-    Only updates transactions that are NOT verified (manual overrides are safe).
+    
+    modes:
+    - overwrite_verified=False (default): Updates Unverified OR Uncategorized transactions.
+    - overwrite_verified=True: Updates ALL transactions regardless of verification status.
     """
     from ..services.categorizer import Categorizer
     categorizer = Categorizer()
@@ -242,19 +249,21 @@ def run_rules(db: Session = Depends(get_db), current_user: models.User = Depends
     # 1. Fetch all rules
     rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == current_user.id).order_by(models.CategorizationRule.priority.desc()).all()
     
-    # 2. Fetch unverified transactions
-    # Optimization: Filter by user_id
     from sqlalchemy import or_
     
-    # 2. Fetch unverified OR uncategorized transactions
-    # Optimization: Filter by user_id
-    transactions = db.query(models.Transaction).filter(
-        models.Transaction.user_id == current_user.id,
-        or_(
-            models.Transaction.is_verified == False,
-            models.Transaction.bucket_id == None
+    # 2. Fetch transactions based on mode
+    query = db.query(models.Transaction).filter(models.Transaction.user_id == current_user.id)
+    
+    if not overwrite_verified:
+        # Strict mode: Only Unverified OR Uncategorized
+        query = query.filter(
+            or_(
+                models.Transaction.is_verified == False,
+                models.Transaction.bucket_id == None
+            )
         )
-    ).all()
+    
+    transactions = query.all()
 
     count = 0
     updated_txns = []

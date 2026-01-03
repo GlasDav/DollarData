@@ -195,8 +195,8 @@ export const deleteAllTransactions = async () => {
     return response.data;
 };
 
-export const runRules = async () => {
-    const response = await api.post('/settings/rules/run');
+export const runRules = async (overwrite = false) => {
+    const response = await api.post(`/settings/rules/run?overwrite_verified=${overwrite}`);
     return response.data;
 };
 
