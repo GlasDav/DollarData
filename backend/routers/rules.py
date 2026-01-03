@@ -447,15 +447,15 @@ def get_rule_suggestions(
     suggestions = []
     
     # === 1. ANALYZE RECENTLY CATEGORIZED TRANSACTIONS ===
-    # Look for patterns in user's manual categorizations (last 30 days)
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    # Look for patterns in user's manual categorizations (last 90 days)
+    ninety_days_ago = datetime.utcnow() - timedelta(days=90)
     
     categorized_txns = db.query(models.Transaction).filter(
         models.Transaction.user_id == current_user.id,
         models.Transaction.bucket_id.isnot(None),
         models.Transaction.is_verified == True,
-        models.Transaction.date >= thirty_days_ago
-    ).limit(500).all()
+        models.Transaction.date >= ninety_days_ago
+    ).limit(1000).all()
     
     # Group by cleaned description + bucket combination
     pattern_counts = Counter()  # (clean_desc_word, bucket_id) -> count
@@ -474,9 +474,9 @@ def get_rule_suggestions(
                     pattern_to_txns[key] = []
                 pattern_to_txns[key].append(txn)
     
-    # Create suggestions for categorized patterns (3+ occurrences)
-    for (keyword, bucket_id), count in pattern_counts.most_common(10):
-        if count < 3:
+    # Create suggestions for categorized patterns (2+ occurrences)
+    for (keyword, bucket_id), count in pattern_counts.most_common(15):
+        if count < 2:
             continue
         
         bucket = bucket_by_id.get(bucket_id)
@@ -532,8 +532,8 @@ def get_rule_suggestions(
         "insurance": "Insurance", "electricity": "Utilities", "gas": "Utilities", "water": "Utilities",
     }
     
-    for keyword, count in word_counter.most_common(10):
-        if count < 3:
+    for keyword, count in word_counter.most_common(15):
+        if count < 2:
             continue
         
         sample_txns = word_to_txns[keyword][:3]
