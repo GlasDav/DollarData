@@ -54,7 +54,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
             setMaxAmount('');
             setApplyTags('');
             setMarkForReview(false);
-            setAssignTo(transaction.spender || '');
+            setAssignTo('');
             setError('');
             setShowPreview(false);
             setPreviewData(null);
