@@ -50,7 +50,12 @@ export default function Reports() {
     });
 
     // Fetch Categories Tree for Filter
-    const { data: categoriesData } = useQuery({
+    const {
+        data: categoriesData,
+        isLoading: categoriesLoading,
+        isError: categoriesError,
+        error: categoriesErrorDetails
+    } = useQuery({
         queryKey: ['buckets'], // Match Budget.jsx for cache sharing
         queryFn: api.getBucketsTree,
         staleTime: 30 * 60 * 1000, // 30 minutes - categories rarely change
@@ -254,18 +259,24 @@ export default function Reports() {
 
                 {/* Category Filter */}
                 <div className="w-64">
-                    {categoriesData === undefined ? (
+                    {categoriesLoading ? (
                         <div className="h-10 w-full bg-slate-100 dark:bg-slate-700 animate-pulse rounded-lg"></div>
+                    ) : categoriesError ? (
+                        <div className="text-xs text-red-500 border border-red-200 bg-red-50 p-2 rounded">
+                            Error loading categories: {categoriesError.message}
+                        </div>
                     ) : (
-                        <MultiSelectCategoryFilter
-                            categories={categories}
-                            selectedIds={categoryFilters}
-                            onChange={setCategoryFilters}
-                            placeholder="Filter by categories..."
-                        />
-                    )}
-                    {categories.length === 0 && categoriesData !== undefined && (
-                        <p className="text-xs text-red-400 mt-1">No categories found</p>
+                        <>
+                            <MultiSelectCategoryFilter
+                                categories={categories}
+                                selectedIds={categoryFilters}
+                                onChange={setCategoryFilters}
+                                placeholder="Filter by categories..."
+                            />
+                            {categories.length === 0 && (
+                                <p className="text-xs text-red-400 mt-1">No categories found</p>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
