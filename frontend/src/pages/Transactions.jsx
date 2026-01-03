@@ -593,14 +593,14 @@ export default function Transactions() {
                                         </td>
                                         <td className="px-3 py-3">
                                             <select
-                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[140px] truncate"
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 dark:focus:bg-slate-800 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[140px] truncate"
                                                 value={txn.spender || "Joint"}
                                                 onChange={(e) => updateMutation.mutate({ id: txn.id, spender: e.target.value })}
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <option value="Joint">Joint</option>
+                                                <option value="Joint" className="dark:bg-slate-800 dark:text-white">Joint</option>
                                                 {members.map(member => (
-                                                    <option key={member.id} value={member.name}>{member.name}</option>
+                                                    <option key={member.id} value={member.name} className="dark:bg-slate-800 dark:text-white">{member.name}</option>
                                                 ))}
                                             </select>
                                         </td>
