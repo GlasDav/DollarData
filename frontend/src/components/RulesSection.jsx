@@ -177,7 +177,7 @@ const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation
                                 value={localAssignTo}
                                 onChange={(e) => setLocalAssignTo(e.target.value)}
                             >
-                                <option value="">Joint</option>
+                                <option value="">Unchanged</option>
                                 {members.map(m => (
                                     <option key={m.id} value={m.name}>{m.name}</option>
                                 ))}
@@ -481,7 +481,7 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
                                     value={assignTo}
                                     onChange={(e) => setAssignTo(e.target.value)}
                                 >
-                                    <option value="">Joint (default)</option>
+                                    <option value="">Unchanged</option>
                                     {members.map(member => (
                                         <option key={member.id} value={member.name}>{member.name}</option>
                                     ))}

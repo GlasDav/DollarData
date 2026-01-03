@@ -165,7 +165,7 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                                     onChange={(e) => setAssignTo(e.target.value)}
                                     className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                                 >
-                                    <option value="">Joint (default)</option>
+                                    <option value="">Unchanged</option>
                                     {members.map(m => (
                                         <option key={m.id} value={m.name}>{m.name}</option>
                                     ))}
@@ -282,7 +282,9 @@ export default function RulesSettings() {
                 </p>
             </div>
 
-            {/* Suggested Rules Section */}
+            <RulesSection buckets={flatBuckets} treeBuckets={buckets} members={members} />
+
+            {/* Suggested Rules Section - Below Defined Rules */}
             {suggestions.length > 0 && (
                 <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl border border-amber-200 dark:border-amber-700 p-4">
                     <div className="flex items-center gap-2 mb-3">
@@ -328,8 +330,6 @@ export default function RulesSettings() {
                     Analyzing transaction patterns...
                 </div>
             )}
-
-            <RulesSection buckets={flatBuckets} treeBuckets={buckets} members={members} />
 
             {/* Edit Suggestion Modal */}
             {editingSuggestion && (
