@@ -244,9 +244,16 @@ def run_rules(db: Session = Depends(get_db), current_user: models.User = Depends
     
     # 2. Fetch unverified transactions
     # Optimization: Filter by user_id
+    from sqlalchemy import or_
+    
+    # 2. Fetch unverified OR uncategorized transactions
+    # Optimization: Filter by user_id
     transactions = db.query(models.Transaction).filter(
         models.Transaction.user_id == current_user.id,
-        models.Transaction.is_verified == False
+        or_(
+            models.Transaction.is_verified == False,
+            models.Transaction.bucket_id == None
+        )
     ).all()
 
     count = 0
