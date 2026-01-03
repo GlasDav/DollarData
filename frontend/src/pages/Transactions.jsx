@@ -226,9 +226,9 @@ export default function Transactions() {
             if (parent.name === 'Income' && parent.group === 'Income') {
                 if (parent.children && parent.children.length > 0) {
                     return (
-                        <optgroup key={parent.id} label="Income" className="dark:bg-slate-800">
+                        <optgroup key={parent.id} label="Income" className="dark:bg-slate-800 dark:text-white text-slate-900">
                             {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
-                                <option key={child.id} value={child.id} className="dark:bg-slate-800">{child.name}</option>
+                                <option key={child.id} value={child.id} className="dark:bg-slate-800 dark:text-white text-slate-900">{child.name}</option>
                             ))}
                         </optgroup>
                     );
@@ -239,16 +239,16 @@ export default function Transactions() {
             // For parents with children, render as optgroup
             if (parent.children && parent.children.length > 0) {
                 return (
-                    <optgroup key={parent.id} label={parent.name} className="dark:bg-slate-800">
+                    <optgroup key={parent.id} label={parent.name} className="dark:bg-slate-800 dark:text-white text-slate-900">
                         {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
-                            <option key={child.id} value={child.id} className="dark:bg-slate-800">{child.name}</option>
+                            <option key={child.id} value={child.id} className="dark:bg-slate-800 dark:text-white text-slate-900">{child.name}</option>
                         ))}
                     </optgroup>
                 );
             }
 
             // For leaf categories (no children), render as plain option
-            return <option key={parent.id} value={parent.id} className="dark:bg-slate-800">{parent.name}</option>;
+            return <option key={parent.id} value={parent.id} className="dark:bg-slate-800 dark:text-white text-slate-900">{parent.name}</option>;
         });
     };
 
@@ -581,7 +581,7 @@ export default function Transactions() {
                                         </td>
                                         <td className="px-3 py-3">
                                             <select
-                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[140px] truncate"
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 dark:focus:bg-slate-800 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[140px] truncate"
                                                 value={txn.bucket_id || ""}
                                                 onChange={(e) => updateMutation.mutate({ id: txn.id, bucket_id: parseInt(e.target.value) })}
                                                 onClick={(e) => e.stopPropagation()}
