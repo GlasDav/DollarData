@@ -144,7 +144,7 @@ const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation
     const [isEditing, setIsEditing] = useState(false);
     const [localKeywords, setLocalKeywords] = useState(rule.keywords);
     const [localBucketId, setLocalBucketId] = useState(rule.bucket_id);
-    const [localPriority, setLocalPriority] = useState(rule.priority);
+
     const [localMinAmount, setLocalMinAmount] = useState(rule.min_amount || '');
     const [localMaxAmount, setLocalMaxAmount] = useState(rule.max_amount || '');
     const [localApplyTags, setLocalApplyTags] = useState(rule.apply_tags || '');
@@ -155,7 +155,7 @@ const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation
         if (!isEditing) {
             setLocalKeywords(rule.keywords);
             setLocalBucketId(rule.bucket_id);
-            setLocalPriority(rule.priority);
+
             setLocalMinAmount(rule.min_amount || '');
             setLocalMaxAmount(rule.max_amount || '');
             setLocalApplyTags(rule.apply_tags || '');
@@ -171,7 +171,7 @@ const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation
             data: {
                 keywords: cleanKeywords(localKeywords),
                 bucket_id: parseInt(localBucketId),
-                priority: parseInt(localPriority) || 0,
+                priority: rule.priority, // Keep existing priority/order
                 min_amount: localMinAmount ? parseFloat(localMinAmount) : null,
                 max_amount: localMaxAmount ? parseFloat(localMaxAmount) : null,
                 apply_tags: localApplyTags.trim() || null,
@@ -325,7 +325,6 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
     const queryClient = useQueryClient();
     const [keyword, setKeyword] = useState("");
     const [bucketId, setBucketId] = useState("");
-    const [priority, setPriority] = useState(0);
     const [minAmount, setMinAmount] = useState("");
     const [maxAmount, setMaxAmount] = useState("");
     const [applyTags, setApplyTags] = useState("");
@@ -389,7 +388,7 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
         createRuleMutation.mutate({
             keywords: cleanKeywords(keyword),
             bucket_id: parseInt(bucketId),
-            priority: parseInt(priority) || 0,
+            priority: 1000, // Default to top priority
             min_amount: minAmount ? parseFloat(minAmount) : null,
             max_amount: maxAmount ? parseFloat(maxAmount) : null,
             apply_tags: applyTags.trim() || null,

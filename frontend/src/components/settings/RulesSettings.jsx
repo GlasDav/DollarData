@@ -86,7 +86,7 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
         onSave({
             keywords: keywords.trim(),
             bucket_id: parseInt(bucketId),
-            priority: parseInt(priority) || 0,
+            priority: 1000,
             min_amount: minAmount ? parseFloat(minAmount) : null,
             max_amount: maxAmount ? parseFloat(maxAmount) : null,
             apply_tags: applyTags.trim() || null,
@@ -171,16 +171,8 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                     </div>
 
                     {/* Priority & Tags */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Priority</label>
-                            <input
-                                type="number"
-                                value={priority}
-                                onChange={(e) => setPriority(e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            />
-                        </div>
+                    <div className="grid grid-cols-1 gap-4">
+
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Apply Tags</label>
                             <input
