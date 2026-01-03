@@ -211,15 +211,15 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
     # Fetch Smart Rules (Prioritized) - this is now the primary categorization method
     from sqlalchemy import case, or_
     
-    # Sort by Priority DESC, then Specificity (Has Filters) DESC, then Newest (ID DESC)
+    # Rules with min/max filters ALWAYS take precedence (specificity first, then drag-drop priority)
     specificity_score = case(
         (or_(models.CategorizationRule.min_amount.isnot(None), models.CategorizationRule.max_amount.isnot(None)), 1),
         else_=0
     )
     
     smart_rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user.id).order_by(
+        specificity_score.desc(),  # Filtered rules always take precedence
         models.CategorizationRule.priority.desc(),
-        specificity_score.desc(), 
         models.CategorizationRule.id.desc()
     ).all()
 
@@ -380,10 +380,19 @@ def process_transactions_preview_with_progress(
     bucket_map = {b.name.lower(): b.id for b in buckets}
     bucket_names = [b.name for b in buckets]
     
-    # Fetch Smart Rules
+    # Fetch Smart Rules - filtered rules always take precedence
+    from sqlalchemy import case, or_
+    specificity_score = case(
+        (or_(models.CategorizationRule.min_amount.isnot(None), models.CategorizationRule.max_amount.isnot(None)), 1),
+        else_=0
+    )
     smart_rules = db.query(models.CategorizationRule).filter(
         models.CategorizationRule.user_id == user.id
-    ).order_by(models.CategorizationRule.priority.desc()).all()
+    ).order_by(
+        specificity_score.desc(),  # Filtered rules always take precedence
+        models.CategorizationRule.priority.desc(),
+        models.CategorizationRule.id.desc()
+    ).all()
     
     report_progress(0, "Applying Smart Rules...")
     
@@ -398,7 +407,7 @@ def process_transactions_preview_with_progress(
         is_verified = False
         
         # Smart Rules first
-        matched_rule = categorizer.apply_rules(clean_desc, smart_rules)
+        matched_rule = categorizer.apply_rules(clean_desc, smart_rules, amount=data["amount"])
         tags = None
         if matched_rule:
             bucket_id = matched_rule.bucket_id
