@@ -205,6 +205,10 @@ Dedicated reporting section for deeper financial analysis.
     1. Smart Rules (user-created, highest priority)
     2. Global Keywords (common merchant patterns)
     3. AI Prediction (Google Gemini fallback)
+-   **Owner Assignment** *(New)*:
+    -   Rules can assign matched transactions to a specific family member.
+    -   Select member in "Assign to" dropdown when creating rule.
+    -   Useful for recurring personal expenses (e.g., "All Netflix → David").
 -   **Sub-Category Support** *(New)*: Rules can target any category including nested sub-categories.
 -   **Placeholder Validation** *(New)*: Edit dropdown shows "Select Category..." for rules with invalid/null categories, preventing silent save failures.
 

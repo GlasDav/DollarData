@@ -1,79 +1,66 @@
-# Session Handover - January 2, 2026 (Evening Session)
+# Session Handover - January 3, 2026
 
 ## What We Accomplished This Session
 
-### 🎯 Focus: UI Polish & Bug Fixes
+### 🎯 Focus: Smart Rules Fixes & AI Categorization
 
-Fixed several UI alignment issues and resolved a critical CSV import bug.
+Fixed critical Smart Rules bugs and added owner assignment feature.
 
 ---
 
 ## Completed Work
 
-### 1. Settings Sidebar Alignment ✅
-- **Problem**: Horizontal divider lines between main sidebar and Settings sidebar weren't aligned
-- **Solution**: Changed Settings sidebar to use `fixed` positioning with `left-64 top-[72px] bottom-0`
-- **Footer Matching**: Matched Settings footer structure exactly to main sidebar (same classes, icon sizes, margins)
+### 1. AI Categorization Fix ✅
+- **Problem**: AI categorization dropped from 95% to ~10%
+- **Root Cause**: `GEMINI_API_KEY` not configured in docker-compose.yml
+- **Fix**: Added `GEMINI_API_KEY=${GEMINI_API_KEY:-}` to environment
+- **Action Required**: Set API key on VPS via `.env` file
 
-### 2. CSV Import "Job not found" Fix ✅
-- **Root Cause**: Gunicorn was spawning multiple workers (`CPU * 2 + 1`), each with separate memory
-- **Issue**: Job created on Worker 1, status check hit Worker 2 = "Job not found"
-- **Solution**: Set workers to 1 in `gunicorn.conf.py` (line 17)
-- **Future**: For multi-worker scaling, migrate job store to Redis
+### 2. Smart Rules - Click to Edit Error ✅
+- **Problem**: "Something went wrong" when clicking a rule in Settings
+- **Root Cause**: `RuleItem` component used `treeBuckets` but prop not passed
+- **Fix**: Added `treeBuckets` prop to `RuleItem` and its JSX usage
 
-### 3. Hierarchical Category Dropdowns ✅
-- **Changed**: Rules page and Import page category dropdowns now group by **parent category** instead of flat groups
-- **Pattern**: Matches Reports page filter structure
-- **Implementation**:
-  - Added `renderCategoryOptions()` helper function
-  - Parent categories become optgroup labels
-  - Child categories appear as options under their parent
-  - Income parent hidden, children shown under "Income" optgroup
+### 3. Smart Rules - Run Rules Returns 0 ✅
+- **Problem**: "Run Rules Now" always returned 0 transactions
+- **Root Cause**: Logic only counted when category **changed**, not NULL→category
+- **Fix**: Changed condition to `if rule and (txn.bucket_id is None or rule.bucket_id != txn.bucket_id)`
 
-### 4. Add google-generativeai Dependency ✅
-- Added `google-generativeai==0.8.5` to `backend/requirements.txt`
-- Required for AI-powered transaction categorization
-
-### 5. Import Page Category Dropdown Sorting ✅
-- Previously grouped by Income/Needs/Wants (flat)
-- Now grouped hierarchically by parent category (tree structure)
-
-### 6. FAB Button Stacking ✅
-- Quick Add and AI Chatbot buttons now stack vertically (bottom-right corner)
-- Prevents content overlap and improves accessibility
+### 4. Smart Rules - Owner Assignment ✅
+- **Problem**: Modal had no way to assign transactions to family members
+- **Solution**: 
+  - Added `assign_to` field to `CategorizationRule` model
+  - Added `assign_to` to `RuleBase` schema
+  - Updated create/update/run endpoints to handle `assign_to`
+  - Added member dropdown to CreateRuleModal
+  - Passed `members` prop from Transactions.jsx
 
 ---
 
 ## Files Modified
 
-### Frontend
-| File | Changes |
-|------|---------|
-| `Settings.jsx` | Fixed positioning for sidebar alignment |
-| `RulesSection.jsx` | Added `renderCategoryOptions` helper, hierarchical dropdown |
-| `RulesSettings.jsx` | Pass `treeBuckets` prop to RulesSection |
-| `DataManagement.jsx` | Hierarchical dropdown, fetch bucketsTree instead of flat |
-| `QuickAddFAB.jsx` | Stack FAB buttons vertically |
-
 ### Backend
 | File | Changes |
 |------|---------|
-| `gunicorn.conf.py` | Set workers to 1 (fix job store issue) |
-| `requirements.txt` | Added google-generativeai==0.8.5 |
+| `docker-compose.yml` | Added GEMINI_API_KEY environment variable |
+| `models.py` | Added `assign_to` column to CategorizationRule |
+| `schemas.py` | Added `assign_to` field to RuleBase |
+| `routers/rules.py` | Fixed run_rules logic, added assign_to to CRUD |
+
+### Frontend
+| File | Changes |
+|------|---------|
+| `RulesSection.jsx` | Passed treeBuckets prop to RuleItem |
+| `CreateRuleModal.jsx` | Added members prop, assignTo state, dropdown UI |
+| `Transactions.jsx` | Passed members prop to CreateRuleModal |
 
 ---
 
 ## Git Commits (This Session)
 
-1. `401a959` - UI fixes: Stack FAB buttons vertically, align sidebar dividers, group Rules dropdown
-2. `fc4396a` - Fix: Sort parent categories before children in dropdown filter
-3. `4e86df9` - Fix: Auto-parent new Income categories under Income parent category
-4. `df49dd5` - Hide Income parent category from dropdown menus
-5. `041d0eb` - Fix: Align Settings footer to bottom with mt-auto, add google-generativeai dependency
-6. `f95e810` - Fix: Settings sidebar header, grouped category dropdown in DataManagement
-7. `e208dd3` - Fix: Rewrite Settings sidebar with fixed positioning, align footer borders
-8. `a7b4201` - Fix: Single gunicorn worker for job store, match sidebar footer styles exactly
-9. `435e6ed` - Group category dropdowns by parent category in Rules and Import pages
+1. `09b8f4c` - docs: Update HANDOVER.md and feature_documentation.md
+2. `9ac3f25` - Fix: Add GEMINI_API_KEY to docker-compose environment
+3. `5b7c7c8` - Fix Smart Rules: treeBuckets prop, run_rules NULL logic, assign_to field, member dropdown
 
 **All pushed to `main` branch** ✅
 
@@ -83,34 +70,21 @@ Fixed several UI alignment issues and resolved a critical CSV import bug.
 
 ### Deploy to VPS:
 ```bash
+# SSH into server
+ssh root@43.224.182.196
+
+# Create .env with API key (if not exists)
+echo 'GEMINI_API_KEY=AIzaSyBU3Io2ARjDmvQU4wZgWJUQth6Q04FaP5Q' >> /opt/principal/.env
+
+# Deploy
 cd /opt/principal && git pull origin main && docker compose down && docker compose up -d --build
 ```
 
-**Note**: The `--build` flag is required because we added a new Python dependency (`google-generativeai`).
-
 ---
 
-## Current Application Status
+## Database Note
 
-### What's Working
-- ✅ Settings sidebar perfectly aligns with main sidebar
-- ✅ CSV import works (single worker ensures job store consistency)
-- ✅ Category dropdowns show hierarchical parent-child structure
-- ✅ AI categorization dependency installed
-- ✅ FAB buttons don't overlap content
-
-### Architecture Note
-- **Gunicorn Workers**: Currently set to 1 worker for job store reliability
-- **Scaling**: For multi-worker production, migrate `_job_store` to Redis
-- **Performance**: Single worker is fine for typical single-user usage
-
----
-
-## Known Issues / Future Improvements
-
-### Minor Items
-1. **Multi-worker Support**: Job store uses in-memory dict; needs Redis for horizontal scaling
-2. **Category Dropdown**: Consider adding visual indentation for nested categories
+The new `assign_to` column in `categorization_rules` table will be auto-created by SQLAlchemy on first run. If you encounter issues, the column is nullable so no migration script is strictly required.
 
 ---
 
@@ -130,16 +104,16 @@ python -m uvicorn backend.main:app --reload
 - Frontend: http://localhost:5173
 - Backend: http://localhost:8000
 - API Docs: http://localhost:8000/docs
-- Production: VPS at 43.224.182.196
+- Production VPS: 43.224.182.196
 
 ---
 
 ## Summary
 
-Focused session on UI polish and critical bug fixes:
-- **Sidebar Alignment**: Pixel-perfect alignment using fixed positioning
-- **CSV Import**: Fixed multi-worker job store issue by reducing to 1 worker
-- **Hierarchical Dropdowns**: Rules and Import pages now show parent-child category structure
-- **AI Dependency**: Added google-generativeai for AI categorization
+Focused session on fixing core Smart Rules functionality:
+- **AI Categorization**: Added missing API key to docker-compose
+- **Rule Click Error**: Fixed missing treeBuckets prop
+- **Run Rules Zero Count**: Fixed NULL→category logic
+- **Owner Assignment**: New feature to assign matched transactions to family members
 
-All changes pushed to GitHub and deployed. 🚀
+All changes pushed to GitHub and ready for deployment. 🚀
