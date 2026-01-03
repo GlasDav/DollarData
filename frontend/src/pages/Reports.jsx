@@ -50,16 +50,17 @@ export default function Reports() {
     });
 
     // Fetch Categories Tree for Filter
-    const {
-        data: categoriesData,
-        isLoading: categoriesLoading,
-        isError: categoriesError,
-        error: categoriesErrorDetails
-    } = useQuery({
+    const bucketsQuery = useQuery({
         queryKey: ['buckets'], // Match Budget.jsx for cache sharing
         queryFn: api.getBucketsTree,
         staleTime: 30 * 60 * 1000, // 30 minutes - categories rarely change
     });
+
+    const categoriesData = bucketsQuery.data;
+    const categoriesLoading = bucketsQuery.isLoading;
+    const categoriesError = bucketsQuery.isError;
+    const categoriesErrorDetails = bucketsQuery.error;
+
     const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
     // Fetch Household Members
