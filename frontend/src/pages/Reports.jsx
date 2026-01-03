@@ -81,6 +81,7 @@ export default function Reports() {
             const params = {
                 start_date: start,
                 end_date: end,
+                spender: spenderFilter, // Fix: Pass spender filter to backend
             };
             // Send comma-separated bucket IDs if multiple selected
             if (categoryFilters.length > 0) {
@@ -253,12 +254,19 @@ export default function Reports() {
 
                 {/* Category Filter */}
                 <div className="w-64">
-                    <MultiSelectCategoryFilter
-                        categories={categories}
-                        selectedIds={categoryFilters}
-                        onChange={setCategoryFilters}
-                        placeholder="Filter by categories..."
-                    />
+                    {categoriesData === undefined ? (
+                        <div className="h-10 w-full bg-slate-100 dark:bg-slate-700 animate-pulse rounded-lg"></div>
+                    ) : (
+                        <MultiSelectCategoryFilter
+                            categories={categories}
+                            selectedIds={categoryFilters}
+                            onChange={setCategoryFilters}
+                            placeholder="Filter by categories..."
+                        />
+                    )}
+                    {categories.length === 0 && categoriesData !== undefined && (
+                        <p className="text-xs text-red-400 mt-1">No categories found</p>
+                    )}
                 </div>
             </div>
 
