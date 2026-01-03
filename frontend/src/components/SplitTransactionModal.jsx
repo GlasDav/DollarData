@@ -11,8 +11,8 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
 
     // Load Buckets
     const { data: buckets = [] } = useQuery({
-        queryKey: ['buckets'],
-        queryFn: api.getBuckets
+        queryKey: ['bucketsTree'],
+        queryFn: api.getBucketsTree
     });
 
     // Initialize splits when transaction opens
@@ -76,6 +76,41 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
         }
     };
 
+    // Helper to render hierarchical category options
+    const renderCategoryOptions = (treeBuckets) => {
+        if (!treeBuckets || treeBuckets.length === 0) return null;
+
+        return treeBuckets.map(parent => {
+            // Skip the Income parent category itself but show its children
+            if (parent.name === 'Income' && parent.group === 'Income') {
+                if (parent.children && parent.children.length > 0) {
+                    return (
+                        <optgroup key={parent.id} label="Income">
+                            {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                                <option key={child.id} value={child.id}>{child.name}</option>
+                            ))}
+                        </optgroup>
+                    );
+                }
+                return null;
+            }
+
+            // For parents with children, render as optgroup
+            if (parent.children && parent.children.length > 0) {
+                return (
+                    <optgroup key={parent.id} label={parent.name}>
+                        {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                            <option key={child.id} value={child.id}>{child.name}</option>
+                        ))}
+                    </optgroup>
+                );
+            }
+
+            // For leaf categories (no children), render as plain option
+            return <option key={parent.id} value={parent.id}>{parent.name}</option>;
+        });
+    };
+
     if (!isOpen || !transaction) return null;
 
     return (
@@ -122,9 +157,7 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                                             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm"
                                         >
                                             <option value="">Select Category...</option>
-                                            {sortBucketsByGroup(buckets).map(b => (
-                                                <option key={b.id} value={b.id}>{b.name}</option>
-                                            ))}
+                                            {renderCategoryOptions(buckets)}
                                         </select>
                                     </div>
                                     <div className="col-span-3">

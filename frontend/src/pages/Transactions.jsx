@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { getBuckets, getSettings, getGoals, deleteAllTransactions, getMembers } from '../services/api';
+import api, { getBucketsTree, getSettings, getGoals, deleteAllTransactions, getMembers } from '../services/api';
 import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X, BookPlus, UserCheck, StickyNote } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
 import TransactionNoteModal from '../components/TransactionNoteModal';
@@ -8,7 +8,6 @@ import SplitTransactionModal from '../components/SplitTransactionModal';
 import CreateRuleModal from '../components/CreateRuleModal';
 import EmptyState from '../components/EmptyState';
 import Button from '../components/ui/Button';
-import { sortBucketsByGroup } from '../utils/bucketUtils';
 
 // Debounce hook
 function useDebounce(value, delay) {
@@ -75,10 +74,10 @@ export default function Transactions() {
     const transactions = transactionData?.items || [];
     const totalCount = transactionData?.total || 0;
 
-    // Fetch Buckets
+    // Fetch Buckets Tree
     const { data: buckets = [] } = useQuery({
-        queryKey: ['buckets'],
-        queryFn: getBuckets
+        queryKey: ['bucketsTree'],
+        queryFn: getBucketsTree
     });
 
     // Fetch User Settings
@@ -204,7 +203,6 @@ export default function Transactions() {
         setSearchParams({});
     };
 
-    // Sort Header Component
     const SortHeader = ({ column, children, className = "" }) => (
         <th
             className={`px-3 py-3 font-semibold text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600 transition select-none ${className}`}
@@ -218,6 +216,97 @@ export default function Transactions() {
             </div>
         </th>
     );
+
+    // Helper to render hierarchical category options
+    const renderCategoryOptions = (treeBuckets) => {
+        if (!treeBuckets || treeBuckets.length === 0) return null;
+
+        return treeBuckets.map(parent => {
+            // Skip the Income parent category itself but show its children
+            if (parent.name === 'Income' && parent.group === 'Income') {
+                if (parent.children && parent.children.length > 0) {
+                    return (
+                        <optgroup key={parent.id} label="Income">
+                            {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                                <option key={child.id} value={child.id}>{child.name}</option>
+                            ))}
+                        </optgroup>
+                    );
+                }
+                return null;
+            }
+
+            // For parents with children, render as optgroup
+            if (parent.children && parent.children.length > 0) {
+                return (
+                    <optgroup key={parent.id} label={parent.name}>
+                        {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                            <option key={child.id} value={child.id}>{child.name}</option>
+                        ))}
+                    </optgroup>
+                );
+            }
+
+            // For leaf categories (no children), render as plain option
+            return <option key={parent.id} value={parent.id}>{parent.name}</option>;
+        });
+    };
+
+    // Flatten buckets for filter searching if needed, though we primarily use the tree for rendering
+    // But for the Custom Filter Dropdown (which isn't a <select>), we need a recursive render or just render the tree structure.
+    const renderFilterDropdownItems = () => {
+        if (!buckets || buckets.length === 0) return null;
+
+        return buckets.map(parent => {
+            // Handle Income group specially to avoid double header
+            if (parent.name === 'Income' && parent.group === 'Income') {
+                if (parent.children && parent.children.length > 0) {
+                    return (
+                        <div key={parent.id}>
+                            <div className="px-4 py-1 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-700/50 mt-1">Income</div>
+                            {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                                <button
+                                    key={child.id}
+                                    onClick={() => { setCategoryFilter(child.id); setShowCategoryDropdown(false); }}
+                                    className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${categoryFilter === child.id ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                                >
+                                    {child.name}
+                                </button>
+                            ))}
+                        </div>
+                    );
+                }
+                return null;
+            }
+
+            if (parent.children && parent.children.length > 0) {
+                return (
+                    <div key={parent.id}>
+                        <div className="px-4 py-1 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-700/50 mt-1">{parent.name}</div>
+                        {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                            <button
+                                key={child.id}
+                                onClick={() => { setCategoryFilter(child.id); setShowCategoryDropdown(false); }}
+                                className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${categoryFilter === child.id ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                            >
+                                {child.name}
+                            </button>
+                        ))}
+                    </div>
+                );
+            }
+
+            return (
+                <button
+                    key={parent.id}
+                    onClick={() => { setCategoryFilter(parent.id); setShowCategoryDropdown(false); }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${categoryFilter === parent.id ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                >
+                    {parent.name}
+                </button>
+            );
+        });
+    };
 
     return (
         <div className="max-w-6xl mx-auto p-8 space-y-8" >
@@ -356,15 +445,7 @@ export default function Transactions() {
                                             >
                                                 All Categories
                                             </button>
-                                            {sortBucketsByGroup(buckets).map(b => (
-                                                <button
-                                                    key={b.id}
-                                                    onClick={() => { setCategoryFilter(b.id); setShowCategoryDropdown(false); }}
-                                                    className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${categoryFilter === b.id ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
-                                                >
-                                                    {b.name}
-                                                </button>
-                                            ))}
+                                            {renderFilterDropdownItems()}
                                         </div>
                                     )}
                                 </th>
@@ -506,9 +587,7 @@ export default function Transactions() {
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 <option value="">Uncategorized</option>
-                                                {sortBucketsByGroup(buckets).map(b => (
-                                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                                ))}
+                                                {renderCategoryOptions(buckets)}
                                             </select>
                                         </td>
                                         <td className="px-3 py-3">
@@ -649,9 +728,7 @@ export default function Transactions() {
                                 disabled={batchUpdateMutation.isPending}
                             >
                                 <option value="">In Category...</option>
-                                {buckets.map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                ))}
+                                {renderCategoryOptions(buckets)}
                             </select>
                             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                         </div>
