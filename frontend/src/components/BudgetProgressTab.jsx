@@ -1,16 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Target, TrendingUp, AlertTriangle, PiggyBank, Filter, BarChart3 } from 'lucide-react';
+import { Target, TrendingUp, AlertTriangle, PiggyBank, Filter, BarChart3, Calendar } from 'lucide-react';
 import CategoryProgressCard from './CategoryProgressCard';
 
 import { API_BASE_URL } from '../config';
 
 const API_URL = API_BASE_URL;
 
+// Time period options
+const PERIOD_OPTIONS = [
+    { id: 'this_month', label: 'This Month' },
+    { id: 'last_month', label: 'Last Month' },
+    { id: 'last_3_months', label: 'Last 3 Months' },
+    { id: 'last_6_months', label: 'Last 6 Months' },
+    { id: 'ytd', label: 'Year to Date' },
+    { id: 'last_year', label: 'Last Year' },
+];
+
+// Calculate date range based on period selection
+const getDateRange = (periodId) => {
+    const now = new Date();
+    let start, end;
+
+    switch (periodId) {
+        case 'this_month':
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            break;
+        case 'last_month':
+            start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            end = new Date(now.getFullYear(), now.getMonth(), 0);
+            break;
+        case 'last_3_months':
+            start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            break;
+        case 'last_6_months':
+            start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            break;
+        case 'ytd':
+            start = new Date(now.getFullYear(), 0, 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            break;
+        case 'last_year':
+            start = new Date(now.getFullYear() - 1, 0, 1);
+            end = new Date(now.getFullYear() - 1, 11, 31);
+            break;
+        default:
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+
+    return {
+        start: start.toISOString().split('T')[0],
+        end: end.toISOString().split('T')[0]
+    };
+};
+
 // Fetch budget progress data
-const fetchBudgetProgress = async (months, spender) => {
+const fetchBudgetProgress = async (months, spender, startDate, endDate) => {
     const token = localStorage.getItem('token');
     const params = new URLSearchParams({ months: months.toString(), spender });
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+
     const response = await fetch(`${API_URL}/analytics/budget-progress?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -33,14 +87,18 @@ const fetchMembers = async () => {
  */
 export default function BudgetProgressTab({ userSettings }) {
     const [selectedMember, setSelectedMember] = useState('Combined');
+    const [selectedPeriod, setSelectedPeriod] = useState('this_month');
 
     const formatCurrency = (val) => {
         return `$${Number(val || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     };
 
+    // Calculate date range based on selected period
+    const dateRange = useMemo(() => getDateRange(selectedPeriod), [selectedPeriod]);
+
     const { data: progress, isLoading } = useQuery({
-        queryKey: ['budget-progress', 6, selectedMember],
-        queryFn: () => fetchBudgetProgress(6, selectedMember)
+        queryKey: ['budget-progress', 6, selectedMember, dateRange.start, dateRange.end],
+        queryFn: () => fetchBudgetProgress(6, selectedMember, dateRange.start, dateRange.end)
     });
 
     const { data: members = [] } = useQuery({
@@ -71,6 +129,17 @@ export default function BudgetProgressTab({ userSettings }) {
                     <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Filters:</span>
                 </div>
 
+                {/* Period Filter */}
+                <select
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                >
+                    {PERIOD_OPTIONS.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.label}</option>
+                    ))}
+                </select>
+
                 {/* Member Filter */}
                 <select
                     value={selectedMember}
@@ -84,11 +153,9 @@ export default function BudgetProgressTab({ userSettings }) {
                     ))}
                 </select>
 
-                {/* History Range Removed (Fixed 6 months) */}
-
                 {/* Period Label */}
-                <div className="ml-auto text-sm text-slate-500 dark:text-slate-400">
-                    <BarChart3 size={14} className="inline mr-1" />
+                <div className="ml-auto text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Calendar size={14} />
                     {period.label || 'Current Month'}
                 </div>
             </div>

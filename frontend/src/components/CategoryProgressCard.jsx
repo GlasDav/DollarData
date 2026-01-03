@@ -1,18 +1,20 @@
-import React from 'react';
-import { TrendingUp, TrendingDown, Minus, Users, Wallet } from 'lucide-react';
+import React, { useState } from 'react';
+import { TrendingUp, TrendingDown, Minus, Users, Wallet, ChevronDown, X } from 'lucide-react';
 import { ICON_MAP } from '../utils/icons';
 import SparklineChart from './SparklineChart';
 
 /**
  * CategoryProgressCard - Shows budget progress for a single category
- * with sparkline history and member breakdown
+ * with sparkline history, member breakdown, and subcategory drill-down
  */
 export default function CategoryProgressCard({
     category,
     formatCurrency = (v) => `$${v?.toLocaleString() || 0}`,
     showMembers = true
 }) {
+    const [showChildren, setShowChildren] = useState(false);
     const Icon = ICON_MAP[category.icon] || Wallet;
+    const hasChildren = category.children && category.children.length > 0;
 
     // Progress bar color based on status
     const getBarColor = () => {
@@ -126,6 +128,61 @@ export default function CategoryProgressCard({
                         </div>
                     </div>
                     <SparklineChart data={category.history} height={64} />
+                </div>
+            )}
+
+            {/* Subcategory Breakdown - Click to expand */}
+            {hasChildren && (
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <button
+                        onClick={() => setShowChildren(!showChildren)}
+                        className="w-full flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    >
+                        <span className="font-medium">
+                            {category.children.length} Subcategories
+                        </span>
+                        <ChevronDown
+                            size={14}
+                            className={`transition-transform ${showChildren ? 'rotate-180' : ''}`}
+                        />
+                    </button>
+
+                    {showChildren && (
+                        <div className="mt-3 space-y-2">
+                            {category.children.map((child, idx) => {
+                                const childPercent = child.limit > 0 ? (child.spent / child.limit) * 100 : 0;
+                                const isOver = childPercent > 100;
+
+                                return (
+                                    <div key={child.id || idx} className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+                                        <div className="flex justify-between items-center mb-1.5">
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                                {child.name}
+                                            </span>
+                                            <span className={`text-sm font-semibold ${isOver ? 'text-red-500' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                {formatCurrency(child.spent)}
+                                            </span>
+                                        </div>
+                                        {child.limit > 0 && (
+                                            <>
+                                                <div className="h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full transition-all ${isOver ? 'bg-red-500' : childPercent > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                                        style={{ width: `${Math.min(childPercent, 100)}%` }}
+                                                    />
+                                                </div>
+                                                <div className="flex justify-between mt-1">
+                                                    <span className="text-[10px] text-slate-400">
+                                                        {Math.round(childPercent)}% of {formatCurrency(child.limit)}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 

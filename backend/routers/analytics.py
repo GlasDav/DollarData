@@ -1254,22 +1254,40 @@ def get_networth_projection(
 def get_budget_progress(
     months: int = Query(6, ge=1, le=12, description="Months of history for sparklines"),
     spender: str = Query(default="Combined", description="Filter by spender"),
+    start_date: str = Query(None, description="Optional ISO start date for custom period"),
+    end_date: str = Query(None, description="Optional ISO end date for custom period"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
     """
     Get comprehensive budget progress data for all categories.
-    Includes current month spending, N months history, per-member breakdown, and trend.
+    Includes spending for selected period, N months history, per-member breakdown, and trend.
     """
     user = current_user
     today = date.today()
     
-    # Current month range
-    current_start = today.replace(day=1)
-    if today.month == 12:
-        current_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    # Determine period range - use custom dates if provided, otherwise current month
+    if start_date and end_date:
+        try:
+            current_start = date.fromisoformat(start_date)
+            current_end = date.fromisoformat(end_date)
+            period_label = f"{current_start.strftime('%b %d')} - {current_end.strftime('%b %d, %Y')}"
+        except ValueError:
+            # Fallback to current month if date parsing fails
+            current_start = today.replace(day=1)
+            if today.month == 12:
+                current_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                current_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+            period_label = current_start.strftime('%B %Y')
     else:
-        current_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+        # Current month range (default)
+        current_start = today.replace(day=1)
+        if today.month == 12:
+            current_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            current_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+        period_label = current_start.strftime('%B %Y')
     
     # History start (N months back)
     history_start = (current_start - timedelta(days=months * 30)).replace(day=1)
@@ -1586,7 +1604,7 @@ def get_budget_progress(
         "period": {
             "start": current_start.isoformat(),
             "end": current_end.isoformat(),
-            "label": current_start.strftime("%B %Y")
+            "label": period_label
         },
         "score": score,
         "summary": {
