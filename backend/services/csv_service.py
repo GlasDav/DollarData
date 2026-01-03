@@ -66,7 +66,7 @@ def process_csv(file_bytes: bytes, mapping: Dict[str, str]) -> List[Dict[str, An
         try:
             # Parse Date
             raw_date = str(row[col_date])
-            dt = date_parser.parse(raw_date)
+            dt = date_parser.parse(raw_date, dayfirst=True)
             
             # Parse Amount
             amount = 0.0
