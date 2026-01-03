@@ -23,14 +23,17 @@ def create_rule(rule: schemas.RuleCreate, db: Session = Depends(get_db), current
     # Deduplicate and sort keywords
     norm_keywords = ", ".join(sorted(list(set([k.strip() for k in rule.keywords.split(",") if k.strip()]))))
 
-    # Check for duplicates
+    # Check for EXAT duplicates (same keywords AND same filters)
     existing_rule = db.query(models.CategorizationRule).filter(
         models.CategorizationRule.user_id == current_user.id,
-        models.CategorizationRule.keywords == norm_keywords
+        models.CategorizationRule.keywords == norm_keywords,
+        models.CategorizationRule.min_amount == rule.min_amount,
+        models.CategorizationRule.max_amount == rule.max_amount,
+        models.CategorizationRule.apply_tags == rule.apply_tags
     ).first()
     
     if existing_rule:
-        raise HTTPException(status_code=400, detail="Rule with these keywords already exists")
+        raise HTTPException(status_code=400, detail="Identical rule already exists")
 
     db_rule = models.CategorizationRule(
         user_id=current_user.id,
