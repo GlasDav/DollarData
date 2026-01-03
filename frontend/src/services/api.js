@@ -210,6 +210,11 @@ export const previewRule = async (keywords, minAmount = null, maxAmount = null) 
     return response.data;
 };
 
+export const reorderRules = async (ruleIds) => {
+    const response = await api.put('/settings/rules/reorder', { rule_ids: ruleIds });
+    return response.data;
+};
+
 // Holdings
 export const getHoldings = async (accountId) => (await api.get(`/net-worth/accounts/${accountId}/holdings`)).data;
 export const createHolding = async (accountId, holding) => (await api.post(`/net-worth/accounts/${accountId}/holdings`, holding)).data;

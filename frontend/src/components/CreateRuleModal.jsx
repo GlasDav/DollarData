@@ -30,7 +30,6 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
     const queryClient = useQueryClient();
     const [keyword, setKeyword] = useState(transaction?.description || '');
     const [bucketId, setBucketId] = useState(transaction?.bucket_id || '');
-    const [priority, setPriority] = useState(10);
     const [minAmount, setMinAmount] = useState('');
     const [maxAmount, setMaxAmount] = useState('');
     const [applyTags, setApplyTags] = useState('');
@@ -49,7 +48,6 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
         if (transaction) {
             setKeyword(transaction.description || '');
             setBucketId(transaction.bucket_id || '');
-            setPriority(10);
             setMinAmount('');
             setMaxAmount('');
             setApplyTags('');
@@ -83,7 +81,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
         createRuleMutation.mutate({
             keywords: keyword.trim().toLowerCase(),
             bucket_id: parseInt(bucketId),
-            priority: parseInt(priority) || 0,
+            priority: 1000,
             min_amount: minAmount ? parseFloat(minAmount) : null,
             max_amount: maxAmount ? parseFloat(maxAmount) : null,
             apply_tags: applyTags.trim() || null,
@@ -321,22 +319,6 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                     <p className="text-xs text-slate-500 dark:text-slate-400 ml-6 -mt-3">
                         Transactions will be categorized but not marked as verified
                     </p>
-
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Priority (optional)
-                        </label>
-                        <input
-                            type="number"
-                            value={priority}
-                            onChange={(e) => setPriority(e.target.value)}
-                            placeholder="0"
-                            className="w-24 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        />
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Higher priority rules are applied first
-                        </p>
-                    </div>
 
                     {members.length > 0 && (
                         <div>

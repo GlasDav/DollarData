@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save, Tag as TagIcon, Trash2, Play, Eye, Loader2 } from 'lucide-react';
+import { Save, Tag as TagIcon, Trash2, Play, Eye, Loader2, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import * as api from '../services/api';
 import { API_BASE_URL } from '../config';
 
@@ -116,7 +119,28 @@ const RunRulesModal = ({ onClose, onConfirm, isPending }) => {
     );
 };
 
-const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation, deleteRuleMutation, isSelected, onToggleSelect }) => {
+const SortableRuleItem = (props) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: props.rule.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="touch-none">
+            <RuleItem {...props} dragHandleProps={{ ...attributes, ...listeners }} />
+        </div>
+    );
+};
+
+const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation, deleteRuleMutation, isSelected, onToggleSelect, dragHandleProps }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localKeywords, setLocalKeywords] = useState(rule.keywords);
     const [localBucketId, setLocalBucketId] = useState(rule.bucket_id);
@@ -182,15 +206,7 @@ const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation
                             {renderCategoryOptions(treeBuckets)}
                         </select>
                     </div>
-                    <div className="col-span-2">
-                        <input
-                            type="number"
-                            className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white text-right"
-                            value={localPriority}
-                            onChange={(e) => setLocalPriority(e.target.value)}
-                            placeholder="Pri"
-                        />
-                    </div>
+
                 </div>
                 {/* Row 2: Amount Range, Tags, Assign To, Mark for Review */}
                 <div className="grid grid-cols-12 gap-4 items-center">
@@ -288,7 +304,12 @@ const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation
                 )}
             </div>
             <div className="col-span-2 flex justify-end items-center gap-3">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{rule.priority}</span>
+                <span
+                    className="text-slate-400 cursor-grab active:cursor-grabbing p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded touch-none"
+                    {...dragHandleProps}
+                >
+                    <GripVertical size={16} />
+                </span>
                 <button
                     onClick={(e) => { e.stopPropagation(); deleteRuleMutation.mutate(rule.id); }}
                     className="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
@@ -427,6 +448,31 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
         }
     };
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        if (active.id !== over.id) {
+            const oldIndex = rules.findIndex((r) => r.id === active.id);
+            const newIndex = rules.findIndex((r) => r.id === over.id);
+            const newOrder = arrayMove(rules, oldIndex, newIndex).map(r => r.id);
+
+            // Optimistic update could happen here, but for now just API call
+            api.reorderRules(newOrder).then(() => {
+                queryClient.invalidateQueries({ queryKey: ['rules'] });
+            });
+        }
+    };
+
     return (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
             <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
@@ -489,15 +535,7 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
                                 {renderCategoryOptions(treeBuckets)}
                             </select>
                         </div>
-                        <div className="w-[80px]">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Priority</label>
-                            <input
-                                type="number"
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                                value={priority}
-                                onChange={(e) => setPriority(e.target.value)}
-                            />
-                        </div>
+
                     </div>
 
                     {/* Row 2: Amount Range, Tags, Member Assignment */}
@@ -639,26 +677,30 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
                 </div>
                 <div className="col-span-5">Keywords</div>
                 <div className="col-span-4">Category</div>
-                <div className="col-span-2 text-right">Priority</div>
+                <div className="col-span-2 text-right">Order</div>
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
-                {!rules?.length && (
-                    <div className="p-8 text-center text-slate-400 text-sm">No rules defined yet.</div>
-                )}
-                {rules?.map(rule => (
-                    <RuleItem
-                        key={rule.id}
-                        rule={rule}
-                        buckets={buckets}
-                        treeBuckets={treeBuckets}
-                        members={members}
-                        updateRuleMutation={updateRuleMutation}
-                        deleteRuleMutation={deleteRuleMutation}
-                        isSelected={selectedRules.has(rule.id)}
-                        onToggleSelect={() => toggleSelectRule(rule.id)}
-                    />
-                ))}
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={rules?.map(r => r.id) || []} strategy={verticalListSortingStrategy}>
+                        {!rules?.length && (
+                            <div className="p-8 text-center text-slate-400 text-sm">No rules defined yet.</div>
+                        )}
+                        {rules?.map(rule => (
+                            <SortableRuleItem
+                                key={rule.id}
+                                rule={rule}
+                                buckets={buckets}
+                                treeBuckets={treeBuckets}
+                                members={members}
+                                updateRuleMutation={updateRuleMutation}
+                                deleteRuleMutation={deleteRuleMutation}
+                                isSelected={selectedRules.has(rule.id)}
+                                onToggleSelect={() => toggleSelectRule(rule.id)}
+                            />
+                        ))}
+                    </SortableContext>
+                </DndContext>
             </div>
         </div>
     );

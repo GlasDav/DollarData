@@ -48,6 +48,40 @@ def create_rule(rule: schemas.RuleCreate, db: Session = Depends(get_db), current
     db.refresh(db_rule)
     return db_rule
 
+class ReorderRequest(schemas.BaseModel):
+    rule_ids: List[int]
+
+@router.put("/reorder")
+def reorder_rules(request: ReorderRequest, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """
+    Reorder rules by updating their priorities. 
+    The first rule in the list gets the highest priority.
+    """
+    # Verify ownership of all rules
+    rules = db.query(models.CategorizationRule).filter(
+        models.CategorizationRule.user_id == current_user.id,
+        models.CategorizationRule.id.in_(request.rule_ids)
+    ).all()
+    
+    rule_map = {r.id: r for r in rules}
+    
+    if len(rules) != len(request.rule_ids):
+        # Some rules might be missing or belong to another user
+        pass # We'll just update the ones we found
+        
+    # Assign priorities: First in list = Max Priority
+    # We use a large base number to avoid conflicts, or just reverse index
+    base_priority = 1000
+    
+    for index, rule_id in enumerate(request.rule_ids):
+        rule = rule_map.get(rule_id)
+        if rule:
+            # First item (index 0) gets highest priority
+            rule.priority = base_priority - index
+            
+    db.commit()
+    return {"message": "Rules reordered successfully"}
+
 
 
 @router.post("/bulk-create", response_model=dict)
