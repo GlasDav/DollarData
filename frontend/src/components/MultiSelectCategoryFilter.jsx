@@ -32,37 +32,25 @@ export default function MultiSelectCategoryFilter({ categories = [], selectedIds
         return result;
     };
 
-    const flattened = flattenAndSort(categories);
+    // Group categories by their Root Parent (e.g. Food, Housing) instead of high-level Group
+    const grouped = {};
 
-    // Group categories, excluding the "Income" parent category (group header is sufficient)
-    const grouped = flattened
-        .filter(cat => !(cat.name === 'Income' && cat.group === 'Income' && cat.depth === 0))
-        .reduce((acc, cat) => {
-            const group = cat.group || 'Other';
-            if (!acc[group]) acc[group] = [];
-            acc[group].push(cat);
-            return acc;
-        }, {});
+    categories.forEach(root => {
+        // Exclude Income categories from the filter
+        if (root.group === 'Income' || root.name === 'Income') return;
 
-    const groupOrder = { 'Income': 1, 'Non-Discretionary': 2, 'Discretionary': 3, 'Transfer': 4 };
+        // Use the root category name as the group header
+        const groupName = root.name;
 
-    // Sort groups and categories within groups
-    const sortedGroups = Object.keys(grouped).sort((a, b) => {
-        const orderA = groupOrder[a] || 999;
-        const orderB = groupOrder[b] || 999;
-        return orderA - orderB;
+        // Flatten the root and its children
+        // We wrap root in array because flattenAndSort expects an array
+        const branchItems = flattenAndSort([root]);
+
+        grouped[groupName] = branchItems;
     });
 
-    sortedGroups.forEach(group => {
-        // Sort: parents (depth 0) first alphabetically, then children (depth > 0) by parent then alphabetically
-        grouped[group].sort((a, b) => {
-            // Depth 0 items (no parent) should come before depth > 0 items
-            if (a.depth === 0 && b.depth > 0) return -1;
-            if (a.depth > 0 && b.depth === 0) return 1;
-            // Within same depth, sort alphabetically
-            return a.name.localeCompare(b.name);
-        });
-    });
+    // Sort groups alphabetically
+    const sortedGroups = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
 
     const toggleCategory = (id) => {
         const newSelection = selectedIds.includes(id)
