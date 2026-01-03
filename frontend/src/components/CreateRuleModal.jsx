@@ -30,7 +30,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
     const queryClient = useQueryClient();
     const [keyword, setKeyword] = useState(transaction?.description || '');
     const [bucketId, setBucketId] = useState(transaction?.bucket_id || '');
-    const [priority, setPriority] = useState(0);
+    const [priority, setPriority] = useState(10);
     const [minAmount, setMinAmount] = useState('');
     const [maxAmount, setMaxAmount] = useState('');
     const [applyTags, setApplyTags] = useState('');
@@ -49,7 +49,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
         if (transaction) {
             setKeyword(transaction.description || '');
             setBucketId(transaction.bucket_id || '');
-            setPriority(0);
+            setPriority(10);
             setMinAmount('');
             setMaxAmount('');
             setApplyTags('');
@@ -349,6 +349,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                                 className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             >
                                 <option value="">Unchanged</option>
+                                <option value="Joint">Joint</option>
                                 {members.map(member => (
                                     <option key={member.id} value={member.name}>{member.name}</option>
                                 ))}
