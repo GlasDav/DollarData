@@ -224,7 +224,7 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
         is_verified = False
         
         # A. Smart Rules (Highest Priority)
-        matched_rule = categorizer.apply_rules(clean_desc, smart_rules)
+        matched_rule = categorizer.apply_rules(clean_desc, smart_rules, amount=data["amount"])
         tags = None
         if matched_rule:
             bucket_id = matched_rule.bucket_id
