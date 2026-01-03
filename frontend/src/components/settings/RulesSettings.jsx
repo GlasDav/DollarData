@@ -72,7 +72,7 @@ const renderCategoryOptions = (nodes, level = 0) => {
 function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClose, onSave, isPending }) {
     const [keywords, setKeywords] = useState(suggestion.keywords);
     const [bucketId, setBucketId] = useState(suggestion.suggested_bucket_id || '');
-    const [priority, setPriority] = useState(0);
+    const [priority, setPriority] = useState(10);
     const [minAmount, setMinAmount] = useState('');
     const [maxAmount, setMaxAmount] = useState('');
     const [applyTags, setApplyTags] = useState('');
@@ -204,6 +204,7 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                                     className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                                 >
                                     <option value="">Unchanged</option>
+                                    <option value="Joint">Joint</option>
                                     {members.map(m => (
                                         <option key={m.id} value={m.name}>{m.name}</option>
                                     ))}
