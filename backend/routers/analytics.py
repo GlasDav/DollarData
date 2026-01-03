@@ -857,11 +857,12 @@ def get_sankey_data(
     nodes = []
     links = []
     node_indices = {}
+    node_children = {}  # Track children for each parent node (for drill-down)
     
-    def get_node(name):
+    def get_node(name, bucket_id=None, group=None):
         if name not in node_indices:
             node_indices[name] = len(nodes)
-            nodes.append({"name": name})
+            nodes.append({"name": name, "bucket_id": bucket_id, "group": group, "children": []})
         return node_indices[name]
     
     # Root Node: Total Income (center of diagram)
@@ -938,6 +939,7 @@ def get_sankey_data(
     # Roll up child spending into parent categories for cleaner visualization
     # This reduces nodes dramatically and fixes potential stack overflow
     parent_spend = {}  # parent_id -> total_amount
+    parent_children = {}  # parent_id -> [{name, amount}, ...] for drill-down
     
     # Helper to find root parent bucket
     def get_root_parent(bucket):
@@ -949,7 +951,7 @@ def get_sankey_data(
             return get_root_parent(parent)
         return bucket
     
-    # Aggregate spending into parent categories
+    # Aggregate spending into parent categories AND track children
     for bid, amount in bucket_spend.items():
         if bid not in bucket_map: 
             continue
@@ -958,7 +960,16 @@ def get_sankey_data(
         
         if root.id not in parent_spend:
             parent_spend[root.id] = 0.0
+            parent_children[root.id] = []
         parent_spend[root.id] += amount
+        
+        # Track children (including self if it's not the root)
+        if bid != root.id:
+            parent_children[root.id].append({
+                "name": bucket.name,
+                "amount": amount,
+                "bucket_id": bid
+            })
     
     # Collect parent buckets by group for ordered processing
     disc_buckets = []
@@ -968,12 +979,13 @@ def get_sankey_data(
         if parent_id not in bucket_map: 
             continue
         bucket = bucket_map[parent_id]
+        children = sorted(parent_children.get(parent_id, []), key=lambda x: x["amount"], reverse=True)
         
         if bucket.group == "Non-Discretionary":
-            non_disc_buckets.append((bucket.name, amount))
+            non_disc_buckets.append((bucket.name, amount, parent_id, children))
             non_disc_total += amount
         else:
-            disc_buckets.append((bucket.name, amount))
+            disc_buckets.append((bucket.name, amount, parent_id, children))
             disc_total += amount
     
     # Sort by amount descending within each group
@@ -981,13 +993,15 @@ def get_sankey_data(
     non_disc_buckets.sort(key=lambda x: x[1], reverse=True)
     
     # Process Discretionary first (will appear higher in diagram)
-    for bucket_name, amount in disc_buckets:
-        idx_b = get_node(bucket_name)
+    for bucket_name, amount, bucket_id, children in disc_buckets:
+        idx_b = get_node(bucket_name, bucket_id=bucket_id, group="Discretionary")
+        nodes[idx_b]["children"] = children
         links.append({"source": idx_disc, "target": idx_b, "value": amount})
     
     # Then Non-Discretionary
-    for bucket_name, amount in non_disc_buckets:
-        idx_b = get_node(bucket_name)
+    for bucket_name, amount, bucket_id, children in non_disc_buckets:
+        idx_b = get_node(bucket_name, bucket_id=bucket_id, group="Non-Discretionary")
+        nodes[idx_b]["children"] = children
         links.append({"source": idx_non_disc, "target": idx_b, "value": amount})
             
     # Uncategorized Logic
