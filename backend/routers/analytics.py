@@ -339,6 +339,16 @@ def get_analytics_history(
 
     monthly_limit_total = 0.0
     
+    # Resolve spender to member_id if specific member
+    target_member_id = None
+    if spender not in ["Combined", "Joint"]:
+        member = db.query(models.HouseholdMember).filter(
+            models.HouseholdMember.user_id == user.id, 
+            models.HouseholdMember.name == spender
+        ).first()
+        if member:
+            target_member_id = member.id
+
     for b in relevant_buckets:
         # Check if we should skip this bucket's limit to avoid double counting
         should_skip = False
@@ -350,8 +360,17 @@ def get_analytics_history(
             if parent and (parent.is_group_budget or getattr(parent, 'is_shared', False)):
                 should_skip = True
         
-        if not should_skip:
-            monthly_limit_total += sum(l.amount for l in b.limits) if b.limits else 0.0
+        if not should_skip and b.limits:
+            # Sum limits matching the spender filter
+            for l in b.limits:
+                if spender == "Combined":
+                     monthly_limit_total += l.amount
+                elif spender == "Joint":
+                    if l.member_id is None: # Shared limit
+                        monthly_limit_total += l.amount
+                else: # Specific member
+                    if l.member_id == target_member_id:
+                        monthly_limit_total += l.amount
     
     logger.info(f"Optimized Limit Calc: {monthly_limit_total} across {len(relevant_buckets)} buckets")
     

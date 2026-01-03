@@ -50,11 +50,12 @@ export default function Reports() {
     });
 
     // Fetch Categories Tree for Filter
-    const { data: categories = [] } = useQuery({
+    const { data: categoriesData } = useQuery({
         queryKey: ['buckets'], // Match Budget.jsx for cache sharing
         queryFn: api.getBucketsTree,
         staleTime: 30 * 60 * 1000, // 30 minutes - categories rarely change
     });
+    const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
     // Fetch Household Members
     const { data: members = [] } = useQuery({
