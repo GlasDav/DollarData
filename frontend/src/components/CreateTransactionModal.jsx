@@ -13,7 +13,8 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
         bucket_id: '',
         spender: 'Joint',
         is_verified: true,
-        notes: ''
+        notes: '',
+        type: 'expense' // 'expense' or 'income'
     });
 
     // Reset form when modal opens
@@ -26,18 +27,22 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
                 bucket_id: '',
                 spender: 'Joint',
                 is_verified: true,
-                notes: ''
+                notes: '',
+                type: 'expense'
             });
         }
     }, [isOpen]);
 
     const createMutation = useMutation({
         mutationFn: async (data) => {
+            const absAmount = Math.abs(parseFloat(data.amount));
+            const finalAmount = data.type === 'expense' ? -absAmount : absAmount;
+
             const payload = {
                 ...data,
-                amount: parseFloat(data.amount), // Ensure float
+                amount: finalAmount,
                 bucket_id: data.bucket_id ? parseInt(data.bucket_id) : null,
-                raw_description: data.description // Use desc as raw_desc for manual entry
+                raw_description: data.description
             };
             await api.post('/transactions/', payload);
         },
@@ -91,6 +96,28 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+                    {/* Type Toggle */}
+                    <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, type: 'expense' })}
+                            className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${formData.type === 'expense'
+                                ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        >
+                            Expense
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, type: 'income' })}
+                            className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${formData.type === 'income'
+                                ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        >
+                            Income
+                        </button>
+                    </div>
 
                     {/* Date & Amount Row */}
                     <div className="grid grid-cols-2 gap-4">
