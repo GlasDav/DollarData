@@ -195,6 +195,60 @@ export default function Subscriptions() {
         return [...Object.values(groups), ...orphans];
     }, [active]);
 
+    // Helper to get bucket group (Discretionary/Non-Discretionary) from bucket tree
+    const getBucketGroup = (bucketId) => {
+        if (!bucketId || !buckets) return null;
+        for (const parent of buckets) {
+            if (parent.id === bucketId) return parent.group;
+            if (parent.children) {
+                const child = parent.children.find(c => c.id === bucketId);
+                if (child) return parent.group; // Children inherit parent's group
+            }
+        }
+        return null;
+    };
+
+    // Split active into Bills (Needs) vs Subscriptions (Wants)
+    const bills = React.useMemo(() =>
+        groupedActive.filter(s => getBucketGroup(s.bucket_id) === 'Non-Discretionary'),
+        [groupedActive, buckets]
+    );
+
+    const subscriptions = React.useMemo(() =>
+        groupedActive.filter(s => getBucketGroup(s.bucket_id) !== 'Non-Discretionary'),
+        [groupedActive, buckets]
+    );
+
+    // Dismissed suggestions (stored in localStorage)
+    const [dismissedSuggestions, setDismissedSuggestions] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('dismissedSubscriptionSuggestions') || '[]');
+        } catch { return []; }
+    });
+
+    const dismissSuggestion = (name) => {
+        const newDismissed = [...dismissedSuggestions, name.toLowerCase()];
+        setDismissedSuggestions(newDismissed);
+        localStorage.setItem('dismissedSubscriptionSuggestions', JSON.stringify(newDismissed));
+    };
+
+    const dismissAllSuggestions = () => {
+        const allNames = suggested.map(s => s.name.toLowerCase());
+        const newDismissed = [...new Set([...dismissedSuggestions, ...allNames])];
+        setDismissedSuggestions(newDismissed);
+        localStorage.setItem('dismissedSubscriptionSuggestions', JSON.stringify(newDismissed));
+    };
+
+    const addAllSuggestions = () => {
+        filteredSuggestions.forEach(sub => confirmSuggestion(sub));
+    };
+
+    // Filter out dismissed suggestions
+    const filteredSuggestions = React.useMemo(() =>
+        suggested.filter(s => !dismissedSuggestions.includes(s.name.toLowerCase())),
+        [suggested, dismissedSuggestions]
+    );
+
     // Mutations
     const createMutation = useMutation({
         mutationFn: api.createSubscription,
@@ -549,16 +603,19 @@ export default function Subscriptions() {
             {
                 view === "list" ? (
                     <div className="space-y-8">
-                        {/* Active Subscriptions */}
+                        {/* Recurring Bills (Needs) */}
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Active Subscriptions</h2>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <span>Recurring Bills</span>
+                                <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-medium">Needs</span>
+                            </h2>
                             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                                 <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {groupedActive.length === 0 ? (
-                                        <div className="p-8 text-center text-slate-500">
-                                            No active subscriptions. Add one manually or approve a suggestion below.
+                                    {bills.length === 0 ? (
+                                        <div className="p-6 text-center text-slate-500 text-sm">
+                                            No recurring bills. Categorize subscriptions as "Non-Discretionary" to see them here.
                                         </div>
-                                    ) : groupedActive.map((sub) => (
+                                    ) : bills.map((sub) => (
                                         <div key={sub.id} className="group border-b border-slate-100 dark:border-slate-700 last:border-0">
                                             {/* Main Row */}
                                             <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
@@ -793,16 +850,169 @@ export default function Subscriptions() {
                             </div>
                         </div>
 
+                        {/* Subscriptions (Wants) */}
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <span>Subscriptions</span>
+                                <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium">Wants</span>
+                            </h2>
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                                    {subscriptions.length === 0 ? (
+                                        <div className="p-6 text-center text-slate-500 text-sm">
+                                            No subscriptions. Add one manually or approve a suggestion below.
+                                        </div>
+                                    ) : subscriptions.map((sub) => (
+                                        <div key={sub.id} className="group border-b border-slate-100 dark:border-slate-700 last:border-0">
+                                            {/* Main Row */}
+                                            <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${sub.type === 'Income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-purple-50 text-purple-600 dark:bg-purple-900/30'}`}>
+                                                        {sub.name.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                                            {sub.name}
+                                                            {sub.children && sub.children.length > 0 && (
+                                                                <span className="text-xs font-normal px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded-full">
+                                                                    Shared Group
+                                                                </span>
+                                                            )}
+                                                        </h3>
+                                                        <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
+                                                            <span className="flex items-center gap-1">
+                                                                <CheckCircle size={14} className={sub.type === 'Income' ? "text-emerald-500" : "text-purple-500"} />
+                                                                {sub.frequency}
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span>Next: {new Date(sub.next_due_date).toLocaleDateString('en-AU')}</span>
+                                                        </div>
+                                                        {sub.bucket_id && (
+                                                            <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                                                {findBucketName(sub.bucket_id) || "Unknown Category"}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-6">
+                                                    <div className="text-right">
+                                                        {sub.children && sub.children.length > 0 ? (
+                                                            <>
+                                                                <div className="text-sm text-slate-400 line-through decoration-slate-400">
+                                                                    ${formatCurrency(sub.amount)}
+                                                                </div>
+                                                                <div className="text-lg font-bold text-slate-900 dark:text-white">
+                                                                    ${formatCurrency(sub.netAmount)} <span className="text-xs font-normal text-slate-500">net</span>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div className={`text-lg font-bold ${sub.type === 'Income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                                                                {sub.type === 'Income' ? '+' : ''}${formatCurrency(sub.amount)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => handleEdit(sub)}
+                                                            className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition"
+                                                            title="Edit"
+                                                        >
+                                                            <Edit2 size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteMutation.mutate(sub.id)}
+                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                                                            disabled={deleteMutation.isPending}
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Inline Edit Form */}
+                                            {editingId === sub.id && (
+                                                <div className="bg-purple-50/50 dark:bg-purple-900/10 border-t border-purple-100 dark:border-purple-900/30 p-4">
+                                                    <form onSubmit={handleSubmit} className="space-y-4">
+                                                        <div className="flex justify-between items-center">
+                                                            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Edit Subscription</h4>
+                                                            <button type="button" onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                                                                <X size={18} />
+                                                            </button>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Name</label>
+                                                                <input type="text" className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm" value={newName} onChange={(e) => setNewName(e.target.value)} required />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Amount</label>
+                                                                <input type="number" step="0.01" className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} required />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Frequency</label>
+                                                                <select className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm" value={newFreq} onChange={(e) => setNewFreq(e.target.value)}>
+                                                                    <option value="Monthly">Monthly</option>
+                                                                    <option value="Weekly">Weekly</option>
+                                                                    <option value="Yearly">Yearly</option>
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Next Due</label>
+                                                                <input type="date" className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm" value={newDate} onChange={(e) => setNewDate(e.target.value)} required />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                                                                <select className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm" value={newBucketId} onChange={(e) => setNewBucketId(e.target.value)}>
+                                                                    <option value="">Select...</option>
+                                                                    {renderCategoryOptions(buckets)}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex justify-end">
+                                                            <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                                <Save size={16} />
+                                                                Save Changes
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Suggested Subscriptions */}
-                        {suggested.length > 0 && (
+                        {filteredSuggestions.length > 0 && (
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                    <span>Detected Suggestions</span>
-                                    <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium">Auto-detected</span>
-                                </h2>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        <span>Detected Suggestions</span>
+                                        <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium">Auto-detected</span>
+                                    </h2>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={addAllSuggestions}
+                                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg flex items-center gap-1.5"
+                                        >
+                                            <Plus size={14} />
+                                            Add All
+                                        </button>
+                                        <button
+                                            onClick={dismissAllSuggestions}
+                                            className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg flex items-center gap-1.5"
+                                        >
+                                            <X size={14} />
+                                            Dismiss All
+                                        </button>
+                                    </div>
+                                </div>
                                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                                     <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                                        {suggested.map((sub, idx) => (
+                                        {filteredSuggestions.map((sub, idx) => (
                                             <div key={idx} className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center font-bold text-amber-600 dark:text-amber-400 text-lg">
@@ -819,7 +1029,7 @@ export default function Subscriptions() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-3">
                                                     <div className="text-right">
                                                         <div className="text-lg font-bold text-slate-900 dark:text-white">${formatCurrency(sub.amount)}</div>
                                                         <div className="text-xs text-slate-400">{sub.confidence} confidence</div>
@@ -830,6 +1040,13 @@ export default function Subscriptions() {
                                                     >
                                                         <Plus size={16} />
                                                         Add
+                                                    </button>
+                                                    <button
+                                                        onClick={() => dismissSuggestion(sub.name)}
+                                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                                                        title="Dismiss"
+                                                    >
+                                                        <X size={18} />
                                                     </button>
                                                 </div>
                                             </div>
