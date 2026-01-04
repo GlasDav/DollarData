@@ -206,7 +206,7 @@ export default function Transactions() {
 
     const SortHeader = ({ column, children, className = "" }) => (
         <th
-            className={`px-3 py-3 font-semibold text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600 transition select-none ${className}`}
+            className={`px-3 py-3 font-semibold text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600 transition select-none ${className} ${className.includes('text-right') ? 'pr-6' : ''}`}
             onClick={() => handleSort(column)}
         >
             <div className={`flex items-center gap-1 ${className.includes('text-right') ? 'justify-end' : ''}`}>
@@ -666,7 +666,7 @@ export default function Transactions() {
                                             </div>
                                         </td>
                                         <td
-                                            className={`px-3 py-3 text-sm font-semibold text-right cursor-pointer group/amount`}
+                                            className={`px-3 pr-6 py-3 text-sm font-semibold text-right cursor-pointer group/amount`}
                                             onClick={() => setEditingCell({ id: txn.id, field: 'amount' })}
                                         >
                                             {editingCell.id === txn.id && editingCell.field === 'amount' ? (
