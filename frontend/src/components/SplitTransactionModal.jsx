@@ -19,7 +19,11 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
     useEffect(() => {
         if (transaction) {
             setSplits([
-                { description: transaction.description, amount: String(transaction.amount), bucket_id: transaction.bucket_id || '' },
+                {
+                    description: transaction.description,
+                    amount: String(Math.abs(transaction.amount)), // Use absolute amount for UI
+                    bucket_id: transaction.bucket_id || ''
+                },
                 { description: '', amount: '', bucket_id: '' }
             ]);
             setError(null);
@@ -39,34 +43,53 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
     const handleChange = (index, field, value) => {
         const newSplits = [...splits];
         newSplits[index][field] = value;
+
+        // Auto-balance logic for exactly 2 splits
+        if (field === 'amount' && splits.length === 2) {
+            const otherIndex = index === 0 ? 1 : 0;
+            const originalAbs = Math.abs(transaction?.amount || 0);
+            const currentVal = parseFloat(value) || 0;
+
+            // Only auto-balance if the entered amount is less than total
+            if (currentVal <= originalAbs) {
+                const remaining = originalAbs - currentVal;
+                newSplits[otherIndex].amount = remaining.toFixed(2);
+            }
+        }
+
         setSplits(newSplits);
     };
 
     // Parse amounts only for calculations (handles empty strings and partial input like "-")
+    // Parse amounts only for calculations
     const parseAmount = (val) => {
         const num = parseFloat(val);
         return isNaN(num) ? 0 : num;
     };
 
     const totalSplit = splits.reduce((sum, item) => sum + parseAmount(item.amount), 0);
-    const originalAmount = transaction ? transaction.amount : 0;
-    const remaining = originalAmount - totalSplit;
+    const originalAbsAmount = transaction ? Math.abs(transaction.amount) : 0;
+    const remaining = originalAbsAmount - totalSplit;
 
     // Check if balanced (allow small float diff)
     const isBalanced = Math.abs(remaining) < 0.01;
 
     const handleSubmit = async () => {
         if (!isBalanced) {
-            setError(`Total must match original amount ($${originalAmount.toFixed(2)}). Remaining: $${remaining.toFixed(2)}`);
+            setError(`Total must match original amount ($${originalAbsAmount.toFixed(2)}). Remaining: $${remaining.toFixed(2)}`);
             return;
         }
 
         try {
-            // Convert string amounts to numbers before submitting
+            // Determine sign based on original amount
+            const sign = (transaction.amount < 0) ? -1 : 1;
+
+            // Apply sign to amounts before submitting
             const splitsWithNumbers = splits.map(s => ({
                 ...s,
-                amount: parseAmount(s.amount)
+                amount: parseAmount(s.amount) * sign
             }));
+
             await api.splitTransaction(transaction.id, splitsWithNumbers);
             onSplitSuccess();
             onClose();
@@ -121,7 +144,7 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                     <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                         <div>
                             <Dialog.Title className="text-lg font-bold text-slate-900 dark:text-white">Split Transaction</Dialog.Title>
-                            <p className="text-sm text-slate-500">Original: {transaction.description} (${originalAmount.toFixed(2)})</p>
+                            <p className="text-sm text-slate-500">Original: {transaction.description} (${originalAbsAmount.toFixed(2)})</p>
                         </div>
                         <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full">
                             <X size={20} className="text-slate-500" />
