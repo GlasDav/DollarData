@@ -143,6 +143,8 @@ export default function Subscriptions() {
     const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
     const [newBucketId, setNewBucketId] = useState("");
 
+    const [newType, setNewType] = useState("Expense"); // 'Expense' | 'Income'
+
     // Data
     const { data: buckets = [] } = useQuery({ queryKey: ['buckets'], queryFn: api.getBuckets });
     const { data: active = [], isLoading: loadingActive } = useQuery({
@@ -188,6 +190,7 @@ export default function Subscriptions() {
         setNewFreq("Monthly");
         setNewDate(new Date().toISOString().split('T')[0]);
         setNewBucketId("");
+        setNewType("Expense");
     };
 
     const handleEdit = (sub) => {
@@ -197,6 +200,7 @@ export default function Subscriptions() {
         setNewFreq(sub.frequency);
         setNewDate(new Date(sub.next_due_date).toISOString().split('T')[0]); // Ensure date format
         setNewBucketId(sub.bucket_id || "");
+        setNewType(sub.type || "Expense");
         setIsFormOpen(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -209,7 +213,8 @@ export default function Subscriptions() {
             frequency: newFreq,
             next_due_date: newDate,
             is_active: true,
-            bucket_id: newBucketId ? parseInt(newBucketId) : null
+            bucket_id: newBucketId ? parseInt(newBucketId) : null,
+            type: newType
         };
 
         if (editingId) {
@@ -226,14 +231,20 @@ export default function Subscriptions() {
             frequency: sub.frequency,
             next_due_date: new Date(sub.next_due).toISOString().split('T')[0],
             description_keyword: sub.description_keyword, // Preserve original for future matching
-            is_active: true
+            is_active: true,
+            type: "Expense" // Default to expense for suggestions
         });
     };
 
-    const totalMonthly = active.reduce((sum, sub) => sum + sub.amount, 0);
+    const totalMonthly = active.reduce((sum, sub) => {
+        const amount = sub.type === 'Income' ? -sub.amount : sub.amount;
+        return sum + amount;
+    }, 0);
+
     const totalAnnual = active.reduce((sum, sub) => {
         const mult = sub.frequency === "Monthly" ? 12 : sub.frequency === "Weekly" ? 52 : 1;
-        return sum + (sub.amount * mult);
+        const amount = sub.type === 'Income' ? -sub.amount : sub.amount;
+        return sum + (amount * mult);
     }, 0);
 
     if (loadingActive || loadingSuggested) return <div className="p-8 text-center text-slate-500">Scanning transaction history for patterns...</div>;
@@ -291,16 +302,38 @@ export default function Subscriptions() {
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                             {editingId ? 'Edit Subscription' : 'Add Subscription'}
                         </h3>
-                        <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
-                            <X size={20} />
-                        </button>
+                        <div className="flex gap-2">
+                            <div className="flex p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                <button
+                                    type="button"
+                                    onClick={() => setNewType('Expense')}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition ${newType === 'Expense'
+                                        ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+                                >
+                                    Expense
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setNewType('Income')}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition ${newType === 'Income'
+                                        ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+                                >
+                                    Income
+                                </button>
+                            </div>
+                            <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                                <X size={20} />
+                            </button>
+                        </div>
                     </div>
                     <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="flex-1 w-full">
                             <label className="block text-xs font-medium text-slate-500 mb-1">Name</label>
                             <input
                                 type="text"
-                                placeholder="Netflix"
+                                placeholder={newType === 'Income' ? "Salary" : "Netflix"}
                                 className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2"
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
@@ -371,7 +404,7 @@ export default function Subscriptions() {
                             <TrendingUp size={24} />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Monthly Cost</p>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Monthly Cost</p>
                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white">${totalMonthly.toFixed(2)}</h3>
                         </div>
                     </div>
@@ -382,7 +415,7 @@ export default function Subscriptions() {
                             <CalendarIcon size={24} />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Annual Projection</p>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Annual Projection</p>
                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white">${totalAnnual.toFixed(2)}</h3>
                         </div>
                     </div>
@@ -416,14 +449,14 @@ export default function Subscriptions() {
                                     ) : active.map((sub) => (
                                         <div key={sub.id} className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center font-bold text-indigo-600 dark:text-indigo-400 text-lg">
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${sub.type === 'Income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30'}`}>
                                                     {sub.name.charAt(0)}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-slate-900 dark:text-white">{sub.name}</h3>
                                                     <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
                                                         <span className="flex items-center gap-1">
-                                                            <CheckCircle size={14} className="text-indigo-500" />
+                                                            <CheckCircle size={14} className={sub.type === 'Income' ? "text-emerald-500" : "text-indigo-500"} />
                                                             {sub.frequency}
                                                         </span>
                                                         <span>•</span>
@@ -438,7 +471,9 @@ export default function Subscriptions() {
                                             </div>
                                             <div className="flex items-center gap-6">
                                                 <div className="text-right">
-                                                    <div className="text-lg font-bold text-slate-900 dark:text-white">${sub.amount.toFixed(2)}</div>
+                                                    <div className={`text-lg font-bold ${sub.type === 'Income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                                                        {sub.type === 'Income' ? '+' : ''}${sub.amount.toFixed(2)}
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
