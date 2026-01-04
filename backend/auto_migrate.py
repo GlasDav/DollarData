@@ -53,11 +53,11 @@ def run_migrations(engine: Engine):
             
             columns_to_add = [
                 ("household_id", "INTEGER"),
-                ("mfa_enabled", "BOOLEAN DEFAULT 0"),
+                ("mfa_enabled", "BOOLEAN DEFAULT FALSE"),
                 ("mfa_secret", "VARCHAR"),
                 ("mfa_backup_codes", "VARCHAR"),
-                ("is_email_verified", "BOOLEAN DEFAULT 0"),
-                ("created_at", "DATETIME")  # When the account was created
+                ("is_email_verified", "BOOLEAN DEFAULT FALSE"),
+                ("created_at", "TIMESTAMP")  # TIMESTAMP for PostgreSQL, DATETIME for SQLite
             ]
             
             with engine.connect() as conn:
