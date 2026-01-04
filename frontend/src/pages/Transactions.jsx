@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getBucketsTree, getSettings, getGoals, deleteAllTransactions, getMembers } from '../services/api';
-import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X, BookPlus, UserCheck, StickyNote } from 'lucide-react';
+import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X, BookPlus, UserCheck, StickyNote, Plus } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
 import TransactionNoteModal from '../components/TransactionNoteModal';
 import SplitTransactionModal from '../components/SplitTransactionModal';
 import CreateRuleModal from '../components/CreateRuleModal';
 import EmptyState from '../components/EmptyState';
+import CreateTransactionModal from '../components/CreateTransactionModal';
 import Button from '../components/ui/Button';
 
 // Debounce hook
@@ -37,6 +38,7 @@ export default function Transactions() {
     const [noteModalOpen, setNoteModalOpen] = useState(false);
     const [transactionForNote, setTransactionForNote] = useState(null);
     const [ruleModalOpen, setRuleModalOpen] = useState(false);
+    const [createModalOpen, setCreateModalOpen] = useState(false);
     const [transactionForRule, setTransactionForRule] = useState(null);
     const [assignDropdownId, setAssignDropdownId] = useState(null);  // ID of txn showing assign dropdown
 
@@ -319,6 +321,15 @@ export default function Transactions() {
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* Add Transaction Button */}
+                    <button
+                        onClick={() => setCreateModalOpen(true)}
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm hover:shadow active:scale-95"
+                    >
+                        <Plus size={18} />
+                        <span>Add</span>
+                    </button>
+
                     {/* Import Button */}
                     <Link to="/data-management">
                         <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm hover:shadow active:scale-95">
@@ -391,6 +402,14 @@ export default function Transactions() {
             />
 
             {/* Note Modal */}
+            {/* Modals */}
+            <CreateTransactionModal
+                isOpen={createModalOpen}
+                onClose={() => setCreateModalOpen(false)}
+                members={members}
+                bucketsTree={buckets}
+            />
+
             <TransactionNoteModal
                 isOpen={noteModalOpen}
                 onClose={() => setNoteModalOpen(false)}

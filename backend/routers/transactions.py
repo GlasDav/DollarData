@@ -91,6 +91,41 @@ def get_transactions(
         "skip": skip,
         "limit": limit
     }
+    
+@router.post("/", response_model=schemas.Transaction)
+def create_transaction(
+    transaction: schemas.TransactionCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Validate bucket if provided
+    if transaction.bucket_id:
+        bucket = db.query(models.BudgetBucket).filter(models.BudgetBucket.id == transaction.bucket_id).first()
+        if not bucket:
+            raise HTTPException(status_code=400, detail="Invalid bucket_id")
+    
+    # Create new transaction
+    db_transaction = models.Transaction(
+        date=transaction.date,
+        description=transaction.description,
+        raw_description=transaction.raw_description or transaction.description,
+        amount=transaction.amount,
+        bucket_id=transaction.bucket_id,
+        user_id=current_user.id,
+        spender=transaction.spender,
+        goal_id=transaction.goal_id,
+        external_id=transaction.external_id,
+        account_id=transaction.account_id,
+        tags=transaction.tags,
+        notes=transaction.notes,
+        category_confidence=transaction.category_confidence,
+        is_verified=transaction.is_verified
+    )
+    
+    db.add(db_transaction)
+    db.commit()
+    db.refresh(db_transaction)
+    return db_transaction
 
 @router.put("/{transaction_id}", response_model=schemas.Transaction)
 def update_transaction(

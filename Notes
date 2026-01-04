@@ -5,7 +5,7 @@ Dashboard
 Transactions
 		- Transaction upload - text pointing to quick add button for manual transactions which doesn't exist
 		- Need an Import/Upload button on this page - currently only doable through the quick add menu
-		- Just some transaction table UI improvements - i.e.e alignment of table headings and content, $ signs for transactions
+		- Just some transaction table UI improvements - i.e alignment of table headings and content, $ signs for transactions
 		- A transaction flagged as for review does not show up in the Family Review tab
         - Subscriptions to be its own page rather than a tab within transactions
 
