@@ -1445,7 +1445,7 @@ def get_budget_progress(
         
         # Check if child should be separated
         # Condition: Different group AND Parent doesn't force a combined budget
-        if child.group != parent.group and not parent.is_group_budget:
+        if child.group != parent.group:
             orphaned_children.append(child)
         else:
             if child.parent_id not in children_map:
