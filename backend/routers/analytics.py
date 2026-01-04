@@ -1423,6 +1423,15 @@ def get_budget_progress(
     for m in members:
         spender_to_member[m.name] = m.name
     
+    # Resolve spender filter to target_member_id
+    target_member_id = -1 # Sentinel for "Combined" (no filter)
+    if spender not in ["Combined", "Joint"]:
+        member = next((m for m in members if m.name == spender), None)
+        if member:
+            target_member_id = member.id
+    elif spender == "Joint":
+        target_member_id = None # Explicitly looking for shared limits (member_id is NULL)
+    
     # Fetch per-member limits for all buckets
     all_limits = db.query(models.BudgetLimit).filter(
         models.BudgetLimit.bucket_id.in_(bucket_ids)
@@ -1557,22 +1566,37 @@ def get_budget_progress(
         # Roll up upcoming from parent + all children
         upcoming = sum(bucket_upcoming.get(bid, 0) for bid in all_bucket_ids)
         
+        # Helper to filter limits based on spender selection
+        def sum_limits(limits):
+            if not limits: return 0
+            total = 0
+            for l in limits:
+                if target_member_id == -1: # Combined - include everything
+                    total += l.amount
+                elif target_member_id is None: # Joint - include only shared (None)
+                    if l.member_id is None:
+                        total += l.amount
+                else: # Specific member
+                    if l.member_id == target_member_id:
+                        total += l.amount
+            return total
+
         # Calculate limit based on is_group_budget flag
         # If is_group_budget=True: Budget is set at parent level only (children share this budget)
         # If is_group_budget=False: Budget is sum of child limits (parent is just a container)
         if b.is_group_budget or getattr(b, 'is_shared', False) or not children:
             # Parent-level budget OR Shared budget OR no children - use parent's limits only
-            base_limit = sum(l.amount for l in b.limits) if b.limits else 0
+            base_limit = sum_limits(b.limits)
             limit = base_limit * delta_months
         else:
             # Children have their own budgets - sum only child limits
             limit = 0
             for child in children:
-                child_base = sum(l.amount for l in child.limits) if child.limits else 0
+                child_base = sum_limits(child.limits)
                 limit += (child_base * delta_months)
             # If children have no limits but parent does, fallback to parent
             if limit == 0:
-                base_limit = sum(l.amount for l in b.limits) if b.limits else 0
+                base_limit = sum_limits(b.limits)
                 limit = base_limit * delta_months
         
         # Calculate percentage
@@ -1661,7 +1685,7 @@ def get_budget_progress(
         children_data = []
         for child in children:
             child_spent = bucket_spent.get(child.id, 0)
-            child_base_limit = sum(l.amount for l in child.limits) if child.limits else 0
+            child_base_limit = sum_limits(child.limits)
             child_limit = child_base_limit * delta_months
             if child_spent > 0 or child_limit > 0:
                 children_data.append({
