@@ -230,8 +230,21 @@ def split_transaction(
         
     created_transactions = []
     
-    # 3. Create children
-    for item in split_data.items:
+    # 3. Apply Splits
+    # Strategy: Update original transaction to be the first split, create new transactions for the rest.
+    
+    # First split item -> Updates Original
+    first_split = split_data.items[0]
+    original.amount = first_split.amount
+    original.description = first_split.description
+    original.bucket_id = first_split.bucket_id
+    original.is_verified = True
+    # We don't change date or other metadata on original to preserve history/linkage where possible
+    
+    created_transactions = [original]
+    
+    # Remaining split items -> Create New Transactions
+    for item in split_data.items[1:]:
         child = models.Transaction(
             date=original.date, # Inherit date
             description=item.description,
@@ -241,14 +254,11 @@ def split_transaction(
             user_id=current_user.id,
             spender=original.spender,
             is_verified=True, # Explicitly created, so verified
-            parent_transaction_id=original.id # Link to parent
+            parent_transaction_id=original.id # Link to parent (now the first split)
         )
         db.add(child)
         created_transactions.append(child)
         
-    # 4. Update parent (optional: mark as verified or keep as container)
-    original.is_verified = True
-    
     db.commit()
     for t in created_transactions:
         db.refresh(t)
