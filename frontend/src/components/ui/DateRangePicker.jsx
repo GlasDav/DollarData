@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { toLocalISOString } from '../../utils/dateUtils';
 
 /**
  * DateRangePicker - Rich date picker with presets and calendar

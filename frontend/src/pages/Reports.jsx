@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api, { getMembers, getBucketsTree } from '../services/api';
+import { toLocalISOString } from '../utils/dateUtils';
 import { Download, RefreshCw, Filter, Calendar as CalendarIcon, PieChart, BarChart2 } from 'lucide-react';
 import { ComposedChart, Bar, Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import MultiSelectCategoryFilter from '../components/MultiSelectCategoryFilter';
