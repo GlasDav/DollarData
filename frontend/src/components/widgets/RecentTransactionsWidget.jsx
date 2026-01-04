@@ -9,11 +9,20 @@ import { ICON_MAP } from '../../utils/icons';
  * RecentTransactionsWidget - Shows 5 most recent transactions
  */
 export default function RecentTransactionsWidget({ formatCurrency }) {
+    // Calculate date range for last 3 days
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
     const { data: transactions = [], isLoading } = useQuery({
-        queryKey: ['recentTransactions'],
+        queryKey: ['recentTransactions', startDate, endDate],
         queryFn: async () => {
             const res = await api.get('/transactions', {
-                params: { limit: 5, sort_by: 'date', sort_order: 'desc' }
+                params: {
+                    start_date: startDate,
+                    end_date: endDate,
+                    sort_by: 'date',
+                    sort_order: 'desc'
+                }
             });
             // API returns { transactions: [...], total: n } or just array
             const data = res.data;
@@ -59,8 +68,8 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
                     </Link>
                 </div>
             ) : (
-                <div className="space-y-2">
-                    {transactions.slice(0, 5).map((tx) => {
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {transactions.map((tx) => {
                         const Icon = ICON_MAP[tx.bucket_icon] || Receipt;
                         const isIncome = tx.amount > 0;
 

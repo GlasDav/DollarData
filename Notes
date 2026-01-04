@@ -1,49 +1,25 @@
-Tasks
+Dashboard
+		- The 'Budget' widget doesn't pull through the correct budget. The budget quotes is ~4x what it should be. I think it's probably pulling in income categories.
+		- The recent transactions is empty - it should be scrollable and show the last 3 days of transactions
+		
 Transactions
-    - Allow user to leave a note on a transaction - action button (pending Basiq integration)
-    - Show upcoming recurring transactions in the budget cards as hashed or unfilled - to signifiy that it hasn't been spent yet but it's coming, so it reduces the effective available budget
-    - Allow user to enter transactions manually (to capture things like Beem/Paypal)
+		- Transaction upload - text pointing to quick add button for manual transactions which doesn't exist
+		- Need an Import/Upload button on this page - currently only doable through the quick add menu
+		- Just some transaction table UI improvements - i.e.e alignment of table headings and content, $ signs for transactions
+		- A transaction flagged as for review does not show up in the Family Review tab
+        - Subscriptions to be its own page rather than a tab within transactions
 
-Integrations
-    - Basiq integration
-    - Amazon extension
-
-Commercialisation
-    - Tiered subscription system
-    - Referral links
+Subscriptions
+		- The Edit Subscription box should appear directly below the subscription being edited (currently at the top of the page)
+		- The Edit Subscription box 'Amount' field should round to 2 decimals
+		- The Edit Subscription box 'Budget Category' field should automatically populate with the transaction's category
+		- Need logic for detecting recurring inflows for shared subscriptions (family spotify plan is a $24 outflow with two $8 inflows)
+		- Monthly cost and annual projection should account for the fact that some are inflows and some are outflows - currently classifies all as outflows.
 
 Budget
-    - Revamp the budget setting process
-
-Net Worth
-    - Default superannuation account
-
-
-General UI/UX
-    - Ability to toggle on/off dashboard widgets
-    - Colour-coded sankey diagram, which should be moved to reports page
-    - Ability to add emoji to categories for visual appeal
-    - Settings sidebar
-    - Scrap API Settings
-
-Account & Settings
-    - Invite family member - sends them an email to create their own login for the same account
-    - Security - set up MFA
-    - Security - email account validation
-
-Reports
-    - Income by type
-    - Ability to run filtered reports (filtered by tags, dates, categories, accounts etc)
-    - Total expenses by month, with ability to click on each month to see the breakdown of expenses
-    - 
-
-Goals
-    - Ability to set expenditure/category budget goals (e.g. under budget on clothing 3 months in a row)
-
-Tutorial
-    - Ability to skip/exit Tutorial
-    - Guide user to set up categories before importing transactions
-    - Guide user to set up smart rules before importing transactions
-    - More robust tutorial covering all features
-    - Add Help/FAQ section
-    
+		- Changing the time filter should also change the budgets in the budget cards to match the timeframe (changing timeframe to 'Last Year' measures all of last years spend agains the monthly budget)
+		- Changing the member filter should also change the budgets in the budget cards to match the member's budget (currently showing the full budget)
+		- Budget cards are not correctly categorizing subcategories in to Non-Discretionary and Discretionary. Some parent categories (e.g. Food) have some discretionary subcategories (e.g. dining out) and some non-discretionary subcategories (e.g. groceries). This should be reflected in the budget cards.
+		
+Settings
+		- Account Settings - 'Member Since Unknown' - fix this

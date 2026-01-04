@@ -11,7 +11,7 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
     const buckets = Array.isArray(bucketsProp) ? bucketsProp : [];
 
     // Calculate budget health metrics
-    const budgetCategories = buckets.filter(b => !b.is_transfer && !b.is_investment && b.limit > 0);
+    const budgetCategories = buckets.filter(b => !b.is_transfer && !b.is_investment && b.limit > 0 && b.group !== 'Income');
     const overBudget = budgetCategories.filter(b => b.percent > 100);
     const nearLimit = budgetCategories.filter(b => b.percent > 80 && b.percent <= 100);
     const healthy = budgetCategories.filter(b => b.percent <= 80);

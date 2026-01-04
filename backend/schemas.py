@@ -260,6 +260,8 @@ class TokenData(BaseModel):
 
 class User(UserBase):
     id: int
+    name: Optional[str] = None
+    created_at: Optional[datetime] = None
     buckets: List[BudgetBucket] = []
 
     class Config:

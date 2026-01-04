@@ -14,6 +14,7 @@ class User(Base):
     currency_symbol = Column(String, default="AUD")  # ISO 4217 currency code (was "A$")
     is_email_verified = Column(Boolean, default=False)  # Email verification status
     token_version = Column(Integer, default=0)  # Incremented to invalidate all tokens
+    created_at = Column(DateTime, default=func.now())  # When the account was created
     
     # Household (Family Sharing) - use_alter defers FK creation until after households table exists
     household_id = Column(Integer, ForeignKey("households.id", use_alter=True, name="fk_user_household"), nullable=True)
@@ -27,6 +28,7 @@ class User(Base):
     transactions = relationship("Transaction", back_populates="user")
     tax_settings = relationship("TaxSettings", back_populates="user", uselist=False)
     household = relationship("Household", back_populates="members", foreign_keys=[household_id])
+
 
 class BudgetBucket(Base):
     __tablename__ = "budget_buckets"

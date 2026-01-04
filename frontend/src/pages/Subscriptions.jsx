@@ -193,7 +193,7 @@ export default function Subscriptions() {
     const handleEdit = (sub) => {
         setEditingId(sub.id);
         setNewName(sub.name);
-        setNewAmount(sub.amount);
+        setNewAmount(parseFloat(sub.amount).toFixed(2));
         setNewFreq(sub.frequency);
         setNewDate(new Date(sub.next_due_date).toISOString().split('T')[0]); // Ensure date format
         setNewBucketId(sub.bucket_id || "");

@@ -56,7 +56,8 @@ def run_migrations(engine: Engine):
                 ("mfa_enabled", "BOOLEAN DEFAULT 0"),
                 ("mfa_secret", "VARCHAR"),
                 ("mfa_backup_codes", "VARCHAR"),
-                ("is_email_verified", "BOOLEAN DEFAULT 0")
+                ("is_email_verified", "BOOLEAN DEFAULT 0"),
+                ("created_at", "DATETIME")  # When the account was created
             ]
             
             with engine.connect() as conn:
