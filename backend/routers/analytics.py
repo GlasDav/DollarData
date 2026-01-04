@@ -161,10 +161,31 @@ def get_dashboard_data(
     delta_months = (e_date.year - s_date.year) * 12 + (e_date.month - s_date.month) + 1
     delta_months = max(1, delta_months)
 
+    # Resolve spender to member_id for limit filtering
+    target_member_id = None
+    if spender not in ["Combined", "Joint"]:
+        member = db.query(models.HouseholdMember).filter(
+            models.HouseholdMember.user_id == user.id, 
+            models.HouseholdMember.name == spender
+        ).first()
+        if member:
+            target_member_id = member.id
+
     for b in buckets:
         spent = spend_map.get(b.id, 0.0)
         
-        base_limit = sum(l.amount for l in b.limits)
+        # Calculate limit based on spender filter
+        # - Combined: sum ALL limits (shared + per-member)
+        # - Specific member: only their limit OR shared limit
+        if spender == "Combined":
+            base_limit = sum(l.amount for l in b.limits)
+        elif target_member_id is not None:
+            # Sum shared limits (member_id is None) + this member's limits
+            base_limit = sum(l.amount for l in b.limits if l.member_id is None or l.member_id == target_member_id)
+        else:
+            # Unknown spender, fallback to shared limits only
+            base_limit = sum(l.amount for l in b.limits if l.member_id is None)
+        
         limit = base_limit * delta_months
         
         # Add Rollover if applicable
