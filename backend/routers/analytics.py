@@ -162,7 +162,11 @@ def get_dashboard_data(
     final_buckets = []
     
     # Calculate months scalar
-    delta_months = (e_date.year - s_date.year) * 12 + (e_date.month - s_date.month) + 1
+    # Use .date() to avoid timezone/time-of-day off-by-one errors
+    # E.g. "2026-01-01T00:00:00" vs "2026-01-31T23:59:59"
+    sd = s_date.date()
+    ed = e_date.date()
+    delta_months = (ed.year - sd.year) * 12 + (ed.month - sd.month) + 1
     delta_months = max(1, delta_months)
 
     # Resolve spender to member_id for limit filtering
@@ -281,6 +285,7 @@ def get_dashboard_data(
     
     logger.warning(f"BUDGET DEBUG: all={all_count}, parents={parent_count}, income={income_count}, transfer={transfer_count}, invest={investment_count}, included={len(included_buckets)}")
     logger.warning(f"BUDGET DEBUG: total_limit={total_limit}, total_upcoming={total_upcoming}, months={delta_months}")
+    logger.warning(f"BUDGET DEBUG: dates={s_date} to {e_date}")
     logger.warning(f"BUDGET DEBUG: decimal_limit_buckets={decimal_buckets}")
 
     return {
