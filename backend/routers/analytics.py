@@ -255,13 +255,22 @@ def get_dashboard_data(
     import logging
     logger = logging.getLogger("backend.analytics")
     
-    # Calculate totals for logging
-    total_limit = sum(fb["limit"] for fb in final_buckets if not fb.get("is_parent") and fb["group"] != "Income" and not fb.get("is_transfer") and not fb.get("is_investment"))
+    # Count buckets by type
+    all_count = len(final_buckets)
+    parent_count = sum(1 for fb in final_buckets if fb.get("is_parent"))
+    income_count = sum(1 for fb in final_buckets if fb["group"] == "Income")
+    transfer_count = sum(1 for fb in final_buckets if fb.get("is_transfer"))
+    investment_count = sum(1 for fb in final_buckets if fb.get("is_investment"))
+    
+    # Calculate totals for logging - this mirrors frontend filter
+    included_buckets = [fb for fb in final_buckets if not fb.get("is_parent") and fb["group"] != "Income" and not fb.get("is_transfer") and not fb.get("is_investment") and fb["limit"] > 0]
+    total_limit = sum(fb["limit"] for fb in included_buckets)
     total_upcoming = sum(fb.get("upcoming_recurring", 0) for fb in final_buckets)
     
     # Find buckets with decimal limits
-    decimal_buckets = [(fb["name"], fb["limit"], fb.get("upcoming_recurring", 0)) for fb in final_buckets if fb["limit"] % 1 != 0]
+    decimal_buckets = [(fb["name"], fb["limit"], fb.get("upcoming_recurring", 0)) for fb in included_buckets if fb["limit"] % 1 != 0]
     
+    logger.warning(f"BUDGET DEBUG: all={all_count}, parents={parent_count}, income={income_count}, transfer={transfer_count}, invest={investment_count}, included={len(included_buckets)}")
     logger.warning(f"BUDGET DEBUG: total_limit={total_limit}, total_upcoming={total_upcoming}")
     logger.warning(f"BUDGET DEBUG: decimal_limit_buckets={decimal_buckets}")
 
