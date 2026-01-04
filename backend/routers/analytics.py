@@ -163,10 +163,13 @@ def get_dashboard_data(
     
     # Calculate months scalar
     # Use .date() to avoid timezone/time-of-day off-by-one errors
-    # E.g. "2026-01-01T00:00:00" vs "2026-01-31T23:59:59"
     sd = s_date.date()
     ed = e_date.date()
-    delta_months = (ed.year - sd.year) * 12 + (ed.month - sd.month) + 1
+    
+    # Robust month calculation: use days/30 rounded
+    # This handles timezone shifts (Dec 31 vs Jan 1) gracefully
+    days_diff = (ed - sd).days + 1
+    delta_months = int(round(days_diff / 30.0))
     delta_months = max(1, delta_months)
 
     # Resolve spender to member_id for limit filtering
