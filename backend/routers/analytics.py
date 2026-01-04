@@ -280,7 +280,7 @@ def get_dashboard_data(
     decimal_buckets = [(fb["name"], fb["limit"], fb.get("upcoming_recurring", 0)) for fb in included_buckets if fb["limit"] % 1 != 0]
     
     logger.warning(f"BUDGET DEBUG: all={all_count}, parents={parent_count}, income={income_count}, transfer={transfer_count}, invest={investment_count}, included={len(included_buckets)}")
-    logger.warning(f"BUDGET DEBUG: total_limit={total_limit}, total_upcoming={total_upcoming}")
+    logger.warning(f"BUDGET DEBUG: total_limit={total_limit}, total_upcoming={total_upcoming}, months={delta_months}")
     logger.warning(f"BUDGET DEBUG: decimal_limit_buckets={decimal_buckets}")
 
     return {
