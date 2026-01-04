@@ -20,6 +20,10 @@ def get_dashboard_data(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    import logging
+    logger = logging.getLogger("backend.analytics")
+    decimal_limit_log_count = []
+    
     try:
         s_date = datetime.fromisoformat(start_date)
         e_date = datetime.fromisoformat(end_date)
@@ -179,6 +183,11 @@ def get_dashboard_data(
         # - Specific member: only their limit OR shared limit
         if spender == "Combined":
             base_limit = sum(l.amount for l in b.limits)
+            # DEBUG: Log limit breakdown for analysis
+            if logger.isEnabledFor(logging.WARNING) and base_limit > 0 and len(decimal_limit_log_count) < 3:
+                 limits_breakdown = [(l.amount, l.member_id) for l in b.limits]
+                 logger.warning(f"LIMIT DEBUG for {b.name}: base={base_limit}, parts={limits_breakdown}")
+                 decimal_limit_log_count.append(1)
         elif target_member_id is not None:
             # Sum shared limits (member_id is None) + this member's limits
             base_limit = sum(l.amount for l in b.limits if l.member_id is None or l.member_id == target_member_id)
@@ -298,6 +307,7 @@ def get_analytics_history(
 ):
     import logging
     logger = logging.getLogger("backend.analytics")
+    decimal_limit_log_count = []
     logger.info(f"History Request: {start_date} to {end_date} for {current_user.email}")
 
     try:
