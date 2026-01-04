@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toLocalISOString } from '../utils/dateUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Calendar as CalendarIcon, TrendingUp, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, Plus, Trash2, Save, Edit2, X } from 'lucide-react';
 import * as api from '../services/api';
@@ -141,7 +142,7 @@ export default function Subscriptions() {
     const [newName, setNewName] = useState("");
     const [newAmount, setNewAmount] = useState("");
     const [newFreq, setNewFreq] = useState("Monthly");
-    const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+    const [newDate, setNewDate] = useState(toLocalISOString(new Date()));
     const [newBucketId, setNewBucketId] = useState("");
     const [newType, setNewType] = useState("Expense"); // 'Expense' | 'Income'
     const [newParentId, setNewParentId] = useState(""); // For linking shared subs
@@ -280,7 +281,7 @@ export default function Subscriptions() {
         setNewName("");
         setNewAmount("");
         setNewFreq("Monthly");
-        setNewDate(new Date().toISOString().split('T')[0]);
+        setNewDate(toLocalISOString(new Date()));
         setNewBucketId("");
         setNewType("Expense");
         setNewParentId("");
@@ -291,7 +292,7 @@ export default function Subscriptions() {
         setNewName(sub.name);
         setNewAmount(parseFloat(sub.amount).toFixed(2));
         setNewFreq(sub.frequency);
-        setNewDate(new Date(sub.next_due_date).toISOString().split('T')[0]);
+        setNewDate(toLocalISOString(new Date(sub.next_due_date)));
         setNewBucketId(sub.bucket_id || "");
         setNewType(sub.type || "Expense");
         setNewParentId(sub.parent_id || "");
@@ -323,7 +324,7 @@ export default function Subscriptions() {
             name: sub.name,
             amount: sub.amount,
             frequency: sub.frequency,
-            next_due_date: new Date(sub.next_due).toISOString().split('T')[0],
+            next_due_date: toLocalISOString(new Date(sub.next_due)),
             description_keyword: sub.description_keyword,
             is_active: true,
             type: sub.type || "Expense",

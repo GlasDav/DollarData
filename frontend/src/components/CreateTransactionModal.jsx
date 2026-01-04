@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toLocalISOString } from '../utils/dateUtils';
 import { X, Calendar, DollarSign, Tag, User, AlignLeft, CheckCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
@@ -7,7 +8,7 @@ import Button from './ui/Button';
 export default function CreateTransactionModal({ isOpen, onClose, members, bucketsTree }) {
     const queryClient = useQueryClient();
     const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: toLocalISOString(new Date()),
         description: '',
         amount: '',
         bucket_id: '',
@@ -21,7 +22,7 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
     useEffect(() => {
         if (isOpen) {
             setFormData({
-                date: new Date().toISOString().split('T')[0],
+                date: toLocalISOString(new Date()),
                 description: '',
                 amount: '',
                 bucket_id: '',

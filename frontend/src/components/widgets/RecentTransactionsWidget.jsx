@@ -1,4 +1,5 @@
 import React from 'react';
+import { toLocalISOString } from '../../utils/dateUtils';
 import { Link } from 'react-router-dom';
 import { Receipt, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -10,8 +11,8 @@ import { ICON_MAP } from '../../utils/icons';
  */
 export default function RecentTransactionsWidget({ formatCurrency }) {
     // Calculate date range for last 3 days
-    const endDate = new Date().toISOString().split('T')[0];
-    const startDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDate = toLocalISOString(new Date());
+    const startDate = toLocalISOString(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000));
 
     const { data: transactions = [], isLoading } = useQuery({
         queryKey: ['recentTransactions', startDate, endDate],

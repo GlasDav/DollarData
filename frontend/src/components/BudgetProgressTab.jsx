@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Target, TrendingUp, AlertTriangle, PiggyBank, Filter, BarChart3, Calendar } from 'lucide-react';
 import CategoryProgressCard from './CategoryProgressCard';
+import { toLocalISOString } from '../utils/dateUtils';
 
 import { API_BASE_URL } from '../config';
 
@@ -53,8 +54,8 @@ const getDateRange = (periodId) => {
     }
 
     return {
-        start: start.toISOString().split('T')[0],
-        end: end.toISOString().split('T')[0]
+        start: toLocalISOString(start),
+        end: toLocalISOString(end)
     };
 };
 

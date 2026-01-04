@@ -3,9 +3,10 @@ import { Fragment, useState } from 'react'
 import axios from 'axios'
 import { X } from 'lucide-react'
 import { API_BASE_URL } from '../config';
+import { toLocalISOString } from '../utils/dateUtils';
 
 export default function CheckInModal({ isOpen, onClose, accounts, onSuccess }) {
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [date, setDate] = useState(toLocalISOString(new Date()))
     const [balances, setBalances] = useState({})
     const [isSubmitting, setIsSubmitting] = useState(false)
 

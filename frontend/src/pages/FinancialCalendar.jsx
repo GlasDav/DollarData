@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { toLocalISOString } from '../utils/dateUtils';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import * as api from '../services/api';
@@ -18,8 +19,8 @@ export default function FinancialCalendar() {
     const endOfMonth = new Date(year, month + 1, 0);
 
     // API uses ISO strings
-    const startStr = startOfMonth.toISOString().split('T')[0];
-    const endStr = endOfMonth.toISOString().split('T')[0];
+    const startStr = toLocalISOString(startOfMonth);
+    const endStr = toLocalISOString(endOfMonth);
 
     // Data Fetching
     const { data: transactions = [], isLoading: loadingTxns } = useQuery({
@@ -66,7 +67,7 @@ export default function FinancialCalendar() {
 
                     events.push({
                         id: `proj-${sub.id}-${date.getDate()}`,
-                        date: date.toISOString().split('T')[0],
+                        date: toLocalISOString(date),
                         amount: -amount, // Bills are expenses
                         description: sub.name,
                         isProjected: true,
@@ -158,7 +159,7 @@ export default function FinancialCalendar() {
             // Heuristic: If date is in past, hide projected?
             // Or only show projected if date >= today.
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = toLocalISOString(new Date());
             if (dateKey >= todayStr) {
                 map[dateKey].txns.push(p);
                 map[dateKey].hasProjected = true;

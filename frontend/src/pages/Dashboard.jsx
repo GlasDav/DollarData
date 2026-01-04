@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api, { getMembers, getUpcomingBills } from '../services/api';
 
 // Widget imports
+import { toLocalISOString } from '../utils/dateUtils';
 import SummaryCardsWidget from '../components/widgets/SummaryCardsWidget';
 import UpcomingBillsWidget from '../components/widgets/UpcomingBillsWidget';
 import CashFlowWidget from '../components/widgets/CashFlowWidget';
@@ -28,8 +29,8 @@ export default function Dashboard() {
     // Date Range State
     const [rangeType, setRangeType] = useState("This Month");
     const [spenderMode, setSpenderMode] = useState("Combined");
-    const [customStart, setCustomStart] = useState(new Date().toISOString().split('T')[0]);
-    const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
+    const [customStart, setCustomStart] = useState(toLocalISOString(new Date()));
+    const [customEnd, setCustomEnd] = useState(toLocalISOString(new Date()));
     const [trendOption, setTrendOption] = useState("Total");
     const [excludeOneOffs, setExcludeOneOffs] = useState(false);
 
@@ -103,8 +104,8 @@ export default function Dashboard() {
         }
 
         return {
-            start: start.toISOString().split('T')[0],
-            end: end.toISOString().split('T')[0]
+            start: toLocalISOString(start),
+            end: toLocalISOString(end)
         };
     };
 

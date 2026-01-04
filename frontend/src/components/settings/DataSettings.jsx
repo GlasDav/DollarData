@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { toLocalISOString } from '../../utils/dateUtils';
 import { useQueryClient } from '@tanstack/react-query';
 import { Save, Download, Upload, Trash2, ShieldAlert } from 'lucide-react';
 import * as api from '../../services/api';
@@ -32,7 +33,7 @@ export default function DataSettings() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `principal_export_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `principal_export_${toLocalISOString(new Date())}.json`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

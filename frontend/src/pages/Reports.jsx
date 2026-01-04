@@ -11,8 +11,8 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 export default function Reports() {
     // State
     const [rangeType, setRangeType] = useState("This Month");
-    const [customStart, setCustomStart] = useState(new Date().toISOString().split('T')[0]);
-    const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
+    const [customStart, setCustomStart] = useState(toLocalISOString(new Date()));
+    const [customEnd, setCustomEnd] = useState(toLocalISOString(new Date()));
     const [spenderFilter, setSpenderFilter] = useState("Combined");
     const [categoryFilters, setCategoryFilters] = useState([]); // Changed to array for multi-select
 
@@ -36,8 +36,8 @@ export default function Reports() {
         }
 
         return {
-            start: start.toISOString().split('T')[0],
-            end: end.toISOString().split('T')[0]
+            start: toLocalISOString(start),
+            end: toLocalISOString(end)
         };
     };
 

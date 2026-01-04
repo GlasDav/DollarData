@@ -29,8 +29,8 @@ export default function PeriodComparisonWidget({
             const compEnd = new Date(endDate);
             compEnd.setMonth(compEnd.getMonth() - 1);
             return {
-                start: compStart.toISOString().split('T')[0],
-                end: compEnd.toISOString().split('T')[0],
+                start: toLocalISOString(compStart),
+                end: toLocalISOString(compEnd),
                 label: 'Last Month'
             };
         } else if (comparisonType === 'lastYear') {
@@ -40,8 +40,8 @@ export default function PeriodComparisonWidget({
             const compEnd = new Date(endDate);
             compEnd.setFullYear(compEnd.getFullYear() - 1);
             return {
-                start: compStart.toISOString().split('T')[0],
-                end: compEnd.toISOString().split('T')[0],
+                start: toLocalISOString(compStart),
+                end: toLocalISOString(compEnd),
                 label: 'Same Period Last Year'
             };
         } else {
@@ -51,8 +51,8 @@ export default function PeriodComparisonWidget({
             const compStart = new Date(compEnd);
             compStart.setDate(compStart.getDate() - periodLength + 1);
             return {
-                start: compStart.toISOString().split('T')[0],
-                end: compEnd.toISOString().split('T')[0],
+                start: toLocalISOString(compStart),
+                end: toLocalISOString(compEnd),
                 label: 'Previous Period'
             };
         }

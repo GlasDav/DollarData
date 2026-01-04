@@ -19,8 +19,8 @@ export default function InsightsCardsWidget({ currentStart, currentEnd, spenderM
         start.setMonth(start.getMonth() - 1);
         end.setMonth(end.getMonth() - 1);
         return {
-            start: start.toISOString().split('T')[0],
-            end: end.toISOString().split('T')[0]
+            start: toLocalISOString(start),
+            end: toLocalISOString(end)
         };
     }, [currentStart, currentEnd]);
 

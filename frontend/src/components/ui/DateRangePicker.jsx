@@ -84,12 +84,12 @@ export default function DateRangePicker({
 
     const handlePresetClick = (preset) => {
         const [start, end] = preset.getDates();
-        onDateChange(start.toISOString().split('T')[0], end.toISOString().split('T')[0]);
+        onDateChange(toLocalISOString(start), toLocalISOString(end));
         setIsOpen(false);
     };
 
     const handleDayClick = (date) => {
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = toLocalISOString(date);
         if (selectingStart) {
             onDateChange(dateStr, endDate || dateStr);
             setSelectingStart(false);
@@ -127,8 +127,8 @@ export default function DateRangePicker({
         return d >= new Date(startDate).getTime() && d <= new Date(endDate).getTime();
     };
 
-    const isStart = (date) => date && startDate && date.toISOString().split('T')[0] === startDate;
-    const isEnd = (date) => date && endDate && date.toISOString().split('T')[0] === endDate;
+    const isStart = (date) => date && startDate && toLocalISOString(date) === startDate;
+    const isEnd = (date) => date && endDate && toLocalISOString(date) === endDate;
 
     return (
         <div ref={containerRef} className={`relative ${className}`}>
