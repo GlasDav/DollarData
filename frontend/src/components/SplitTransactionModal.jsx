@@ -87,7 +87,8 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
             // Apply sign to amounts before submitting
             const splitsWithNumbers = splits.map(s => ({
                 ...s,
-                amount: parseAmount(s.amount) * sign
+                amount: parseAmount(s.amount) * sign,
+                bucket_id: s.bucket_id || null  // Convert empty string/0 to null
             }));
 
             await api.splitTransaction(transaction.id, splitsWithNumbers);
@@ -95,7 +96,19 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
             onClose();
         } catch (err) {
             console.error(err);
-            setError(err.response?.data?.detail || "Failed to split transaction");
+            const detail = err.response?.data?.detail;
+            let errorMessage = "Failed to split transaction";
+
+            if (typeof detail === 'string') {
+                errorMessage = detail;
+            } else if (Array.isArray(detail)) {
+                // Pydantic validation error
+                errorMessage = detail.map(e => `${e.loc.join('.')}: ${e.msg}`).join(', ');
+            } else if (typeof detail === 'object') {
+                errorMessage = JSON.stringify(detail);
+            }
+
+            setError(errorMessage);
         }
     };
 
