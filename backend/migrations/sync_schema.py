@@ -68,6 +68,7 @@ EXPECTED_COLUMNS = {
     ],
     "subscriptions": [
         ("bucket_id", "INTEGER", None),
+        ("parent_id", "INTEGER", None),
     ],
     "categorization_rules": [
         ("min_amount", "FLOAT", None),
