@@ -108,11 +108,26 @@ const colorClasses = {
 };
 
 export default function AchievementsWidget({ dashboardData, netWorth, goals }) {
-    // Fetch additional data needed for achievements
-    const { data: buckets = [] } = useQuery({
+    // Fetch additional data needed for achievements (use tree API to match other components)
+    const { data: bucketsTree = [] } = useQuery({
         queryKey: ['buckets'],
-        queryFn: async () => (await api.get('/settings/buckets')).data
+        queryFn: async () => (await api.get('/settings/buckets/tree')).data
     });
+
+    // Flatten tree for counting
+    const buckets = useMemo(() => {
+        const flatten = (nodes) => {
+            let result = [];
+            nodes.forEach(node => {
+                result.push(node);
+                if (node.children && node.children.length > 0) {
+                    result = result.concat(flatten(node.children));
+                }
+            });
+            return result;
+        };
+        return flatten(bucketsTree);
+    }, [bucketsTree]);
 
     const { data: txStats } = useQuery({
         queryKey: ['transactionStats'],
