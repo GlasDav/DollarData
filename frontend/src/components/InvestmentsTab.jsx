@@ -11,11 +11,11 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart as RePieChart, Pie, Cell, Legend
 } from 'recharts';
-import { SkeletonBox as Skeleton } from '../components/Skeleton';
-import AddInvestmentModal from '../components/AddInvestmentModal';
-import ImportInvestmentsModal from '../components/ImportInvestmentsModal';
+import { SkeletonBox as Skeleton } from './Skeleton';
+import AddInvestmentModal from './AddInvestmentModal';
+import ImportInvestmentsModal from './ImportInvestmentsModal';
 
-export default function Investments() {
+export default function InvestmentsTab() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const [refreshing, setRefreshing] = useState(false);
@@ -81,7 +81,7 @@ export default function Investments() {
     // --- Render ---
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="space-y-6">
             <AddInvestmentModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
@@ -94,10 +94,10 @@ export default function Investments() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Briefcase className="text-emerald-500" />
                         Investments
-                    </h1>
+                    </h2>
                     <p className="text-slate-500 dark:text-slate-400 text-sm">
                         Track your portfolio performance across all asset classes.
                     </p>

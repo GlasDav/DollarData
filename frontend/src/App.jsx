@@ -15,7 +15,7 @@ import Review from './pages/Review';
 import Reports from './pages/Reports';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
-import Investments from './pages/Investments';
+
 import TransactionsHub from './pages/TransactionsHub';
 import ReportsHub from './pages/ReportsHub';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -99,7 +99,7 @@ const PAGE_TITLES = {
   '/review': 'Review',
   '/tools': 'Tools',
   '/insights': 'Insights',
-  '/investments': 'Investments',
+
 };
 
 // Header with page title
@@ -146,7 +146,7 @@ function Layout() {
             <NavItem to="/transactions" icon={List}>Transactions</NavItem>
             <NavItem to="/subscriptions" icon={CreditCard}>Subscriptions</NavItem>
             <NavItem to="/budget" icon={PiggyBank}>Budget</NavItem>
-            <NavItem to="/investments" icon={Briefcase}>Investments</NavItem>
+
             <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
           </div>
 
@@ -239,7 +239,7 @@ function App() {
                     <Route path="/transactions" element={<TransactionsHub />} />
                     <Route path="/budget" element={<Budget />} />
                     <Route path="/net-worth" element={<NetWorth />} />
-                    <Route path="/investments" element={<Investments />} />
+                    <Route path="/investments" element={<Navigate to="/net-worth" replace />} />
                     <Route path="/goals" element={<Goals />} />
                     <Route path="/reports" element={<ReportsHub />} />
                     <Route path="/settings" element={<Settings />} />

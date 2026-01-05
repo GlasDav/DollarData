@@ -35,7 +35,7 @@ This document outlines the planned features, improvements, and future direction 
 ## 🏦 Net Worth & Assets
 
 - [x] **Superannuation:** Add default Superannuation account type/support.
-- [ ] **Investments Tab:** Move Investments to a dedicated tab within Net Worth page (currently separate page).
+- [x] **Investments Tab:** Move Investments to a dedicated tab within Net Worth page (currently separate page).
 
 ## ⚙️ Account & Settings
 
