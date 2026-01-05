@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Lock, Mail, TrendingUp } from 'lucide-react';
+import { Lock, Mail, TrendingUp, Play } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
+
+// Demo account credentials
+const DEMO_EMAIL = "demo@principal.finance";
+const DEMO_PASSWORD = "demo123";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -10,6 +14,7 @@ export default function Login() {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isDemoLoading, setIsDemoLoading] = useState(false);
     const { login, googleLogin } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -32,6 +37,24 @@ export default function Login() {
             }
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleDemoLogin = async () => {
+        setError("");
+        setIsDemoLoading(true);
+        try {
+            await login(DEMO_EMAIL, DEMO_PASSWORD);
+            navigate("/", { replace: true });
+        } catch (err) {
+            const detail = err.response?.data?.detail;
+            if (typeof detail === 'string') {
+                setError(detail);
+            } else {
+                setError("Demo account not available. Please try again later.");
+            }
+        } finally {
+            setIsDemoLoading(false);
         }
     };
 
@@ -87,6 +110,35 @@ export default function Login() {
                         {error}
                     </div>
                 )}
+
+                {/* Try Demo Button - Prominent CTA */}
+                <button
+                    type="button"
+                    onClick={handleDemoLogin}
+                    disabled={isDemoLoading}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isDemoLoading ? (
+                        <>
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Loading demo...
+                        </>
+                    ) : (
+                        <>
+                            <Play size={18} fill="currentColor" />
+                            Try Demo - No Sign Up Required
+                        </>
+                    )}
+                </button>
+
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="flex-1 h-px bg-white/20"></div>
+                    <span className="text-xs text-slate-500">or sign in</span>
+                    <div className="flex-1 h-px bg-white/20"></div>
+                </div>
 
                 {/* Google Login Button */}
                 <button
