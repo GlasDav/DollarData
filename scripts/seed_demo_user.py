@@ -210,13 +210,21 @@ def clear_demo_user(db: Session):
     user = db.query(models.User).filter(models.User.email == DEMO_EMAIL).first()
     if user:
         print(f"Removing existing demo user (ID: {user.id})...")
-        # Delete related data (cascade should handle most, but be explicit)
+        # Delete related data in correct order (respecting foreign keys)
         db.query(models.Transaction).filter(models.Transaction.user_id == user.id).delete()
-        db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).delete()
-        db.query(models.Account).filter(models.Account.user_id == user.id).delete()
-        db.query(models.Goal).filter(models.Goal.user_id == user.id).delete()
-        db.query(models.Subscription).filter(models.Subscription.user_id == user.id).delete()
         db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user.id).delete()
+        db.query(models.Subscription).filter(models.Subscription.user_id == user.id).delete()
+        db.query(models.Goal).filter(models.Goal.user_id == user.id).delete()
+        # Delete budget limits before buckets
+        bucket_ids = [b.id for b in db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).all()]
+        if bucket_ids:
+            db.query(models.BudgetLimit).filter(models.BudgetLimit.bucket_id.in_(bucket_ids)).delete(synchronize_session=False)
+        db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).delete()
+        # Delete account-related data
+        account_ids = [a.id for a in db.query(models.Account).filter(models.Account.user_id == user.id).all()]
+        if account_ids:
+            db.query(models.InvestmentHolding).filter(models.InvestmentHolding.account_id.in_(account_ids)).delete(synchronize_session=False)
+        db.query(models.Account).filter(models.Account.user_id == user.id).delete()
         db.query(models.HouseholdMember).filter(models.HouseholdMember.user_id == user.id).delete()
         db.query(models.NetWorthSnapshot).filter(models.NetWorthSnapshot.user_id == user.id).delete()
         db.delete(user)
