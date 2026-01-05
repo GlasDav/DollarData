@@ -36,6 +36,11 @@ This document outlines the planned features, improvements, and future direction 
 
 - [x] **Superannuation:** Add default Superannuation account type/support.
 - [x] **Investments Tab:** Move Investments to a dedicated tab within Net Worth page (currently separate page).
+- [ ] **Asset Split (Overview):** Distinguish between ETFs and stocks in Asset Allocation chart.
+- [ ] **Chart UI:** Fix Asset Allocation chart UI in overview page.
+- [ ] **Asset Split (Investments):** Distinguish between stocks and ETFs in Investments tab.
+- [ ] **Trade Logic:** Rename 'Add Investment' to 'Add Trade', add trade date, and implement Buy/Sell logic.
+- [ ] **Terminology:** Change 'Monthly check in' to 'Record Values'.
 
 ## ⚙️ Account & Settings
 

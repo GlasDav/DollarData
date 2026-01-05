@@ -224,13 +224,15 @@ const SankeyChart = ({ data }) => {
     };
 
     const categoryCount = sanitizedData.nodes.length - 4;
-    const chartHeight = Math.max(400, Math.min(800, categoryCount * 28 + 100));
+    // Calculate required height based on number of nodes. Minimum 400px.
+    // Each node gets roughly 30px + padding.
+    const chartHeight = Math.max(400, categoryCount * 30 + 120);
     const nodePadding = Math.max(8, Math.min(30, 400 / Math.max(categoryCount, 1)));
 
     return (
         <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex flex-col relative">
             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 shrink-0">Cash Flow</h3>
-            <div className="overflow-auto" style={{ maxHeight: '500px' }}>
+            <div className="w-full transition-all duration-300">
                 <div style={{ height: `${chartHeight}px`, minHeight: '400px' }}>
                     <Sankey
                         width={1000}
