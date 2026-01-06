@@ -133,7 +133,7 @@ def get_dashboard_data(
     # 4. Global Totals (Income vs Expense)
     # IMPORTANT: Refunds (positive amounts to expense buckets) should reduce expenses, not count as income
     # True Income = positive amounts from Income-group buckets only
-    # Net Expenses = all non-transfer, non-income bucket amounts (negative expenses + positive refunds net together)
+    # Net Expenses = all non-transfer, non-income, non-investment bucket amounts
     
     # Step 1: Get net amounts by bucket to separate income from expenses
     bucket_totals_query = db.query(
@@ -143,7 +143,8 @@ def get_dashboard_data(
         models.Transaction.user_id == user.id,
         models.Transaction.date >= s_date,
         models.Transaction.date <= e_date,
-        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)  # Exclude investments from expenses
     )
     
     if spender != "Combined":
@@ -1234,37 +1235,50 @@ def get_sankey_data(
     investment_res = investment_query.first()
     total_investments = abs(investment_res[0] or 0.0)
 
-    # --- DEFICIT / SAVINGS LOGIC ---
-    # Balance Equation: Income + Deficit = Expenses + Investments + Savings
+    # --- RECONCILIATION LOGIC ---
+    # Calculate actual outflows shown in the Sankey
+    # disc_total and non_disc_total are already calculated as the sum of expense links
+    actual_expense_links = disc_total + non_disc_total + unallocated_spend
     
-    total_outflow = total_expenses + total_investments
+    # Total inflows = displayed_income (sum of all income streams)
+    # Total outflows = actual expense links + investments (savings is calculated as remainder)
     
-    # 1. Deficit Logic (Expenses > Income)
-    if total_outflow > displayed_income:
-        deficit = total_outflow - displayed_income
+    # Net balance = displayed_income - actual_expense_links - investments
+    # If > 0: Net Savings
+    # If < 0: Deficit (or reconciling item if it doesn't match)
+    
+    net_balance = displayed_income - actual_expense_links - total_investments
+
+    # --- DEFICIT / SAVINGS / RECONCILING LOGIC ---
+    if net_balance >= 0:
+        # Positive balance = Savings + Investments
+        if net_balance > 0 or total_investments > 0:
+            combined_savings_total = net_balance + total_investments
+            
+            idx_combined = get_node("Savings & Investments")
+            
+            # Income -> "Savings & Investments"
+            links.append({"source": idx_income, "target": idx_combined, "value": combined_savings_total})
+            
+            # "Savings & Investments" -> "Net Cash Savings" (if > 0)
+            if net_balance > 0:
+                idx_cash_savings = get_node("Net Cash Savings")
+                links.append({"source": idx_combined, "target": idx_cash_savings, "value": net_balance})
+                
+            # "Savings & Investments" -> "Investments" (if > 0)
+            if total_investments > 0:
+                idx_investments_bucket = get_node("Investments")
+                links.append({"source": idx_combined, "target": idx_investments_bucket, "value": total_investments})
+    else:
+        # Negative balance = Deficit
+        deficit = abs(net_balance)
         idx_deficit = get_node("Deficit (Savings Withdrawal)")
         links.append({"source": idx_deficit, "target": idx_income, "value": deficit})
         
-    # 2. Savings Logic (Income > Expenses)
-    net_savings = displayed_income - total_outflow
-    
-    if net_savings > 0 or total_investments > 0:
-        # Parent Node: "Savings & Investments"
-        # Value is the sum of Cash Savings + Investments
-        combined_savings_total = max(0, net_savings) + total_investments
-        
-        idx_combined = get_node("Savings & Investments")
-        
-        # Income -> "Savings & Investments"
-        links.append({"source": idx_income, "target": idx_combined, "value": combined_savings_total})
-        
-        # "Savings & Investments" -> "Net Cash Savings" (if > 0)
-        if net_savings > 0:
-            idx_cash_savings = get_node("Net Cash Savings")
-            links.append({"source": idx_combined, "target": idx_cash_savings, "value": net_savings})
-            
-        # "Savings & Investments" -> "Investments" (if > 0)
+        # Still show investments if any
         if total_investments > 0:
+            idx_combined = get_node("Savings & Investments")
+            links.append({"source": idx_income, "target": idx_combined, "value": total_investments})
             idx_investments_bucket = get_node("Investments")
             links.append({"source": idx_combined, "target": idx_investments_bucket, "value": total_investments})
         
