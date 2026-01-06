@@ -131,28 +131,58 @@ def get_dashboard_data(
             rollover_map[b.id] = max(0, pre_limit - pre_spent)
 
     # 4. Global Totals (Income vs Expense)
-    # Detailed query for totals to ensure we capture everything (even unbucketed)
-    # We can do this in one pass or separate. Separate is clean.
-    totals_query = db.query(
-        func.sum(case((models.Transaction.amount < 0, models.Transaction.amount), else_=0)).label("expenses"),
-        func.sum(case((models.Transaction.amount > 0, models.Transaction.amount), else_=0)).label("income")
+    # IMPORTANT: Refunds (positive amounts to expense buckets) should reduce expenses, not count as income
+    # True Income = positive amounts from Income-group buckets only
+    # Net Expenses = all non-transfer, non-income bucket amounts (negative expenses + positive refunds net together)
+    
+    # Step 1: Get net amounts by bucket to separate income from expenses
+    bucket_totals_query = db.query(
+        models.Transaction.bucket_id,
+        func.sum(models.Transaction.amount).label("net_amount")
     ).filter(
         models.Transaction.user_id == user.id,
         models.Transaction.date >= s_date,
-        models.Transaction.date <= e_date
+        models.Transaction.date <= e_date,
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
     )
     
     if spender != "Combined":
-        totals_query = totals_query.filter(models.Transaction.spender == spender)
-
-    # Exclude Transfer buckets from totals
-    totals_query = totals_query.filter(
-        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
-    )
-
-    totals_res = totals_query.first()
-    total_expenses = abs(totals_res.expenses or 0.0)
-    total_income = totals_res.income or 0.0
+        bucket_totals_query = bucket_totals_query.filter(models.Transaction.spender == spender)
+    
+    bucket_totals = bucket_totals_query.group_by(models.Transaction.bucket_id).all()
+    
+    # Build bucket lookup for group checking
+    bucket_map = {b.id: b for b in buckets}
+    
+    # Separate true income from net expenses
+    total_income = 0.0
+    total_net_expenses = 0.0
+    
+    for bid, net_amount in bucket_totals:
+        if bid is None:
+            # Uncategorized - treat as expense if negative, income if positive
+            if net_amount and net_amount > 0:
+                total_income += net_amount
+            elif net_amount and net_amount < 0:
+                total_net_expenses += abs(net_amount)
+        elif bid in bucket_map:
+            bucket = bucket_map[bid]
+            # Check if bucket is in Income group (or parent is)
+            is_income_group = bucket.group == "Income"
+            if not is_income_group and bucket.parent_id and bucket.parent_id in bucket_map:
+                is_income_group = bucket_map[bucket.parent_id].group == "Income"
+            
+            if is_income_group:
+                # Income bucket - positive amounts are income
+                if net_amount and net_amount > 0:
+                    total_income += net_amount
+            else:
+                # Expense bucket - net amount (expenses minus refunds)
+                if net_amount and net_amount < 0:
+                    total_net_expenses += abs(net_amount)
+                # If net_amount > 0, it means refunds > expenses (net positive) - ignore for expenses
+    
+    total_expenses = total_net_expenses
 
     # 5. Build Final Response
     final_buckets = []
@@ -903,33 +933,64 @@ def get_sankey_data(
         
     user = current_user
     
-    # 1. Fetch Totals (Income vs Expenses)
-    totals_query = db.query(
-        func.sum(case((models.Transaction.amount < 0, models.Transaction.amount), else_=0)).label("expenses"),
-        func.sum(case((models.Transaction.amount > 0, models.Transaction.amount), else_=0)).label("income")
+    # 1. Fetch Totals (Income vs Expenses) using same logic as dashboard
+    # IMPORTANT: Refunds (positive amounts to expense buckets) reduce expenses, don't count as income
+    
+    # Get buckets for group lookup
+    all_buckets = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).all()
+    bucket_map = {b.id: b for b in all_buckets}
+    
+    # Helper to check if bucket is income group
+    def is_income_group(bucket):
+        if bucket.group == "Income":
+            return True
+        if bucket.parent_id and bucket.parent_id in bucket_map:
+            return bucket_map[bucket.parent_id].group == "Income"
+        return False
+    
+    # Query net amounts by bucket
+    bucket_totals_query = db.query(
+        models.Transaction.bucket_id,
+        func.sum(models.Transaction.amount).label("net_amount")
     ).filter(
         models.Transaction.user_id == user.id,
         models.Transaction.date >= s_date,
-        models.Transaction.date <= e_date
-    )
-    
-    if spender != "Combined":
-        totals_query = totals_query.filter(models.Transaction.spender == spender)
-
-    # Exclude Transfer and Investment buckets from expense totals
-    totals_query = totals_query.filter(
+        models.Transaction.date <= e_date,
         ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
         ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
     )
+    
+    if spender != "Combined":
+        bucket_totals_query = bucket_totals_query.filter(models.Transaction.spender == spender)
 
     if exclude_one_offs:
-        totals_query = totals_query.filter(
+        bucket_totals_query = bucket_totals_query.filter(
             ~models.Transaction.bucket.has(models.BudgetBucket.is_one_off == True)
         )
         
-    totals_res = totals_query.first()
-    total_expenses = abs(totals_res.expenses or 0.0)
-    total_income = totals_res.income or 0.0
+    bucket_totals = bucket_totals_query.group_by(models.Transaction.bucket_id).all()
+    
+    # Calculate totals: true income and net expenses
+    total_income = 0.0
+    total_expenses = 0.0
+    
+    for bid, net_amount in bucket_totals:
+        if bid is None:
+            # Uncategorized - treat as expense if negative, income if positive
+            if net_amount and net_amount > 0:
+                total_income += net_amount
+            elif net_amount and net_amount < 0:
+                total_expenses += abs(net_amount)
+        elif bid in bucket_map:
+            bucket = bucket_map[bid]
+            if is_income_group(bucket):
+                # Income bucket - positive amounts are income
+                if net_amount and net_amount > 0:
+                    total_income += net_amount
+            else:
+                # Expense bucket - net amount (expenses minus refunds)
+                if net_amount and net_amount < 0:
+                    total_expenses += abs(net_amount)
     
     # 2. Fetch NET Spending by Bucket (expenses minus refunds)
     # This allows refunds to offset expenses within the same bucket
@@ -1034,13 +1095,10 @@ def get_sankey_data(
             other_income_total += amount
         elif bid in bucket_map:
             bucket = bucket_map[bid]
-            # Show buckets from Income group as named income streams
+            # Only include Income-group buckets in income streams
+            # Refunds to expense buckets are NOT income - they just reduce expenses
             if is_income_bucket(bucket):
                 income_by_bucket[bucket.name] = income_by_bucket.get(bucket.name, 0) + amount
-            else:
-                # Refunds to expense buckets go to "Other Income" 
-                # This ensures Sankey income matches dashboard Total Income
-                other_income_total += amount
     
     # Create income bucket nodes flowing INTO "Income"
     for bucket_name, amount in income_by_bucket.items():
@@ -1562,9 +1620,18 @@ def get_budget_progress(
             bucket_by_member[bid] = {}
         bucket_by_member[bid][mapped_name] = bucket_by_member[bid].get(mapped_name, 0) + amt
     
-    # ===== HISTORY (last N months) =====
-    # If delta_months > 1, include current period in history query instead of appending as single bar
-    history_end = current_end if delta_months > 1 else current_start - timedelta(days=1)
+    # ===== HISTORY (always 12 months, with selected period highlighted) =====
+    # Always show the most recent 12 months, regardless of selected period
+    # Mark months that fall within the selected period with is_selected=True
+    
+    # Calculate 12-month window ending at current month
+    today = date.today()
+    twelve_months_ago = (today.replace(day=1) - timedelta(days=11*30)).replace(day=1)
+    history_end_date = today.replace(day=1)  # First of current month
+    if today.month == 12:
+        history_end_last = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        history_end_last = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
     
     history_query = db.query(
         models.Transaction.bucket_id,
@@ -1574,9 +1641,9 @@ def get_budget_progress(
     ).filter(
         models.Transaction.user_id == user.id,
         models.Transaction.bucket_id.in_(bucket_ids),
-        models.Transaction.date >= history_start,
-        models.Transaction.date <= history_end
-        # models.Transaction.amount < 0  # REMOVED: Match current month logic (Net Spending)
+        models.Transaction.date >= twelve_months_ago,
+        models.Transaction.date <= history_end_last
+        # Net spending (expenses + refunds)
     )
     
     if spender != "Combined":
@@ -1586,7 +1653,7 @@ def get_budget_progress(
         models.Transaction.bucket_id, 'year', 'month'
     ).all()
     
-    # Build history map: bucket_id -> [{month_name, amount}, ...]
+    # Build history map: bucket_id -> {month_key: amount}
     bucket_history = {}
     for bid, yr, mo, total in history_results:
         if bid is None:
@@ -1596,16 +1663,27 @@ def get_budget_progress(
         key = f"{int(yr)}-{int(mo):02d}"
         bucket_history[bid][key] = -total if total else 0
     
-    # Generate month labels for sparkline
-    # If delta_months > 1, include months up to current_end; otherwise up to current_start
+    # Generate 12 month labels with is_selected flag
     month_labels = []
-    current = history_start
-    label_end = current_end if delta_months > 1 else current_start
-    while current <= label_end:
+    current = twelve_months_ago
+    while current <= history_end_date:
+        month_key = current.strftime("%Y-%m")
+        # Check if this month is within the selected period
+        # A month is "selected" if it overlaps with [current_start, current_end]
+        month_first = current
+        if current.month == 12:
+            month_last = current.replace(year=current.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            month_last = current.replace(month=current.month + 1, day=1) - timedelta(days=1)
+        
+        is_selected = (month_first <= current_end and month_last >= current_start)
+        
         month_labels.append({
-            "key": current.strftime("%Y-%m"),
-            "label": current.strftime("%b")
+            "key": month_key,
+            "label": current.strftime("%b"),
+            "is_selected": is_selected
         })
+        
         if current.month == 12:
             current = current.replace(year=current.year + 1, month=1)
         else:
@@ -1702,26 +1780,18 @@ def get_budget_progress(
                 total_saved += (limit - spent)
         
         # Build history array for sparkline - aggregate parent + children
+        # Now always shows 12 months with is_selected flag for highlighting
         history = []
         hist_amounts = []
         for ml in month_labels:
             amt = sum(bucket_history.get(bid, {}).get(ml["key"], 0) for bid in all_bucket_ids)
             history.append({
                 "month": ml["label"],
-                "amount": round(amt, 2)
+                "amount": round(amt, 2),
+                "is_selected": ml["is_selected"]
             })
             if amt > 0:
                 hist_amounts.append(amt)
-
-        # Add current month to history (for sparkline) - only for single month periods
-        # For multi-month periods, the months are already included in month_labels
-        if delta_months == 1:
-            history.append({
-                "month": current_start.strftime("%b"),
-                "amount": round(spent, 2)
-            })
-            if spent > 0:
-                hist_amounts.append(spent)
         
         # Calculate trend vs average (or vs last month)
         trend = 0

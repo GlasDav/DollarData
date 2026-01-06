@@ -51,7 +51,7 @@ export default function SparklineChart({ data = [], height = 40, className = '' 
                         {data.map((entry, index) => (
                             <Cell
                                 key={`cell-${index}`}
-                                fill={index === data.length - 1 ? '#6366f1' : '#cbd5e1'}
+                                fill={entry.is_selected ? '#6366f1' : '#cbd5e1'}
                             />
                         ))}
                     </Bar>
