@@ -1161,21 +1161,69 @@ def get_sankey_data(
             })
     
     # Collect parent buckets by group for ordered processing
+    # IMPORTANT: Each bucket uses its OWN group setting, not the root parent's
     disc_buckets = []
     non_disc_buckets = []
     
     for parent_id, amount in parent_spend.items():
         if parent_id not in bucket_map: 
             continue
-        bucket = bucket_map[parent_id]
+        parent_bucket = bucket_map[parent_id]
         children = sorted(parent_children.get(parent_id, []), key=lambda x: x["amount"], reverse=True)
         
-        if bucket.group == "Non-Discretionary":
-            non_disc_buckets.append((bucket.name, amount, parent_id, children))
-            non_disc_total += amount
+        # Split children by their own group (some may differ from parent)
+        disc_children = []
+        non_disc_children = []
+        disc_child_total = 0.0
+        non_disc_child_total = 0.0
+        
+        for child in children:
+            child_bucket = bucket_map.get(child["bucket_id"])
+            if child_bucket:
+                # Use child's own group, falling back to parent's group if not set
+                child_group = child_bucket.group if child_bucket.group else parent_bucket.group
+                if child_group == "Non-Discretionary":
+                    non_disc_children.append(child)
+                    non_disc_child_total += child["amount"]
+                else:
+                    disc_children.append(child)
+                    disc_child_total += child["amount"]
+            else:
+                # Fallback to parent's group
+                if parent_bucket.group == "Non-Discretionary":
+                    non_disc_children.append(child)
+                    non_disc_child_total += child["amount"]
+                else:
+                    disc_children.append(child)
+                    disc_child_total += child["amount"]
+        
+        # Parent bucket's own spending (what's NOT in children)
+        parent_own_spend = amount - disc_child_total - non_disc_child_total
+        
+        # Add parent to its own group (with its portion of direct spending)
+        if parent_bucket.group == "Non-Discretionary":
+            # Parent is Non-Disc, add its own spend + non-disc children
+            parent_amount = parent_own_spend + non_disc_child_total
+            if parent_amount > 0:
+                non_disc_buckets.append((parent_bucket.name, parent_amount, parent_id, non_disc_children))
+                non_disc_total += parent_amount
+            # Add disc children to Discretionary
+            if disc_child_total > 0:
+                # These children go under Discretionary, but we show them under parent name
+                for child in disc_children:
+                    disc_buckets.append((child["name"], child["amount"], child["bucket_id"], []))
+                    disc_total += child["amount"]
         else:
-            disc_buckets.append((bucket.name, amount, parent_id, children))
-            disc_total += amount
+            # Parent is Discretionary, add its own spend + disc children
+            parent_amount = parent_own_spend + disc_child_total
+            if parent_amount > 0:
+                disc_buckets.append((parent_bucket.name, parent_amount, parent_id, disc_children))
+                disc_total += parent_amount
+            # Add non-disc children to Non-Discretionary
+            if non_disc_child_total > 0:
+                for child in non_disc_children:
+                    non_disc_buckets.append((child["name"], child["amount"], child["bucket_id"], []))
+                    non_disc_total += child["amount"]
     
     # Sort by amount descending within each group
     disc_buckets.sort(key=lambda x: x[1], reverse=True)
