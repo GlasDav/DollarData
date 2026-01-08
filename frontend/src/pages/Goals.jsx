@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Target as TargetIcon, Plus as PlusIcon, Pencil as PencilIcon, CheckCircle as CheckCircleIcon, TrendingUp as TrendingUpIcon, Building as BuildingIcon, Wallet as WalletIcon, Trash2 as TrashIcon, Calendar as CalendarIcon, Flame as FlameIcon, LineChart as LineChartIcon } from 'lucide-react';
+import Button from '../components/ui/Button';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import api, { getGoals, createGoal, updateGoal, deleteGoal } from '../services/api';
+import api, { getGoals, createGoal, updateGoal, deleteGoal, getBucketsTree } from '../services/api';
 import { Dialog } from '@headlessui/react';
 
 const formatCurrency = (amount) => {
@@ -414,20 +415,20 @@ export default function Goals() {
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Track your savings and spending habits</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
+                    <Button
+                        variant="secondary"
                         onClick={() => setCategoryModalOpen(true)}
-                        className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-2"
+                        icon={PlusIcon}
                     >
-                        <PlusIcon size={18} />
                         New Habit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => { setEditingGoal(null); setModalOpen(true); }}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-indigo-500/30"
+                        icon={PlusIcon}
+                        className="shadow-lg shadow-indigo-500/30"
                     >
-                        <PlusIcon size={18} />
                         New Savings Goal
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -619,13 +620,10 @@ function CategoryGoalModal({ isOpen, onClose, onSave }) {
     const [bucketId, setBucketId] = useState('');
     const [targetAmount, setTargetAmount] = useState('');
 
-    // Fetch buckets for dropdown
+    // Fetch buckets tree for grouped dropdown
     const { data: buckets = [] } = useQuery({
-        queryKey: ['buckets'],
-        queryFn: async () => {
-            const res = await api.get('/settings/buckets');
-            return res.data;
-        },
+        queryKey: ['bucketsTree'],
+        queryFn: getBucketsTree,
         enabled: isOpen
     });
 
@@ -661,9 +659,31 @@ function CategoryGoalModal({ isOpen, onClose, onSave }) {
                                 required
                             >
                                 <option value="">Select a category...</option>
-                                {buckets.filter(b => b.group !== 'Income' && !b.is_transfer).map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                ))}
+                                {buckets.map(group => {
+                                    // Filter out Income and Transfers for spending habits
+                                    if (group.group === 'Income' || group.is_transfer) return null;
+
+                                    if (group.children && group.children.length > 0) {
+                                        return (
+                                            <optgroup key={group.id} label={group.name} className="font-semibold text-slate-900 dark:text-slate-100">
+                                                {group.children
+                                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                                    .map(child => (
+                                                        <option key={child.id} value={child.id} className="text-slate-700 dark:text-slate-300">
+                                                            {child.name}
+                                                        </option>
+                                                    ))}
+                                            </optgroup>
+                                        );
+                                    }
+
+                                    // Standalone categories
+                                    return (
+                                        <option key={group.id} value={group.id} className="text-slate-700 dark:text-slate-300">
+                                            {group.name}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
                         <div>

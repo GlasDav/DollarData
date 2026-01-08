@@ -68,7 +68,7 @@ export default function Transactions() {
             if (sortBy) params.sort_by = sortBy;
             if (sortDir) params.sort_dir = sortDir;
 
-            const res = await api.get('/transactions/', { params });
+            const res = await api.get('/transactions', { params });
             return res.data;
         }
     });
