@@ -32,7 +32,7 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **New Default Categories:** Add 'Reimbursable' and 'Mobile Phone' to default category list.
 - [ ] **Budget Score:** Revise methodology to be more intuitive.
 - [ ] **Category Goals:** specific expenditure goals (e.g., "Under budget on clothing for 3 months").
-- [ ] **Goal Tracking:** Visual progress for specific saving/spending goals.
+- [x] **Goal Tracking:** Visual progress for specific saving/spending goals.
 
 ## 🏦 Net Worth & Assets
 

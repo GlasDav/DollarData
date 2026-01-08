@@ -102,3 +102,60 @@ def delete_goal(
     db.delete(db_goal)
     db.commit()
     return {"ok": True}
+
+@router.get("/{goal_id}/history")
+def get_goal_history(
+    goal_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    goal = db.query(models.Goal).filter(models.Goal.id == goal_id, models.Goal.user_id == current_user.id).first()
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+        
+    history = []
+    
+    if goal.linked_account_id:
+        # Linked Mode: Fetch history from AccountBalance snapshots
+        # Join NetWorthSnapshot to get the date
+        results = db.query(
+            models.NetWorthSnapshot.date, 
+            models.AccountBalance.balance
+        ).join(
+            models.AccountBalance, 
+            models.AccountBalance.snapshot_id == models.NetWorthSnapshot.id
+        ).filter(
+            models.NetWorthSnapshot.user_id == current_user.id,
+            models.AccountBalance.account_id == goal.linked_account_id
+        ).order_by(models.NetWorthSnapshot.date.asc()).all()
+        
+        for date, balance in results:
+            history.append({"date": date.strftime("%Y-%m-%d"), "amount": balance})
+            
+    else:
+        # Manual Mode: Cumulative sum of linked transactions
+        transactions = db.query(models.Transaction)\
+            .filter(
+                models.Transaction.goal_id == goal.id,
+                models.Transaction.user_id == current_user.id
+            )\
+            .order_by(models.Transaction.date.asc())\
+            .all()
+            
+        current_total = 0.0
+        # Group by date to avoid multiple points per day (optional, but cleaner)
+        grouped_by_date = {}
+        
+        for txn in transactions:
+            d = txn.date.strftime("%Y-%m-%d")
+            if d not in grouped_by_date:
+                grouped_by_date[d] = 0.0
+            grouped_by_date[d] += txn.amount
+            
+        # Create cumulative series
+        sorted_dates = sorted(grouped_by_date.keys())
+        for d in sorted_dates:
+            current_total += grouped_by_date[d]
+            history.append({"date": d, "amount": current_total})
+            
+    return history

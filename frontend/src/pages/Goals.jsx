@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Target, Plus, Pencil, CheckCircle, TrendingUp, Building, Wallet, Trash2 } from 'lucide-react';
+import { Target, Plus, Pencil, CheckCircle, TrendingUp, Building, Wallet, Trash2, Calendar, LineChart as LineChartIcon } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import api, { getGoals, createGoal, updateGoal, deleteGoal } from '../services/api';
 import { Dialog } from '@headlessui/react';
 
+// ... (GoalModal component remains unchanged) ...
 const GoalModal = ({ isOpen, onClose, goal, accounts, onSave }) => {
     const isEdit = !!goal;
     const [mode, setMode] = useState(goal?.linked_account_id ? 'linked' : 'manual'); // 'linked' | 'manual'
@@ -141,10 +143,191 @@ const GoalModal = ({ isOpen, onClose, goal, accounts, onSave }) => {
     );
 };
 
+// --- NEW COMPONENT: Goal Details with Chart ---
+const GoalDetailsModal = ({ isOpen, onClose, goal }) => {
+    // 1. Fetch History
+    const { data: history = [], isLoading } = useQuery({
+        queryKey: ['goal_history', goal?.id],
+        queryFn: async () => {
+            if (!goal?.id) return [];
+            const res = await api.get(`/goals/${goal.id}/history`);
+            return res.data;
+        },
+        enabled: !!goal?.id
+    });
+
+    // 2. Compute Projections
+    const projection = useMemo(() => {
+        if (!history || history.length < 2) return null;
+
+        // Sort history just in case
+        const sorted = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // Use last 90 days for trend (or all if less than 90 days)
+        const now = new Date();
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(now.getDate() - 90);
+
+        let recentPoints = sorted.filter(p => new Date(p.date) >= ninetyDaysAgo);
+        if (recentPoints.length < 2) recentPoints = sorted; // Fallback to all data if not enough recent data
+
+        const first = recentPoints[0];
+        const last = recentPoints[recentPoints.length - 1];
+
+        // Calculate daily rate
+        const daysDiff = (new Date(last.date) - new Date(first.date)) / (1000 * 60 * 60 * 24);
+        if (daysDiff <= 0) return null;
+
+        const growth = last.amount - first.amount;
+        // Avoid projecting negative growth for "savings" goals unless we want to warn them
+        const dailyRate = growth / daysDiff;
+
+        // Remaining
+        const remaining = goal.target_amount - last.amount;
+        if (remaining <= 0) return { status: 'COMPLETED', date: new Date() }; // Already done
+
+        if (dailyRate <= 0) return { status: 'STAGNANT', date: null };
+
+        const daysToFinish = remaining / dailyRate;
+        const completionDate = new Date();
+        completionDate.setDate(completionDate.getDate() + daysToFinish);
+
+        return {
+            status: 'ON_TRACK',
+            date: completionDate,
+            dailyRate
+        };
+    }, [history, goal]);
+
+    if (!isOpen || !goal) return null;
+
+    return (
+        <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+            <div className="fixed inset-0 flex items-center justify-center p-4">
+                <Dialog.Panel className="w-full max-w-3xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
+                    {/* Header */}
+                    <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-start">
+                        <div>
+                            <Dialog.Title className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                                {goal.name}
+                                {goal.current_amount >= goal.target_amount && <CheckCircle className="text-green-500" size={24} />}
+                            </Dialog.Title>
+                            <p className="text-slate-500 dark:text-slate-400 mt-1">
+                                ${goal.current_amount.toLocaleString()} of ${goal.target_amount.toLocaleString()} Goal
+                            </p>
+                        </div>
+                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition">
+                            <span className="sr-only">Close</span>
+                            <svg className="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-8">
+
+                        {/* 1. Projection Card */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Completion Estimate</h4>
+                                {projection?.status === 'COMPLETED' ? (
+                                    <div className="text-green-600 font-bold">Goal Completed! 🎉</div>
+                                ) : projection?.status === 'ON_TRACK' ? (
+                                    <div>
+                                        <div className="text-xl font-bold text-slate-900 dark:text-white">
+                                            {projection.date.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}
+                                        </div>
+                                        <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                            <TrendingUp size={12} />
+                                            Saving ~${(projection.dailyRate * 30).toFixed(0)}/mo
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-slate-400 italic">Not enough growth data yet</div>
+                                )}
+                            </div>
+
+                            <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Target Date</h4>
+                                <div className="text-xl font-bold text-slate-900 dark:text-white">
+                                    {goal.target_date ? new Date(goal.target_date).toLocaleDateString('en-AU') : "No deadline"}
+                                </div>
+                                {goal.target_date && projection?.date && projection.status === 'ON_TRACK' && (
+                                    <div className={`text-xs mt-1 ${projection.date <= new Date(goal.target_date) ? 'text-green-600' : 'text-amber-500'}`}>
+                                        {projection.date <= new Date(goal.target_date) ? "On track to finish early" : "Behind schedule"}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Remaining</h4>
+                                <div className="text-xl font-bold text-slate-900 dark:text-white">
+                                    ${Math.max(0, goal.target_amount - goal.current_amount).toLocaleString()}
+                                </div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                    {((goal.current_amount / goal.target_amount) * 100).toFixed(1)}% Funded
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. Chart */}
+                        <div className="h-80 w-full">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Progress History</h4>
+                            {isLoading ? (
+                                <div className="h-full flex items-center justify-center text-slate-400">Loading history...</div>
+                            ) : history.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={history}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                        <XAxis
+                                            dataKey="date"
+                                            tickFormatter={(val) => new Date(val).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })}
+                                            stroke="#94a3b8"
+                                            fontSize={12}
+                                            tickMargin={10}
+                                        />
+                                        <YAxis
+                                            tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
+                                            stroke="#94a3b8"
+                                            fontSize={12}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}
+                                            itemStyle={{ color: '#fff' }}
+                                            formatter={(val) => [`$${val.toLocaleString()}`, 'Balance']}
+                                            labelFormatter={(l) => new Date(l).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                        />
+                                        <ReferenceLine y={goal.target_amount} label="Target" stroke="#10b981" strokeDasharray="3 3" />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="amount"
+                                            stroke="#6366f1"
+                                            strokeWidth={3}
+                                            dot={false}
+                                            activeDot={{ r: 6 }}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                                    No history data available yet
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </Dialog.Panel>
+            </div>
+        </Dialog>
+    );
+};
+
 export default function Goals() {
     const queryClient = useQueryClient();
     const [isModalOpen, setModalOpen] = useState(false);
     const [editingGoal, setEditingGoal] = useState(null);
+    const [selectedGoal, setSelectedGoal] = useState(null); // For Detail View
 
     // Fetch Goals
     const { data: goalsRaw = [], isLoading: goalsLoading } = useQuery({
@@ -237,8 +420,12 @@ export default function Goals() {
                         const isLinked = !!goal.linked_account_id;
 
                         return (
-                            <div key={goal.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-between relative group">
-                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                            <div
+                                key={goal.id}
+                                className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-between relative group cursor-pointer hover:shadow-md transition-shadow"
+                                onClick={() => setSelectedGoal(goal)}
+                            >
+                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2" onClick={(e) => e.stopPropagation()}>
                                     <button
                                         onClick={() => deleteMutation.mutate(goal.id)}
                                         className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
@@ -259,7 +446,7 @@ export default function Goals() {
                                             {isLinked ? <Building size={24} /> : <Wallet size={24} />}
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1">{goal.name}</h3>
+                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-indigo-600 transition-colors">{goal.name}</h3>
                                             <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider flex items-center gap-1">
                                                 {isLinked ? "Account Goal" : "Manual Goal"}
                                             </p>
@@ -283,10 +470,14 @@ export default function Goals() {
                                         />
                                     </div>
                                     <div className="mt-2 flex justify-between items-center">
-                                        <span className="text-xs text-slate-400">{goal.target_date ? `Deadline: ${new Date(goal.target_date).toLocaleDateString('en-AU')}` : "No deadline"}</span>
-                                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                                            {progress.toFixed(1)}%
-                                        </span>
+                                        <div className="flex items-center gap-1 text-xs text-slate-400">
+                                            <Calendar size={12} />
+                                            {goal.target_date ? new Date(goal.target_date).toLocaleDateString('en-AU') : "No deadline"}
+                                        </div>
+                                        <div className="flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                                            <LineChartIcon size={12} />
+                                            View Details
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -301,6 +492,12 @@ export default function Goals() {
                 goal={editingGoal}
                 accounts={accounts}
                 onSave={handleSave}
+            />
+
+            <GoalDetailsModal
+                isOpen={!!selectedGoal}
+                onClose={() => setSelectedGoal(null)}
+                goal={selectedGoal}
             />
         </div>
     );
