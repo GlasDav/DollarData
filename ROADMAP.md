@@ -12,7 +12,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Transaction Notes:** Add ability to annotate transactions with custom notes (pending Basiq integration).
 - [ ] **Basiq Integration:** Full bank feed integration for automatic transaction import.
 - [ ] **Amazon Extension:** Browser extension or integration to categorize Amazon purchases automatically.
-- [ ] **Bug:** Recent transactions widget on dashboard isn't showing any transactions.
+- [x] **Bug:** Recent transactions widget on dashboard isn't showing any transactions.
 
 ## 📊 Reports & Analytics
 

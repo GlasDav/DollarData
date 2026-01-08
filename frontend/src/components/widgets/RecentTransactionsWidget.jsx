@@ -25,9 +25,10 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
                     sort_order: 'desc'
                 }
             });
-            // API returns { transactions: [...], total: n } or just array
+            // API returns { items: [...], total: n } or just array (legacy)
             const data = res.data;
             if (Array.isArray(data)) return data;
+            if (data && Array.isArray(data.items)) return data.items;
             if (data && Array.isArray(data.transactions)) return data.transactions;
             return [];
         },

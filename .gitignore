@@ -44,4 +44,4 @@ principal*.db
 htmlcov/
 
 # Agent workflows (contains sensitive deploy credentials)
-.agent/
+# .agent/
