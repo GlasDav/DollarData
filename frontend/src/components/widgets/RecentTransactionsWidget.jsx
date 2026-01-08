@@ -17,6 +17,7 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
     const { data: transactions = [], isLoading } = useQuery({
         queryKey: ['recentTransactions', startDate, endDate],
         queryFn: async () => {
+            console.log("RecentTransactions Request:", { startDate, sort_by: 'date', sort_order: 'desc' });
             const res = await api.get('/transactions', {
                 params: {
                     start_date: startDate,
@@ -24,12 +25,17 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
                     sort_order: 'desc'
                 }
             });
+            console.log("RecentTransactions API RAW Response:", res.data);
+
             // API returns { items: [...], total: n } or just array (legacy)
             const data = res.data;
-            if (Array.isArray(data)) return data;
-            if (data && Array.isArray(data.items)) return data.items;
-            if (data && Array.isArray(data.transactions)) return data.transactions;
-            return [];
+            let result = [];
+            if (Array.isArray(data)) result = data;
+            else if (data && Array.isArray(data.items)) result = data.items;
+            else if (data && Array.isArray(data.transactions)) result = data.transactions;
+
+            console.log("RecentTransactions Final Result:", result);
+            return result;
         },
         staleTime: 60000 // 1 minute
     });

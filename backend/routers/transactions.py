@@ -101,7 +101,18 @@ def get_transactions(
         # Default sort by date descending
         query = query.order_by(models.Transaction.date.desc())
     
+    # DEBUG LOGGING
+    print(f"DEBUG: get_transactions called with start_date={start_date}, end_date={end_date}")
+    try:
+        from sqlalchemy.dialects import postgresql
+        # query_str = str(query.statement.compile(dialect=postgresql.dialect()))
+        # print(f"DEBUG: Query: {query_str}")
+        pass
+    except Exception as e:
+        print(f"DEBUG: Could not print query: {e}")
+
     transactions = query.offset(skip).limit(limit).all()
+    print(f"DEBUG: Found {len(transactions)} transactions")
     
     # Return with metadata
     return {
