@@ -362,6 +362,23 @@ class Subscription(SubscriptionBase):
         from_attributes = True
 
 # Goals
+class CategoryGoalBase(BaseModel):
+    bucket_id: int
+    target_amount: Optional[float] = None
+    
+class CategoryGoalCreate(CategoryGoalBase):
+    pass
+
+class CategoryGoal(CategoryGoalBase):
+    id: int
+    user_id: int
+    start_date: date
+    # Optional: include current streak or status in the schema if calculated on read?
+    # Or keep it separate. Let's keep the base schema simple.
+    
+    class Config:
+        from_attributes = True
+
 class GoalBase(BaseModel):
     name: str
     target_amount: float

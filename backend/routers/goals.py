@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
+from datetime import date, datetime, timedelta
 from .. import models, schemas, database, auth
 
 router = APIRouter(
@@ -103,6 +104,146 @@ def delete_goal(
     db.commit()
     return {"ok": True}
 
+
+# ==========================================
+# CATEGORY GOALS (Streak-based Spending Limits)
+# ==========================================
+
+@router.post("/category", response_model=schemas.CategoryGoal)
+def create_category_goal(
+    goal: schemas.CategoryGoalCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Check if a goal already exists for this bucket?
+    # Let's allow one per bucket for now.
+    existing = db.query(models.CategoryGoal).filter(
+        models.CategoryGoal.bucket_id == goal.bucket_id,
+        models.CategoryGoal.user_id == current_user.id
+    ).first()
+    
+    if existing:
+        # Update existing?
+        existing.target_amount = goal.target_amount
+        # Reset start date on major change? Let's keep start date unless explicitly requested.
+        # existing.start_date = func.now() 
+        db.commit()
+        db.refresh(existing)
+        return existing
+        
+    db_goal = models.CategoryGoal(
+        user_id=current_user.id,
+        bucket_id=goal.bucket_id,
+        target_amount=goal.target_amount
+    )
+    db.add(db_goal)
+    db.commit()
+    db.refresh(db_goal)
+    return db_goal
+
+@router.get("/category")
+def get_category_goals(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    goals = db.query(models.CategoryGoal).filter(models.CategoryGoal.user_id == current_user.id).all()
+    
+    results = []
+    
+    # Pre-fetch buckets to get default limits if target_amount is None
+    # Optimized: eager load buckets in the query above?
+    # Let's just iterate, N+1 is acceptable for small number of goals (usually < 10)
+    
+    today = date.today()
+    
+    for g in goals:
+        # Determine Target
+        target = g.target_amount
+        if target is None:
+            # Fetch bucket limit
+            # Only user's limit? Or shared?
+            # Default to sum of limits for simplicity or just the user's share if we can distinguish.
+            # Using total bucket limit logic from analytics would be ideal but complex here.
+            # Simple fallback:
+            bucket = g.bucket
+            if bucket and bucket.limits:
+                target = sum(l.amount for l in bucket.limits)
+            else:
+                target = 0.0
+                
+        # Calculate Streak
+        # Logic: Iterate backwards from Last Month.
+        # Current month doesn't count for streak until it's over? 
+        # Or does it break the streak immediately if broken?
+        # Let's say: Streak = Number of *completed* months in a row ending last month where target was met.
+        # + Current status: "On Track" or "Failed" for this month.
+        
+        streak = 0
+        current_status = "On Track"
+        
+        # Check current month first (partial)
+        from sqlalchemy import func
+        from datetime import datetime
+        
+        # Helper for monthly spend
+        def get_monthly_spend(month_start, month_end):
+            total = db.query(func.sum(models.Transaction.amount))\
+                .filter(
+                    models.Transaction.user_id == current_user.id,
+                    models.Transaction.bucket_id == g.bucket_id,
+                    models.Transaction.date >= month_start,
+                    models.Transaction.date < month_end,
+                    models.Transaction.amount < 0 # Expenses only
+                ).scalar()
+            return abs(total) if total else 0.0
+
+        # Current Month
+        cm_start = date(today.year, today.month, 1)
+        cm_next = date(today.year + 1, 1, 1) if today.month == 12 else date(today.year, today.month + 1, 1)
+        
+        current_spend = get_monthly_spend(cm_start, cm_next)
+        if current_spend > target:
+            current_status = "Failed"
+            
+        # Backwards Streak
+        # Max check 12 months?
+        check_date = cm_start
+        
+        for _ in range(12): # Limit to 1 year streak check for performance
+            # Go back one month
+            if check_date.month == 1:
+                check_date = date(check_date.year - 1, 12, 1)
+            else:
+                check_date = date(check_date.year, check_date.month - 1, 1)
+                
+            # If before start_date, stop
+            if check_date < g.start_date:
+                break
+                
+            # Calculate range
+            curr_next = date(check_date.year + 1, 1, 1) if check_date.month == 12 else date(check_date.year, check_date.month + 1, 1)
+            
+            spent = get_monthly_spend(check_date, curr_next)
+            if spent <= target:
+                streak += 1
+            else:
+                break # Streak broken
+                
+        results.append({
+            "id": g.id,
+            "bucket_id": g.bucket_id,
+            "bucket_name": g.bucket.name if g.bucket else "Unknown",
+            "bucket_icon": g.bucket.icon_name if g.bucket else "Wallet",
+            "target_amount": target,
+            "streak_months": streak,
+            "current_month_status": current_status,
+            "current_month_spend": current_spend,
+            "start_date": g.start_date
+        })
+        
+    return results
+
+# Existing Endpoints below...
 @router.get("/{goal_id}/history")
 def get_goal_history(
     goal_id: int,

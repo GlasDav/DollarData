@@ -296,18 +296,33 @@ class BudgetLimit(Base):
     
     bucket = relationship("BudgetBucket")
     member = relationship("HouseholdMember", back_populates="budget_limits")
+
 class Notification(Base):
     __tablename__ = "notifications"
-
+    
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    type = Column(String)  # 'budget', 'bill', 'goal'
+    title = Column(String)
     message = Column(String)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
-    meta_data = Column(String, nullable=True)  # JSON string for extra data (e.g., related IDs)
+    
+    user = relationship("User")
 
-    user = relationship("User", backref="notifications")
+class CategoryGoal(Base):
+    __tablename__ = "category_goals"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    bucket_id = Column(Integer, ForeignKey("budget_buckets.id"))
+    target_amount = Column(Float, nullable=True) # If None, use bucket budget
+    start_date = Column(Date, default=func.now())
+    
+    user = relationship("User")
+    bucket = relationship("BudgetBucket")
+
+    user = relationship("User")
+    bucket = relationship("BudgetBucket")
 
 class NotificationSettings(Base):
     __tablename__ = "notification_settings"

@@ -1,9 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Target, Plus, Pencil, CheckCircle, TrendingUp, Building, Wallet, Trash2, Calendar, LineChart as LineChartIcon } from 'lucide-react';
+import { Target, Plus, Pencil, CheckCircle, TrendingUp, Building, Wallet, Trash2, Calendar, Flame, LineChart as LineChartIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import api, { getGoals, createGoal, updateGoal, deleteGoal } from '../services/api';
 import { Dialog } from '@headlessui/react';
+
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency: 'AUD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(amount || 0);
+};
 
 // ... (GoalModal component remains unchanged) ...
 const GoalModal = ({ isOpen, onClose, goal, accounts, onSave }) => {
@@ -381,109 +390,184 @@ export default function Goals() {
 
     return (
         <div className="max-w-6xl mx-auto p-8 space-y-8">
-            <header className="flex justify-between items-center">
+            <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <Target className="text-indigo-600" />
-                        Savings Goals
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-2">
-                        Track progress towards your financial objectives.
-                    </p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Goals</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">Track your savings and spending habits</p>
                 </div>
-                <button
-                    onClick={() => { setEditingGoal(null); setModalOpen(true); }}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm"
-                >
-                    <Plus size={20} />
-                    New Goal
-                </button>
-            </header>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setCategoryModalOpen(true)}
+                        className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-2"
+                    >
+                        <PlusIcon size={18} />
+                        New Habit
+                    </button>
+                    <button
+                        onClick={() => { setEditingGoal(null); setModalOpen(true); }}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-indigo-500/30"
+                    >
+                        <PlusIcon size={18} />
+                        New Savings Goal
+                    </button>
+                </div>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {goals.length === 0 ? (
-                    <div className="col-span-full text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500">
-                        <Target size={48} className="mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-                        <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">No Goals Yet</h3>
-                        <p className="max-w-md mx-auto mt-2 mb-6">Create a goal to track savings for a vacation, emergency fund, or big purchase.</p>
-                        <button
-                            onClick={() => { setEditingGoal(null); setModalOpen(true); }}
-                            className="text-indigo-600 font-medium hover:underline"
-                        >
-                            Create your first goal
-                        </button>
-                    </div>
-                ) : (
-                    goals.map(goal => {
-                        const progress = Math.min(100, (goal.current_amount / goal.target_amount) * 100);
-                        const isCompleted = progress >= 100;
-                        const isLinked = !!goal.linked_account_id;
-
-                        return (
-                            <div
-                                key={goal.id}
-                                className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-between relative group cursor-pointer hover:shadow-md transition-shadow"
-                                onClick={() => setSelectedGoal(goal)}
-                            >
-                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                        onClick={() => deleteMutation.mutate(goal.id)}
-                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => { setEditingGoal(goal); setModalOpen(true); }}
-                                        className="p-1.5 text-slate-400 hover:text-indigo-500 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"
-                                    >
-                                        <Pencil size={14} />
-                                    </button>
-                                </div>
-
-                                <div>
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <div className={`p-3 rounded-xl ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-indigo-50 text-indigo-600'} dark:bg-slate-700 dark:text-white`}>
-                                            {isLinked ? <Building size={24} /> : <Wallet size={24} />}
+            {/* Spending Habits Section */}
+            {categoryGoals.length > 0 && (
+                <div className="space-y-4">
+                    <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <FlameIcon className="text-orange-500" size={24} />
+                        Spending Habits
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {categoryGoals.map(goal => (
+                            <div key={goal.id} className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                                            {/* Icons mapping would be ideal, fallback for now */}
+                                            <FlameIcon size={20} />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-indigo-600 transition-colors">{goal.name}</h3>
-                                            <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider flex items-center gap-1">
-                                                {isLinked ? "Account Goal" : "Manual Goal"}
-                                            </p>
+                                            <h3 className="font-semibold text-slate-900 dark:text-white">{goal.bucket_name}</h3>
+                                            <p className="text-xs text-slate-500">Target: {formatCurrency(goal.target_amount)}/mo</p>
                                         </div>
                                     </div>
-
-                                    <div className="mb-2 flex justify-between items-end">
-                                        <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                                            ${goal.current_amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                        </div>
-                                        <div className="text-sm font-medium text-slate-500 mb-1">
-                                            of ${goal.target_amount.toLocaleString()}
+                                    <div className="flex flex-col items-end">
+                                        <div className="flex items-center gap-1 text-orange-500 font-bold bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-full text-xs border border-orange-100 dark:border-orange-800">
+                                            <FlameIcon size={12} fill="currentColor" />
+                                            {goal.streak_months} Month Streak
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Progress Bar */}
-                                    <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                {/* Current Month Status */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-slate-500">This Month</span>
+                                        <span className={`font-medium ${goal.current_month_status === 'Failed' ? 'text-red-500' : 'text-emerald-500'
+                                            }`}>
+                                            {formatCurrency(goal.current_month_spend)}
+                                        </span>
+                                    </div>
+                                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-1000 ${isCompleted ? 'bg-green-500' : 'bg-indigo-600'}`}
-                                            style={{ width: `${progress}%` }}
+                                            className={`h-full rounded-full transition-all duration-500 ${goal.current_month_status === 'Failed' ? 'bg-red-500' : 'bg-emerald-500'
+                                                }`}
+                                            style={{ width: `${Math.min(100, (goal.current_month_spend / goal.target_amount) * 100)}%` }}
                                         />
                                     </div>
-                                    <div className="mt-2 flex justify-between items-center">
-                                        <div className="flex items-center gap-1 text-xs text-slate-400">
-                                            <Calendar size={12} />
-                                            {goal.target_date ? new Date(goal.target_date).toLocaleDateString('en-AU') : "No deadline"}
+                                    <p className="text-xs text-center text-slate-400 mt-1">
+                                        {goal.current_month_status === 'Failed'
+                                            ? `Over budget by ${formatCurrency(goal.current_month_spend - goal.target_amount)}`
+                                            : `${formatCurrency(goal.target_amount - goal.current_month_spend)} remaining`
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Savings Goals Section */}
+            <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Savings Goals</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {goals.length === 0 ? (
+                        <div className="col-span-full text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                            <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <TargetIcon size={32} />
+                            </div>
+                            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">No goals yet</h3>
+                            <p className="text-slate-500 dark:text-slate-400 mb-4">Create your first goal to start tracking your progress</p>
+                            <button
+                                onClick={() => setModalOpen(true)}
+                                className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+                            >
+                                Create a goal
+                            </button>
+                        </div>
+                    ) : (
+                        goals.map(goal => {
+                            const progress = Math.min(100, Math.max(0, (goal.current_amount / goal.target_amount) * 100));
+                            const isCompleted = progress >= 100;
+                            const daysLeft = goal.target_date
+                                ? Math.ceil((new Date(goal.target_date) - new Date()) / (1000 * 60 * 60 * 24))
+                                : null;
+
+                            return (
+                                <div
+                                    key={goal.id}
+                                    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-between relative group cursor-pointer hover:shadow-md transition-shadow"
+                                    onClick={() => setSelectedGoal(goal)}
+                                >
+                                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingGoal(goal); setModalOpen(true); }}
+                                            className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors"
+                                        >
+                                            <PencilIcon size={16} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(goal.id); }}
+                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-lg transition-colors"
+                                        >
+                                            <TrashIcon size={16} />
+                                        </button>
+                                    </div>
+
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isCompleted
+                                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                                                : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                                }`}>
+                                                {isCompleted ? <CheckCircleIcon size={24} /> : <TargetIcon size={24} />}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-slate-900 dark:text-white text-lg">{goal.name}</h3>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                                    Target: {formatCurrency(goal.target_amount)}
+                                                </p>
+                                            </div>
                                         </div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm font-medium">
+                                                <span className="text-slate-700 dark:text-slate-300">{formatCurrency(goal.current_amount)}</span>
+                                                <span className="text-slate-500">{Math.round(progress)}%</span>
+                                            </div>
+                                            <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full transition-all duration-1000 ${isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'
+                                                        }`}
+                                                    style={{ width: `${progress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                                        {daysLeft !== null && !isCompleted ? (
+                                            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                                                <CalendarIcon size={14} />
+                                                {daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'}
+                                            </div>
+                                        ) : (
+                                            <div className="text-xs text-slate-400">No deadline</div>
+                                        )}
                                         <div className="flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400">
                                             <LineChartIcon size={12} />
                                             View Details
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })
-                )}
+                            );
+                        })
+                    )}
+                </div>
             </div>
 
             <GoalModal
@@ -499,6 +583,102 @@ export default function Goals() {
                 onClose={() => setSelectedGoal(null)}
                 goal={selectedGoal}
             />
+
+            <CategoryGoalModal
+                isOpen={isCategoryModalOpen}
+                onClose={() => setCategoryModalOpen(false)}
+                accounts={accounts} // Not strictly needed but keeping prop signature simple? No, need buckets actually.
+                // We need buckets here. Goals.jsx currently fetches accounts and goals but not buckets?
+                // Let's check imports/state. We might need to fetch buckets.
+                onSave={(data) => createCategoryGoalMutation.mutate(data)}
+            />
         </div>
+    );
+}
+
+// Simple Category Goal Modal
+function CategoryGoalModal({ isOpen, onClose, onSave }) {
+    const [bucketId, setBucketId] = useState('');
+    const [targetAmount, setTargetAmount] = useState('');
+
+    // Fetch buckets for dropdown
+    const { data: buckets = [] } = useQuery({
+        queryKey: ['buckets'],
+        queryFn: async () => {
+            const res = await api.get('/budget/buckets');
+            return res.data;
+        },
+        enabled: isOpen
+    });
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave({
+            bucket_id: parseInt(bucketId),
+            target_amount: targetAmount ? parseFloat(targetAmount) : null
+        });
+        setBucketId('');
+        setTargetAmount('');
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+            <div className="fixed inset-0 flex items-center justify-center p-4">
+                <Dialog.Panel className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6">
+                    <Dialog.Title className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                        New Habit Goal
+                    </Dialog.Title>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                Category
+                            </label>
+                            <select
+                                value={bucketId}
+                                onChange={(e) => setBucketId(e.target.value)}
+                                className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                                required
+                            >
+                                <option value="">Select a category...</option>
+                                {buckets.filter(b => b.group !== 'Income' && !b.is_transfer).map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                Monthly Limit (Optional)
+                            </label>
+                            <input
+                                type="number"
+                                value={targetAmount}
+                                onChange={(e) => setTargetAmount(e.target.value)}
+                                placeholder="Leave empty to use Budget Limit"
+                                className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={!bucketId}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                                Start Habit
+                            </button>
+                        </div>
+                    </form>
+                </Dialog.Panel>
+            </div>
+        </Dialog>
     );
 }
