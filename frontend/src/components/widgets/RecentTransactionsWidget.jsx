@@ -20,7 +20,6 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
             const res = await api.get('/transactions', {
                 params: {
                     start_date: startDate,
-                    end_date: endDate,
                     sort_by: 'date',
                     sort_order: 'desc'
                 }

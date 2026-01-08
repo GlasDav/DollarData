@@ -9,7 +9,7 @@ description: Push changes to GitHub
    - `git add .`
 
 3. Commit the changes.
-   - You MUST ask the user for a commit message if they haven't provided one.
+   - You MUST come up with a concise and relevant commit message.
    - `git commit -m "<commit_message>"`
 
 4. Push the changes to the remote repository.

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import extract, or_, func
 from typing import List, Optional
+from datetime import datetime
 from ..database import get_db
 from .. import models, schemas, auth
 
@@ -71,10 +72,20 @@ def get_transactions(
         query = query.filter(extract('year', models.Transaction.date) == year)
 
     if start_date is not None:
-        query = query.filter(models.Transaction.date >= start_date)
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            query = query.filter(models.Transaction.date >= start_dt)
+        except ValueError:
+            pass # Ignore invalid dates or handle error
     
     if end_date is not None:
-        query = query.filter(models.Transaction.date <= end_date)
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            # Set time to end of day to include all transactions on that date
+            end_dt = end_dt.replace(hour=23, minute=59, second=59)
+            query = query.filter(models.Transaction.date <= end_dt)
+        except ValueError:
+            pass
     
     # Get total count before pagination
     total = query.count()
