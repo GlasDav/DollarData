@@ -119,6 +119,7 @@ export default function Transactions() {
         onSuccess: (data, variables) => {
             console.log('Update success:', variables);
             queryClient.invalidateQueries(['transactions']);
+            queryClient.invalidateQueries(['recentTransactions']);
         },
         onError: (error) => {
             console.error('Update failed:', error);
@@ -147,6 +148,7 @@ export default function Transactions() {
         mutationFn: deleteAllTransactions,
         onSuccess: (data) => {
             queryClient.invalidateQueries(['transactions']);
+            queryClient.invalidateQueries(['recentTransactions']);
             alert(`Successfully deleted ${data.count} transactions.`);
         },
         onError: (err) => {

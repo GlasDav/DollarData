@@ -51,6 +51,7 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['transactions']);
+            queryClient.invalidateQueries(['recentTransactions']);
             if (shouldClose) {
                 onClose();
             } else {

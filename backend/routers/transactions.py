@@ -23,6 +23,8 @@ def get_transactions(
     assigned_to: Optional[str] = None, # "ANY" for all assigned, or specific name
     min_amount: Optional[float] = None,
     max_amount: Optional[float] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     sort_by: Optional[str] = Query(None, regex="^(date|amount|description)$"),
     sort_dir: Optional[str] = Query(None, regex="^(asc|desc)$"),
     db: Session = Depends(get_db),
@@ -67,6 +69,12 @@ def get_transactions(
     
     if year is not None:
         query = query.filter(extract('year', models.Transaction.date) == year)
+
+    if start_date is not None:
+        query = query.filter(models.Transaction.date >= start_date)
+    
+    if end_date is not None:
+        query = query.filter(models.Transaction.date <= end_date)
     
     # Get total count before pagination
     total = query.count()
