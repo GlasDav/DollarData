@@ -80,3 +80,4 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **Spending Trends:** Category dropdown needs sorting and grouping.
 - [x] **Budget History:** 6 month history should include current month.
 - [x] **Budget Chart:** History chart numbers incorrect when switching months.
+- [ ] **Goal Modal:** Content spills out of modal container (fix attempted but failed).
