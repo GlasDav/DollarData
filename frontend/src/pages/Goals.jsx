@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Target as TargetIcon, Plus as PlusIcon, Pencil, CheckCircle as CheckCircleIcon, TrendingUp, Building, Wallet, Trash2, Calendar, Flame as FlameIcon, LineChart as LineChartIcon } from 'lucide-react';
+import { Target as TargetIcon, Plus as PlusIcon, Pencil as PencilIcon, CheckCircle as CheckCircleIcon, TrendingUp, Building, Wallet, Trash2 as TrashIcon, Calendar, Flame as FlameIcon, LineChart as LineChartIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import api, { getGoals, createGoal, updateGoal, deleteGoal } from '../services/api';
 import { Dialog } from '@headlessui/react';
