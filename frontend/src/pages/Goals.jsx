@@ -623,7 +623,7 @@ function CategoryGoalModal({ isOpen, onClose, onSave }) {
     const { data: buckets = [] } = useQuery({
         queryKey: ['buckets'],
         queryFn: async () => {
-            const res = await api.get('/budget/buckets');
+            const res = await api.get('/settings/buckets');
             return res.data;
         },
         enabled: isOpen
