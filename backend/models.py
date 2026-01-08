@@ -302,12 +302,13 @@ class Notification(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    title = Column(String)
+    type = Column(String)  # 'budget', 'bill', 'goal'
     message = Column(String)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
-    
-    user = relationship("User")
+    meta_data = Column(String, nullable=True)  # JSON string for extra data (e.g., related IDs)
+
+    user = relationship("User", backref="notifications")
 
 class CategoryGoal(Base):
     __tablename__ = "category_goals"
