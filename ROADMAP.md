@@ -55,6 +55,11 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 🎨 UI/UX Improvements
 
+- [ ] **Design Token Migration:** Migrate all components from hardcoded Tailwind colors to new design tokens.
+    - Replace `bg-indigo-600` with `bg-primary`.
+    - Replace `bg-slate-50` with `var(--color-surface)`.
+    - Replace `text-slate-900` with `text-text-primary`.
+    - See `frontend/BRAND GUIDELINES.md` for full mapping.
 - [ ] **Dashboard Customization:** Ability to hide/unhide specific dashboard widgets.
 - [x] **Quick Add Button:** Align emojis and improve visual layout.
 - [ ] **Tutorial System:**

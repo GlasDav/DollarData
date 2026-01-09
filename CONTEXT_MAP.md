@@ -250,6 +250,16 @@ erDiagram
   - **Frontend:** New `BudgetPerformanceTab.jsx` component with freeze panes (sticky Category column), collapsible parent/child rows, and clickable month columns to update variance display.
   - Child categories now correctly display in their own Needs/Wants section, not their parent's group.
   - Member filter toggle (Total Household, Joint, individual members).
+- **Design Token System (Midfunnel-Inspired):**
+  - Added centralized design tokens in `index.css` via Tailwind v4 `@theme` directive.
+  - Tokens include: primary colors (#5D5DFF), surface colors, text, borders, shadows, and radius.
+  - Added Inter font from Google Fonts.
+  - Created `frontend/BRAND GUIDELINES.md` with migration guide.
+  - See `tailwind.config.js` for token definitions.
+- **Bug Fixes (January 2026):**
+  - **NotificationProvider:** Moved to `PrivateRoute.jsx` to prevent crashes on public routes.
+  - **SummaryCardsWidget:** Added null checks for `totals` and `netWorth` props.
+  - **NotificationContext:** Added `Array.isArray()` check before filtering notifications.
 
 ## Known Issues
 - **Recent Transactions Widget:** Currently not displaying transactions on dashboard (Investigating).

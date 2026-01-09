@@ -1,9 +1,71 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Design Token System - Midfunnel Style */
+@theme {
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand Primary - Electric Indigo */
+  --color-primary: #5D5DFF;
+  --color-primary-hover: #4B4BE6;
+  --color-primary-light: #8B8BFF;
+
+  /* Surfaces */
+  --color-surface: #F5F5F7;
+  --color-surface-dark: #1A1A2E;
+  --color-card: #FFFFFF;
+  --color-card-dark: #252538;
+
+  /* Text */
+  --color-text-primary: #191B18;
+  --color-text-primary-dark: #F5F5F7;
+  --color-text-muted: #666666;
+  --color-text-muted-dark: #9CA3AF;
+
+  /* Buttons */
+  --color-button-dark: #232522;
+  --color-button-dark-hover: #191B18;
+
+  /* Borders */
+  --color-border: #E5E5E7;
+  --color-border-dark: #374151;
+
+  /* Accents */
+  --color-accent-success: #34D399;
+  --color-accent-warning: #FB923C;
+  --color-accent-error: #EF4444;
+  --color-accent-info: #5D5DFF;
+
+  /* Shadows */
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+  /* Border Radius */
+  --radius-card: 1.5rem;
+}
+
 @layer base {
   body {
+    /* Use standard Tailwind classes for compatibility */
     @apply bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50;
+    /* Apply Inter font from design tokens */
+    font-family: var(--font-sans);
+  }
+
+  /* Apply design token colors via CSS overrides */
+  :root {
+    --tw-bg-opacity: 1;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+  }
+
+  .dark body {
+    background-color: var(--color-surface-dark);
+    color: var(--color-text-primary-dark);
   }
 }
 

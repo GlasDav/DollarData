@@ -24,7 +24,6 @@ import BasiqCallback from './pages/BasiqCallback';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { NotificationProvider } from './context/NotificationContext';
 import { ToastProvider } from './context/ToastContext';
 import { Navigate, Outlet } from 'react-router-dom';
 import Login from './pages/Login';
@@ -221,39 +220,37 @@ function App() {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <NotificationProvider>
-              <Router>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/verify-email" element={<VerifyEmail />} />
-                  <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/terms" element={<TermsOfService />} />
-                  <Route path="/basiq-callback" element={<BasiqCallback />} />
+            <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/basiq-callback" element={<BasiqCallback />} />
 
-                  {/* Protected Routes */}
-                  <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/transactions" element={<TransactionsHub />} />
-                    <Route path="/budget" element={<Budget />} />
-                    <Route path="/net-worth" element={<NetWorth />} />
-                    <Route path="/investments" element={<Navigate to="/net-worth" replace />} />
-                    <Route path="/goals" element={<Goals />} />
-                    <Route path="/reports" element={<ReportsHub />} />
-                    <Route path="/settings" element={<Settings />} />
-                    {/* Legacy routes - redirect to consolidated pages */}
-                    <Route path="/subscriptions" element={<Subscriptions />} />
-                    <Route path="/review" element={<TransactionsHub />} />
-                    <Route path="/calendar" element={<ReportsHub />} />
-                    <Route path="/insights" element={<ReportsHub />} />
-                    <Route path="/data-management" element={<DataManagement />} />
-                    <Route path="/tools" element={<Settings />} />
-                  </Route>
-                </Routes>
-              </Router>
-            </NotificationProvider>
+                {/* Protected Routes */}
+                <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/transactions" element={<TransactionsHub />} />
+                  <Route path="/budget" element={<Budget />} />
+                  <Route path="/net-worth" element={<NetWorth />} />
+                  <Route path="/investments" element={<Navigate to="/net-worth" replace />} />
+                  <Route path="/goals" element={<Goals />} />
+                  <Route path="/reports" element={<ReportsHub />} />
+                  <Route path="/settings" element={<Settings />} />
+                  {/* Legacy routes - redirect to consolidated pages */}
+                  <Route path="/subscriptions" element={<Subscriptions />} />
+                  <Route path="/review" element={<TransactionsHub />} />
+                  <Route path="/calendar" element={<ReportsHub />} />
+                  <Route path="/insights" element={<ReportsHub />} />
+                  <Route path="/data-management" element={<DataManagement />} />
+                  <Route path="/tools" element={<Settings />} />
+                </Route>
+              </Routes>
+            </Router>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
