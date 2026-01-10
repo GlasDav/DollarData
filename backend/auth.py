@@ -272,9 +272,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             
             payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
             
-        elif alg == "RS256":
+        elif alg in ["RS256", "ES256"]:
             if not SUPABASE_URL:
-                logger.error("Received RS256 token but SUPABASE_URL is not set")
+                logger.error(f"Received {alg} token but SUPABASE_URL is not set")
                 raise credentials_exception
             
             # Fetch JWKS
@@ -284,7 +284,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             payload = jwt.decode(
                 token, 
                 jwks, 
-                algorithms=["RS256"], 
+                algorithms=["RS256", "ES256"], 
                 audience="authenticated",
                 # Python-Jose with JWKS dict automatically finds key by 'kid'
             )
