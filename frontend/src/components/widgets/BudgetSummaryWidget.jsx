@@ -70,7 +70,7 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
             <Link to="/budget" className="block">
                 <div className="flex items-center justify-between mb-2">
                     {/* Left Side: Icon/Text + Gauge */}
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
                         {/* Icon + Text */}
                         <div className="flex items-center gap-3">
                             <div className={`p-2.5 rounded-xl ${colors.bg}`}>
@@ -82,15 +82,18 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
                             </div>
                         </div>
 
-                        {/* Gauge (Moved next to text) */}
-                        <div className="relative w-24 h-24 -my-4">
+                        {/* Gauge (Resized & Tooltip Add) */}
+                        <div
+                            className="relative w-16 h-16 -my-2 cursor-help"
+                            title="Budget Score (0-100): Weighted score based on spending velocity, category adherence, and planning."
+                        >
                             <ResponsiveContainer width="100%" height="100%">
                                 <RadialBarChart
                                     cx="50%"
                                     cy="50%"
                                     innerRadius="60%"
                                     outerRadius="80%"
-                                    barSize={10}
+                                    barSize={8}
                                     data={[{ name: 'score', value: score, fill: score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444' }]}
                                     startAngle={180}
                                     endAngle={0}
@@ -109,8 +112,8 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
                                     />
                                 </RadialBarChart>
                             </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
-                                <span className={`text-xl font-bold ${score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
+                                <span className={`text-lg font-bold ${score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
                                     {score}
                                 </span>
                             </div>
@@ -125,8 +128,8 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
                             setShowRollover(!showRollover);
                         }}
                         className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors z-10 ${showRollover
-                                ? 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary-light dark:border-primary/30'
-                                : 'bg-surface text-text-muted border-border hover:bg-slate-100 dark:bg-card-dark dark:text-text-muted-dark dark:border-border-dark dark:hover:bg-slate-800'
+                            ? 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary-light dark:border-primary/30'
+                            : 'bg-surface text-text-muted border-border hover:bg-slate-100 dark:bg-card-dark dark:text-text-muted-dark dark:border-border-dark dark:hover:bg-slate-800'
                             }`}
                         title="Include accumulated unspent budget (rollovers) in total"
                     >
