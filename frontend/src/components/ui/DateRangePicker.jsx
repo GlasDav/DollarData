@@ -136,9 +136,9 @@ export default function DateRangePicker({
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-white hover:border-indigo-300 dark:hover:border-indigo-500 transition"
+                className="flex items-center gap-2 px-3 py-2 bg-card dark:bg-card-dark border border-border dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark hover:border-primary transition"
             >
-                <Calendar size={16} className="text-slate-400" />
+                <Calendar size={16} className="text-text-muted" />
                 <span>
                     {startDate && endDate
                         ? `${formatDate(new Date(startDate))} - ${formatDate(new Date(endDate))}`
@@ -149,15 +149,15 @@ export default function DateRangePicker({
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 flex overflow-hidden">
+                <div className="absolute top-full left-0 mt-2 bg-card dark:bg-card-dark rounded-xl shadow-xl border border-border dark:border-border-dark z-50 flex overflow-hidden">
                     {/* Presets */}
-                    <div className="w-40 border-r border-slate-200 dark:border-slate-700 p-2">
-                        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">Quick Select</div>
+                    <div className="w-40 border-r border-border dark:border-border-dark p-2">
+                        <div className="text-xs font-semibold text-text-muted uppercase tracking-wider px-2 py-1">Quick Select</div>
                         {presets.map(preset => (
                             <button
                                 key={preset.label}
                                 onClick={() => handlePresetClick(preset)}
-                                className="w-full text-left px-2 py-1.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition"
+                                className="w-full text-left px-2 py-1.5 text-sm text-text-secondary dark:text-text-secondary-dark hover:bg-primary/10 hover:text-primary rounded transition"
                             >
                                 {preset.label}
                             </button>
@@ -170,25 +170,25 @@ export default function DateRangePicker({
                         <div className="flex items-center justify-between mb-4">
                             <button
                                 onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1))}
-                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                className="p-1 hover:bg-surface dark:hover:bg-surface-dark rounded"
                             >
-                                <ChevronLeft size={18} />
+                                <ChevronLeft size={18} className="text-text-secondary" />
                             </button>
-                            <span className="font-semibold text-slate-800 dark:text-white">
+                            <span className="font-semibold text-text-primary dark:text-text-primary-dark">
                                 {viewMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
                             </span>
                             <button
                                 onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1))}
-                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                className="p-1 hover:bg-surface dark:hover:bg-surface-dark rounded"
                             >
-                                <ChevronRight size={18} />
+                                <ChevronRight size={18} className="text-text-secondary" />
                             </button>
                         </div>
 
                         {/* Day Headers */}
                         <div className="grid grid-cols-7 gap-1 mb-2">
                             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                                <div key={d} className="text-center text-xs font-medium text-slate-400 py-1">{d}</div>
+                                <div key={d} className="text-center text-xs font-medium text-text-muted py-1">{d}</div>
                             ))}
                         </div>
 
@@ -200,10 +200,10 @@ export default function DateRangePicker({
                                     disabled={!date}
                                     onClick={() => date && handleDayClick(date)}
                                     className={`h-8 text-sm rounded transition
-                                        ${!date ? '' : 'hover:bg-indigo-100 dark:hover:bg-indigo-900/50'}
-                                        ${isStart(date) || isEnd(date) ? 'bg-indigo-500 text-white font-medium' : ''}
-                                        ${isInRange(date) && !isStart(date) && !isEnd(date) ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : ''}
-                                        ${!isInRange(date) && date ? 'text-slate-700 dark:text-slate-200' : ''}
+                                        ${!date ? '' : 'hover:bg-primary/20'}
+                                        ${isStart(date) || isEnd(date) ? 'bg-primary text-white font-medium' : ''}
+                                        ${isInRange(date) && !isStart(date) && !isEnd(date) ? 'bg-primary/10 text-primary' : ''}
+                                        ${!isInRange(date) && date ? 'text-text-secondary dark:text-text-secondary-dark' : ''}
                                     `}
                                 >
                                     {date?.getDate()}
@@ -212,7 +212,7 @@ export default function DateRangePicker({
                         </div>
 
                         {/* Selection hint */}
-                        <div className="mt-3 text-xs text-center text-slate-400">
+                        <div className="mt-3 text-xs text-center text-text-muted">
                             {selectingStart ? 'Select start date' : 'Select end date'}
                         </div>
                     </div>

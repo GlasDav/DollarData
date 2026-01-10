@@ -8,24 +8,8 @@ import React from 'react';
 
 // Base skeleton styles defined inline for portability
 const skeletonStyle = {
-    background: 'linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%)',
-    backgroundSize: '200% 100%',
-    animation: 'skeleton-loading 1.5s infinite',
-    borderRadius: '4px',
+    // Replaced hardcoded gradient with Tailwind classes in the component
 };
-
-// CSS keyframes injected once
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  @keyframes skeleton-loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-`;
-if (!document.head.querySelector('[data-skeleton-styles]')) {
-    styleSheet.setAttribute('data-skeleton-styles', 'true');
-    document.head.appendChild(styleSheet);
-}
 
 /**
  * Basic skeleton box with customizable dimensions
@@ -33,9 +17,8 @@ if (!document.head.querySelector('[data-skeleton-styles]')) {
 export function SkeletonBox({ width = '100%', height = '20px', className = '', style = {} }) {
     return (
         <div
-            className={`skeleton-box ${className}`}
+            className={`animate-pulse bg-slate-200 dark:bg-slate-700/50 rounded ${className}`}
             style={{
-                ...skeletonStyle,
                 width,
                 height,
                 ...style,
@@ -82,13 +65,7 @@ export function SkeletonCircle({ size = '40px', className = '' }) {
 export function SkeletonCard({ className = '' }) {
     return (
         <div
-            className={`skeleton-card ${className}`}
-            style={{
-                padding: '16px',
-                backgroundColor: '#fff',
-                borderRadius: '8px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            }}
+            className={`bg-card dark:bg-card-dark rounded-xl shadow-sm border border-border dark:border-border-dark p-4 ${className}`}
         >
             <SkeletonBox height="24px" width="60%" style={{ marginBottom: '16px' }} />
             <SkeletonText lines={3} />
@@ -141,13 +118,7 @@ export function SkeletonTable({ rows = 5, columns = 4, className = '' }) {
 export function SkeletonDashboardCard({ className = '' }) {
     return (
         <div
-            className={`skeleton-dashboard-card ${className}`}
-            style={{
-                padding: '20px',
-                backgroundColor: '#fff',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            }}
+            className={`bg-card dark:bg-card-dark rounded-xl shadow-sm border border-border dark:border-border-dark p-5 ${className}`}
         >
             <SkeletonBox height="14px" width="40%" style={{ marginBottom: '8px' }} />
             <SkeletonBox height="36px" width="60%" style={{ marginBottom: '12px' }} />
@@ -162,15 +133,9 @@ export function SkeletonDashboardCard({ className = '' }) {
 export function SkeletonChart({ height = '300px', className = '' }) {
     return (
         <div
-            className={`skeleton-chart ${className}`}
+            className={`bg-card dark:bg-card-dark rounded-xl shadow-sm border border-border dark:border-border-dark p-4 flex flex-col justify-end ${className}`}
             style={{
                 height,
-                backgroundColor: '#fff',
-                borderRadius: '8px',
-                padding: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-end',
             }}
         >
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '80%' }}>
@@ -193,17 +158,11 @@ export function SkeletonChart({ height = '300px', className = '' }) {
 export function SkeletonTransactionItem({ className = '' }) {
     return (
         <div
-            className={`skeleton-transaction ${className}`}
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '12px 16px',
-                borderBottom: '1px solid #f0f0f0',
-            }}
+            className={`flex items-center p-3 border-b border-border dark:border-border-dark ${className}`}
         >
             <SkeletonCircle size="36px" />
-            <div style={{ flex: 1, marginLeft: '12px' }}>
-                <SkeletonBox height="16px" width="50%" style={{ marginBottom: '4px' }} />
+            <div className="flex-1 ml-3">
+                <SkeletonBox height="16px" width="50%" className="mb-1" />
                 <SkeletonBox height="12px" width="30%" />
             </div>
             <SkeletonBox height="18px" width="80px" />
@@ -230,13 +189,7 @@ export function SkeletonTransactionList({ count = 5, className = '' }) {
 export function SkeletonBudgetCategory({ className = '' }) {
     return (
         <div
-            className={`skeleton-budget ${className}`}
-            style={{
-                padding: '16px',
-                backgroundColor: '#fff',
-                borderRadius: '8px',
-                marginBottom: '8px',
-            }}
+            className={`bg-card dark:bg-card-dark rounded-xl p-4 mb-2 ${className}`}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <SkeletonBox height="16px" width="40%" />
