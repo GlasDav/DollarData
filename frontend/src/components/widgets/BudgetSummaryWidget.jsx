@@ -69,24 +69,62 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
             {/* Gauge Section */}
             <Link to="/budget" className="block">
                 <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl ${colors.bg}`}>
-                            <PiggyBank className={colors.text} size={20} />
+                    {/* Left Side: Icon/Text + Gauge */}
+                    <div className="flex items-center gap-6">
+                        {/* Icon + Text */}
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2.5 rounded-xl ${colors.bg}`}>
+                                <PiggyBank className={colors.text} size={20} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-text-primary dark:text-text-primary-dark">Budget Score</h3>
+                                <div className="text-xs text-text-muted dark:text-text-muted-dark">Financial Health</div>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-text-primary dark:text-text-primary-dark">Budget Score</h3>
-                            <div className="text-xs text-text-muted dark:text-text-muted-dark">Financial Health</div>
+
+                        {/* Gauge (Moved next to text) */}
+                        <div className="relative w-24 h-24 -my-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadialBarChart
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius="60%"
+                                    outerRadius="80%"
+                                    barSize={10}
+                                    data={[{ name: 'score', value: score, fill: score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444' }]}
+                                    startAngle={180}
+                                    endAngle={0}
+                                >
+                                    <PolarAngleAxis
+                                        type="number"
+                                        domain={[0, 100]}
+                                        angleAxisId={0}
+                                        tick={false}
+                                    />
+                                    <RadialBar
+                                        background
+                                        clockWise
+                                        dataKey="value"
+                                        cornerRadius={10}
+                                    />
+                                </RadialBarChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
+                                <span className={`text-xl font-bold ${score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
+                                    {score}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Toggle Button - Unified Style */}
+                    {/* Right Side: Toggle Button */}
                     <button
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             setShowRollover(!showRollover);
                         }}
-                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors z-10 mr-4 ${showRollover
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors z-10 ${showRollover
                                 ? 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary-light dark:border-primary/30'
                                 : 'bg-surface text-text-muted border-border hover:bg-slate-100 dark:bg-card-dark dark:text-text-muted-dark dark:border-border-dark dark:hover:bg-slate-800'
                             }`}
@@ -94,40 +132,6 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
                     >
                         {showRollover ? 'Rollovers: ON' : 'Rollovers: OFF'}
                     </button>
-
-                    {/* Score Gauge */}
-                    <div className="relative w-24 h-24 -my-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RadialBarChart
-                                cx="50%"
-                                cy="50%"
-                                innerRadius="60%"
-                                outerRadius="80%"
-                                barSize={10}
-                                data={[{ name: 'score', value: score, fill: score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444' }]}
-                                startAngle={180}
-                                endAngle={0}
-                            >
-                                <PolarAngleAxis
-                                    type="number"
-                                    domain={[0, 100]}
-                                    angleAxisId={0}
-                                    tick={false}
-                                />
-                                <RadialBar
-                                    background
-                                    clockWise
-                                    dataKey="value"
-                                    cornerRadius={10}
-                                />
-                            </RadialBarChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
-                            <span className={`text-xl font-bold ${score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
-                                {score}
-                            </span>
-                        </div>
-                    </div>
                 </div>
             </Link>
 
