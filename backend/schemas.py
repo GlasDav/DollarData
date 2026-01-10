@@ -406,6 +406,14 @@ class Goal(GoalBase):
     id: int
     user_id: str
     current_amount: Optional[float] = 0.0 # Computed field
+    
+    @field_validator('user_id', mode='before')
+    @classmethod
+    def serialize_uuid(cls, v):
+        """Convert UUID to string if needed"""
+        if v is not None and not isinstance(v, str):
+            return str(v)
+        return v
 
     class Config:
         from_attributes = True
