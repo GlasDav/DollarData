@@ -118,7 +118,7 @@ class RuleCreate(RuleBase):
 
 class Rule(RuleBase):
     id: int
-    user_id: int
+    user_id: str
     
     class Config:
         from_attributes = True
@@ -211,7 +211,7 @@ class TransactionUpdate(BaseModel):
 
 class Transaction(TransactionBase):
     id: int
-    user_id: int
+    user_id: str
     raw_description: Optional[str] = None
     category_confidence: float = 0.0
     is_verified: bool = False
@@ -260,7 +260,7 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 class User(UserBase):
-    id: int
+    id: str
     name: Optional[str] = None
     created_at: Optional[datetime] = None
     buckets: List[BudgetBucket] = []
@@ -356,7 +356,7 @@ class SubscriptionUpdate(BaseModel):
 
 class Subscription(SubscriptionBase):
     id: int
-    user_id: int
+    user_id: str
     
     class Config:
         from_attributes = True
@@ -371,7 +371,7 @@ class CategoryGoalCreate(CategoryGoalBase):
 
 class CategoryGoal(CategoryGoalBase):
     id: int
-    user_id: int
+    user_id: str
     start_date: date
     # Optional: include current streak or status in the schema if calculated on read?
     # Or keep it separate. Let's keep the base schema simple.
@@ -396,7 +396,7 @@ class GoalUpdate(BaseModel):
 
 class Goal(GoalBase):
     id: int
-    user_id: int
+    user_id: str
     current_amount: Optional[float] = 0.0 # Computed field
 
     class Config:
@@ -414,7 +414,7 @@ class TaxSettingsUpdate(TaxSettingsBase):
 
 class TaxSettings(TaxSettingsBase):
     id: int
-    user_id: int
+    user_id: str
     
     class Config:
         from_attributes = True
@@ -488,7 +488,7 @@ class HouseholdMemberCreate(HouseholdMemberBase):
 
 class HouseholdMember(HouseholdMemberBase):
     id: int
-    user_id: int
+    user_id: str
     created_at: datetime
     
     class Config:
@@ -506,7 +506,7 @@ class NotificationCreate(NotificationBase):
 
 class Notification(NotificationBase):
     id: int
-    user_id: int
+    user_id: str
     created_at: datetime
 
     class Config:
@@ -524,7 +524,7 @@ class NotificationSettingsUpdate(NotificationSettingsBase):
 
 class NotificationSettings(NotificationSettingsBase):
     id: int
-    user_id: int
+    user_id: str
     
     class Config:
         from_attributes = True
@@ -591,7 +591,7 @@ class HouseholdUserBase(BaseModel):
 class HouseholdUserResponse(HouseholdUserBase):
     id: int
     household_id: int
-    user_id: int
+    user_id: str
     member_id: Optional[int] = None
     status: str
     invited_at: datetime

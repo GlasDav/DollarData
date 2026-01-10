@@ -78,54 +78,32 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     # SUPABASE JWT SECRET
     SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
+    if not SUPABASE_JWT_SECRET:
+         logger.error("Missing SUPABASE_JWT_SECRET env var")
+         raise credentials_exception
+
     try:
-        # 1. Try Legacy Token
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        token_version: int = payload.get("tv", 0)
+        # Verify Supabase Token
+        # Supabase tokens use HS256 and have 'authenticated' audience
+        payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+        user_id: str = payload.get("sub")
+        email: str = payload.get("email")
+        
+        if not user_id:
+             raise credentials_exception
+
     except JWTError:
-        # 2. Try Supabase Token (if configured)
-        if SUPABASE_JWT_SECRET:
-            try:
-                # Supabase tokens use HS256 and have 'authenticated' audience
-                #options = {"verify_aud": False} # Sometimes aud is missing or array?
-                payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
-                email = payload.get("email")
-                # Supabase token doesn't use our versioning system, so we accept it as valid 
-                # (or we could fetch user.token_version and ignore it, but let's treat external auth as Source of Truth)
-                token_version = 999999 # Treat as always valid/different
-                
-                # IMPORTANT: Supabase token 'sub' is the UUID. 'email' is the email.
-                # We need EMAIL to lookup the legacy user (Int ID).
-                if not email:
-                     # Fallback to fetching user from Supabase API if email not in token? 
-                     # Usually email is in token.
-                     raise credentials_exception
-            except JWTError:
-                raise credentials_exception
-        else:
-            raise credentials_exception
-
-    if email is None:
         raise credentials_exception
 
-    # Query User (Legacy ID) by Email
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if user is None:
-        # Auto-create user if they exist in Supabase but not in Legacy?
-        # For now, raise error. We rely on the migration script.
-        raise credentials_exception
+    # Query User by ID (UUID)
+    user = db.query(models.User).filter(models.User.id == user_id).first()
     
-    # Check if token is still valid (Legacy only)
-    # If it was a Supabase token (token_version = 999999), we skip this check
-    user_token_version = getattr(user, 'token_version', 0) or 0
-    if token_version != 999999 and token_version < user_token_version:
-        logger.warning(f"Token invalidated for user {email} - token_version mismatch")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session expired. Please log in again.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    if user is None:
+        # Optional: Auto-create user record if they exist in Auth but not in public.users?
+        # This handles the "JIT" creation if migration missed something or new signup.
+        # But we should trust our migration.
+        # logger.warning(f"User {user_id} ({email}) found in Token but not in DB.")
+        raise credentials_exception
     
     return user
 

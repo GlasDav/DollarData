@@ -30,6 +30,7 @@ else:
         max_overflow=10,
         pool_pre_ping=True,  # Verify connections before use
         pool_recycle=300,    # Recycle connections every 5 minutes to prevent stale connections
+        connect_args={"sslmode": "require"} # Require SSL for Supabase
     )
     logger.info("Using PostgreSQL database (production mode)")
 
