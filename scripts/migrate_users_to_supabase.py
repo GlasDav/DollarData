@@ -88,6 +88,12 @@ async def migrate_users():
                     # User will need to reset password
                 }
                 
+                try:
+                    response = await client.post(
+                        f"{supabase_url}/auth/v1/admin/users",
+                        headers=headers,
+                        json=payload
+                    )
                 except Exception as e:
                     print(f"❌ Error processing {user.email}: {str(e)}")
                     continue
