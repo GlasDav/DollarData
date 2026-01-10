@@ -154,20 +154,20 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
         <Dialog open={isOpen} onClose={onClose} className="relative z-50">
             <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
             <div className="fixed inset-0 flex items-center justify-center p-4">
-                <Dialog.Panel className="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <Dialog.Panel className="w-full max-w-2xl bg-card dark:bg-card-dark rounded-2xl shadow-xl border border-border dark:border-border-dark overflow-hidden">
+                    <div className="p-6 border-b border-border dark:border-border-dark flex justify-between items-center">
                         <div>
-                            <Dialog.Title className="text-lg font-bold text-slate-900 dark:text-white">Split Transaction</Dialog.Title>
-                            <p className="text-sm text-slate-500">Original: {transaction.description} (${originalAbsAmount.toFixed(2)})</p>
+                            <Dialog.Title className="text-lg font-bold text-text-primary dark:text-text-primary-dark">Split Transaction</Dialog.Title>
+                            <p className="text-sm text-text-muted">Original: {transaction.description} (${originalAbsAmount.toFixed(2)})</p>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full">
-                            <X size={20} className="text-slate-500" />
+                        <button onClick={onClose} className="p-2 hover:bg-surface dark:hover:bg-surface-dark rounded-full transition">
+                            <X size={20} className="text-text-muted" />
                         </button>
                     </div>
 
                     <div className="p-6 space-y-4">
                         {/* Table Header */}
-                        <div className="grid grid-cols-12 gap-4 text-sm font-medium text-slate-500 px-2">
+                        <div className="grid grid-cols-12 gap-4 text-sm font-medium text-text-secondary px-2">
                             <div className="col-span-4">Description</div>
                             <div className="col-span-4">Category</div>
                             <div className="col-span-3">Amount</div>
@@ -183,7 +183,7 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                                             type="text"
                                             value={split.description}
                                             onChange={(e) => handleChange(idx, 'description', e.target.value)}
-                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm"
+                                            className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-text-primary dark:text-text-primary-dark text-sm placeholder-text-muted/50"
                                             placeholder="Description"
                                         />
                                     </div>
@@ -191,7 +191,7 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                                         <select
                                             value={split.bucket_id}
                                             onChange={(e) => handleChange(idx, 'bucket_id', e.target.value)}
-                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm"
+                                            className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-text-primary dark:text-text-primary-dark text-sm appearance-none cursor-pointer"
                                         >
                                             <option value="">Select Category...</option>
                                             {renderCategoryOptions(buckets)}
@@ -199,20 +199,20 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                                     </div>
                                     <div className="col-span-3">
                                         <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">$</span>
                                             <input
                                                 type="text"
                                                 inputMode="decimal"
                                                 value={split.amount}
                                                 onChange={(e) => handleChange(idx, 'amount', e.target.value)}
-                                                className={`w-full pl-7 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm text-right ${!isBalanced ? 'border-amber-300' : 'border-slate-200 dark:border-slate-600'}`}
+                                                className={`w-full pl-7 pr-3 py-2 bg-surface dark:bg-surface-dark border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-text-primary dark:text-text-primary-dark text-sm text-right ${!isBalanced ? 'border-amber-300' : 'border-input dark:border-border-dark'}`}
                                                 placeholder="0.00"
                                             />
                                         </div>
                                     </div>
                                     <div className="col-span-1 text-center">
                                         {splits.length > 2 && (
-                                            <button onClick={() => handleRemoveRow(idx)} className="text-slate-400 hover:text-red-500">
+                                            <button onClick={() => handleRemoveRow(idx)} className="text-text-muted hover:text-red-500 transition">
                                                 <Trash2 size={18} />
                                             </button>
                                         )}
@@ -221,25 +221,25 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
                             ))}
                         </div>
 
-                        <button onClick={handleAddRow} className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 px-2 mt-2">
+                        <button onClick={handleAddRow} className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover px-2 mt-2 transition">
                             <Plus size={16} />
                             Add Split
                         </button>
                     </div>
 
-                    <div className="p-6 bg-slate-50 dark:bg-slate-700/30 flex justify-between items-center">
+                    <div className="p-6 bg-surface/50 dark:bg-surface-dark/50 flex justify-between items-center border-t border-border dark:border-border-dark">
                         <div className={`text-sm font-medium ${isBalanced ? 'text-green-600' : 'text-amber-600'} flex items-center gap-2`}>
                             {!isBalanced && <AlertCircle size={16} />}
                             {isBalanced ? "Balanced" : `Remaining: $${remaining.toFixed(2)}`}
                         </div>
                         <div className="flex gap-3">
-                            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg transition">
+                            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark rounded-lg transition">
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSubmit}
                                 disabled={!isBalanced}
-                                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition shadow-sm ${isBalanced ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-300 cursor-not-allowed'}`}
+                                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition shadow-sm ${isBalanced ? 'bg-primary hover:bg-primary-hover' : 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed text-slate-500 dark:text-slate-400'}`}
                             >
                                 Split Transaction
                             </button>

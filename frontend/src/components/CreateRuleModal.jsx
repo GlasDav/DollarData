@@ -151,14 +151,14 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="bg-card dark:bg-card-dark rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between p-4 border-b border-border dark:border-border-dark">
                     <div className="flex items-center gap-2">
-                        <BookPlus className="text-indigo-500" size={20} />
-                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Create Smart Rule</h2>
+                        <BookPlus className="text-primary" size={20} />
+                        <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">Create Smart Rule</h2>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                    <button onClick={onClose} className="text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark transition">
                         <X size={20} />
                     </button>
                 </div>
@@ -166,13 +166,13 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                 {/* Body */}
                 <form onSubmit={handleSubmit} className="p-4 space-y-4 flex-1 overflow-y-auto">
                     {error && (
-                        <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm">
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm">
                             {error}
                         </div>
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                             Keyword to match
                         </label>
                         <div className="flex gap-2">
@@ -181,35 +181,35 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                                 value={keyword}
                                 onChange={(e) => { setKeyword(e.target.value); setShowPreview(false); }}
                                 placeholder="e.g. woolworths, netflix, uber"
-                                className="flex-1 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="flex-1 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg px-3 py-2 text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent placeholder-text-muted/50"
                             />
                             <button
                                 type="button"
                                 onClick={handlePreview}
                                 disabled={!keyword.trim()}
-                                className="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg transition flex items-center gap-1 disabled:opacity-50"
+                                className="px-3 py-2 bg-surface hover:bg-surface-hover dark:bg-surface-dark dark:hover:bg-surface-dark-hover text-text-secondary dark:text-text-secondary-dark rounded-lg transition flex items-center gap-1 disabled:opacity-50"
                                 title="Preview matching transactions"
                             >
                                 <Eye size={16} />
                                 Preview
                             </button>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <p className="text-xs text-text-muted mt-1">
                             Future transactions containing this keyword will auto-categorize
                         </p>
                     </div>
 
                     {/* Preview Results */}
                     {showPreview && (
-                        <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-3 bg-slate-50 dark:bg-slate-700/50">
+                        <div className="border border-border dark:border-border-dark rounded-lg p-3 bg-surface/50 dark:bg-surface-dark/50">
                             <div className="flex items-center gap-2 mb-2">
-                                <AlertCircle size={16} className="text-indigo-500" />
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <AlertCircle size={16} className="text-primary" />
+                                <span className="text-sm font-medium text-text-primary dark:text-text-primary-dark">
                                     Preview: Matching Transactions
                                 </span>
                             </div>
                             {previewLoading && (
-                                <div className="flex items-center gap-2 text-sm text-slate-500">
+                                <div className="flex items-center gap-2 text-sm text-text-muted">
                                     <Loader2 className="animate-spin" size={14} />
                                     Loading preview...
                                 </div>
@@ -219,26 +219,26 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                             )}
                             {previewData && (
                                 <div>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                                    <p className="text-sm text-text-secondary dark:text-text-secondary-dark mb-2">
                                         <strong>{previewData.match_count}</strong> existing transactions would match this rule
                                     </p>
                                     {previewData.sample_transactions?.length > 0 && (
                                         <div className="max-h-32 overflow-y-auto space-y-1">
                                             {previewData.sample_transactions.slice(0, 5).map((t, i) => (
-                                                <div key={i} className="text-xs text-slate-500 dark:text-slate-400 flex justify-between">
+                                                <div key={i} className="text-xs text-text-muted flex justify-between">
                                                     <span className="truncate flex-1">{t.description}</span>
                                                     <span className="ml-2 font-medium">${Math.abs(t.amount).toFixed(2)}</span>
                                                 </div>
                                             ))}
                                             {previewData.match_count > 5 && (
-                                                <p className="text-xs text-slate-400 italic">
+                                                <p className="text-xs text-text-muted italic">
                                                     ...and {previewData.match_count - 5} more
                                                 </p>
                                             )}
                                         </div>
                                     )}
                                     {previewData.match_count === 0 && (
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        <p className="text-xs text-text-muted">
                                             No existing transactions match. This rule will apply to future imports.
                                         </p>
                                     )}
@@ -248,13 +248,13 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                             Assign to category
                         </label>
                         <select
                             value={bucketId}
                             onChange={(e) => setBucketId(e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg px-3 py-2 text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
                         >
                             <option value="">Select a category...</option>
                             {renderCategoryOptions(buckets)}
@@ -263,7 +263,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
 
                     {/* Amount Range (optional) */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                             Amount range (optional)
                         </label>
                         <div className="flex items-center gap-2">
@@ -273,22 +273,22 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                                 onChange={(e) => { setMinAmount(e.target.value); setShowPreview(false); }}
                                 placeholder="Min"
                                 step="0.01"
-                                className="w-28 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-28 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg px-3 py-2 text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
-                            <span className="text-slate-400">—</span>
+                            <span className="text-text-muted">—</span>
                             <input
                                 type="number"
                                 value={maxAmount}
                                 onChange={(e) => { setMaxAmount(e.target.value); setShowPreview(false); }}
                                 placeholder="Max"
                                 step="0.01"
-                                className="w-28 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-28 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg px-3 py-2 text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                             Apply Tags (optional)
                         </label>
                         <input
@@ -296,9 +296,9 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                             value={applyTags}
                             onChange={(e) => setApplyTags(e.target.value)}
                             placeholder="e.g. Tax-Deductible, Reimbursement"
-                            className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg px-3 py-2 text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent"
                         />
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <p className="text-xs text-text-muted mt-1">
                             Comma separated tags to add to matched transactions
                         </p>
                     </div>
@@ -309,26 +309,26 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                             id="markForReview"
                             checked={markForReview}
                             onChange={(e) => setMarkForReview(e.target.checked)}
-                            className="w-4 h-4 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
+                            className="w-4 h-4 text-primary bg-surface border-input rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-card-dark focus:ring-2 dark:bg-surface-dark dark:border-border-dark"
                         />
-                        <label htmlFor="markForReview" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <label htmlFor="markForReview" className="text-sm font-medium text-text-primary dark:text-text-primary-dark">
                             Mark for Review
                         </label>
                     </div>
 
-                    <p className="text-xs text-slate-500 dark:text-slate-400 ml-6 -mt-3">
+                    <p className="text-xs text-text-muted ml-6 -mt-3">
                         Transactions will be categorized but not marked as verified
                     </p>
 
                     {members.length > 0 && (
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                 Assign to member (optional)
                             </label>
                             <select
                                 value={assignTo}
                                 onChange={(e) => setAssignTo(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-full bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg px-3 py-2 text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent appearance-none cursor-pointer"
                             >
                                 <option value="">Unchanged</option>
                                 <option value="Joint">Joint</option>
@@ -336,7 +336,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                                     <option key={member.id} value={member.name}>{member.name}</option>
                                 ))}
                             </select>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            <p className="text-xs text-text-muted mt-1">
                                 Matched transactions will be assigned to this member
                             </p>
                         </div>
@@ -346,14 +346,14 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets,
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+                            className="px-4 py-2 text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark hover:bg-surface-hover dark:hover:bg-surface-dark-hover rounded-lg transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={createRuleMutation.isPending}
-                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center gap-2 disabled:opacity-50"
+                            className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium transition flex items-center gap-2 disabled:opacity-50"
                         >
                             {createRuleMutation.isPending ? (
                                 <>

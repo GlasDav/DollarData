@@ -226,7 +226,7 @@ const HoldingsTable = ({ accountId }) => {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
-                <Loader2 className="animate-spin text-indigo-500" size={24} />
+                <Loader2 className="animate-spin text-primary" size={24} />
             </div>
         );
     }
@@ -236,10 +236,10 @@ const HoldingsTable = ({ accountId }) => {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Holdings</h3>
+                    <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark">Holdings</h3>
                     {holdings.length > 0 && (
-                        <p className="text-sm text-slate-500">
-                            Portfolio Value: <span className="font-semibold text-slate-700 dark:text-slate-300">
+                        <p className="text-sm text-text-muted">
+                            Portfolio Value: <span className="font-semibold text-text-primary dark:text-text-primary-dark">
                                 {formatCurrency(totalValueInSystemCurrency, systemCurrency)}
                             </span>
                         </p>
@@ -248,7 +248,7 @@ const HoldingsTable = ({ accountId }) => {
                 {!isFormOpen && (
                     <button
                         onClick={() => { resetForm(); setIsFormOpen(true); }}
-                        className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-lg transition"
+                        className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover bg-primary/10 dark:bg-primary/20 px-3 py-1.5 rounded-lg transition"
                     >
                         <Plus size={16} />
                         Add Holding
@@ -258,11 +258,11 @@ const HoldingsTable = ({ accountId }) => {
 
             {/* Add/Edit Form */}
             {isFormOpen && (
-                <form onSubmit={handleSubmit} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
+                <form onSubmit={handleSubmit} className="bg-surface dark:bg-surface-dark p-4 rounded-xl border border-border dark:border-border-dark space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                         {/* Ticker */}
                         <div className="md:col-span-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Ticker</label>
+                            <label className="text-xs font-bold text-text-muted uppercase">Ticker</label>
                             <TickerSearch
                                 value={form.ticker}
                                 onChange={(val) => setForm(prev => ({ ...prev, ticker: val }))}
@@ -272,9 +272,9 @@ const HoldingsTable = ({ accountId }) => {
 
                         {/* Name (read-only) */}
                         <div className="md:col-span-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Name</label>
+                            <label className="text-xs font-bold text-text-muted uppercase">Name</label>
                             <input
-                                className="w-full mt-1 px-3 py-2 rounded-lg border-0 text-sm bg-slate-100 dark:bg-slate-700 text-slate-500"
+                                className="w-full mt-1 px-3 py-2 rounded-lg border-0 text-sm bg-card dark:bg-card-dark text-text-muted"
                                 value={form.name}
                                 readOnly
                                 placeholder="Auto-filled from ticker"
@@ -283,11 +283,11 @@ const HoldingsTable = ({ accountId }) => {
 
                         {/* Quantity */}
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase">Quantity</label>
+                            <label className="text-xs font-bold text-text-muted uppercase">Quantity</label>
                             <input
                                 type="number"
                                 step="any"
-                                className="w-full mt-1 px-3 py-2 rounded-lg border-0 text-sm focus:ring-2 focus:ring-indigo-500"
+                                className="w-full mt-1 px-3 py-2 rounded-lg border-0 text-sm focus:ring-2 focus:ring-primary bg-card dark:bg-card-dark text-text-primary dark:text-text-primary-dark"
                                 value={form.quantity}
                                 onChange={(e) => setForm(prev => ({ ...prev, quantity: e.target.value }))}
                                 required
@@ -296,11 +296,11 @@ const HoldingsTable = ({ accountId }) => {
 
                         {/* Price (read-only) */}
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase">Price</label>
+                            <label className="text-xs font-bold text-text-muted uppercase">Price</label>
                             <input
                                 type="number"
                                 step="0.01"
-                                className="w-full mt-1 px-3 py-2 rounded-lg border-0 text-sm bg-slate-100 dark:bg-slate-700 text-slate-500"
+                                className="w-full mt-1 px-3 py-2 rounded-lg border-0 text-sm bg-card dark:bg-card-dark text-text-muted"
                                 value={form.price}
                                 readOnly
                             />
@@ -312,13 +312,13 @@ const HoldingsTable = ({ accountId }) => {
                         <button
                             type="button"
                             onClick={resetForm}
-                            className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg"
+                            className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary bg-card dark:bg-card-dark border border-border dark:border-border-dark rounded-lg"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg flex items-center gap-2"
+                            className="px-4 py-2 text-sm text-white bg-primary hover:bg-primary-hover rounded-lg flex items-center gap-2"
                         >
                             <Save size={16} />
                             {editingId ? 'Update' : 'Save'}
@@ -329,13 +329,13 @@ const HoldingsTable = ({ accountId }) => {
 
             {/* Holdings Table */}
             {holdings.length === 0 ? (
-                <div className="text-center py-12 border-2 border-dashed border-slate-100 dark:border-slate-700 rounded-xl">
-                    <p className="text-slate-400">No holdings tracked yet.</p>
+                <div className="text-center py-12 border-2 border-dashed border-border dark:border-border-dark rounded-xl">
+                    <p className="text-text-muted">No holdings tracked yet.</p>
                 </div>
             ) : (
-                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="overflow-hidden rounded-xl border border-border dark:border-border-dark">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                        <thead className="bg-surface dark:bg-surface-dark text-text-muted border-b border-border dark:border-border-dark">
                             <tr>
                                 <th className="px-4 py-3 font-bold">Ticker</th>
                                 <th className="px-4 py-3 font-bold">Name</th>
@@ -345,32 +345,32 @@ const HoldingsTable = ({ accountId }) => {
                                 <th className="px-4 py-3 font-bold text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                        <tbody className="divide-y divide-border dark:divide-border-dark">
                             {holdings.map(h => (
-                                <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                                    <td className="px-4 py-3 font-bold text-slate-700 dark:text-slate-200">{h.ticker}</td>
-                                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 max-w-[200px] truncate">{h.name}</td>
-                                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 tabular-nums">
+                                <tr key={h.id} className="hover:bg-surface dark:hover:bg-surface-dark/50 transition">
+                                    <td className="px-4 py-3 font-bold text-text-secondary dark:text-text-secondary-dark">{h.ticker}</td>
+                                    <td className="px-4 py-3 text-text-secondary dark:text-text-secondary-dark max-w-[200px] truncate">{h.name}</td>
+                                    <td className="px-4 py-3 text-right text-text-secondary dark:text-text-secondary-dark tabular-nums">
                                         {formatNumber(h.quantity, h.quantity % 1 !== 0 ? 4 : 0)}
                                     </td>
-                                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 tabular-nums">
+                                    <td className="px-4 py-3 text-right text-text-secondary dark:text-text-secondary-dark tabular-nums">
                                         {formatCurrency(h.price || 0, h.currency)}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-bold text-slate-900 dark:text-white tabular-nums">
+                                    <td className="px-4 py-3 text-right font-bold text-text-primary dark:text-text-primary-dark tabular-nums">
                                         {formatCurrency(h.value || 0, systemCurrency)}
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex justify-end gap-1">
                                             <button
                                                 onClick={() => startEdit(h)}
-                                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition"
+                                                className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded transition"
                                                 title="Edit"
                                             >
                                                 <Pencil size={14} />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(h.id)}
-                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                                                className="p-1.5 text-text-muted hover:text-accent-error hover:bg-accent-error/10 dark:hover:bg-accent-error/20 rounded transition"
                                                 title="Delete"
                                             >
                                                 <Trash2 size={14} />
@@ -380,11 +380,11 @@ const HoldingsTable = ({ accountId }) => {
                                 </tr>
                             ))}
                             {/* Total Row */}
-                            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800/40 dark:to-slate-800/20 font-bold">
-                                <td colSpan={4} className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                            <tr className="bg-surface dark:bg-surface-dark font-bold">
+                                <td colSpan={4} className="px-4 py-3 text-right text-text-secondary dark:text-text-secondary-dark">
                                     Total Portfolio Value
                                 </td>
-                                <td className="px-4 py-3 text-right text-lg text-indigo-600 dark:text-indigo-400 tabular-nums">
+                                <td className="px-4 py-3 text-right text-lg text-primary dark:text-primary-dark tabular-nums">
                                     {formatCurrency(totalValueInSystemCurrency, systemCurrency)}
                                 </td>
                                 <td></td>

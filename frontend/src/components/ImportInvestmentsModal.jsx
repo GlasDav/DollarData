@@ -125,14 +125,14 @@ export default function ImportInvestmentsModal({ isOpen, onClose }) {
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-6 text-left align-middle shadow-xl transition-all border border-slate-200 dark:border-slate-700">
+                            <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-card dark:bg-card-dark p-6 text-left align-middle shadow-xl transition-all border border-border dark:border-border-dark">
                                 <div className="flex justify-between items-start mb-6">
-                                    <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-slate-900 dark:text-white">
+                                    <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-text-primary dark:text-text-primary-dark">
                                         Import Holdings
                                     </Dialog.Title>
                                     <button
                                         onClick={handleClose}
-                                        className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 focus:outline-none"
+                                        className="text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark focus:outline-none"
                                     >
                                         <X size={20} />
                                     </button>
@@ -140,25 +140,25 @@ export default function ImportInvestmentsModal({ isOpen, onClose }) {
 
                                 {importResult && importResult.ok ? (
                                     <div className="text-center py-6 space-y-4">
-                                        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto text-green-600 dark:text-green-400">
+                                        <div className="w-16 h-16 bg-accent-success/10 rounded-full flex items-center justify-center mx-auto text-accent-success">
                                             <Check size={32} />
                                         </div>
-                                        <h4 className="text-lg font-semibold text-slate-900 dark:text-white">Import Successful!</h4>
-                                        <p className="text-slate-500 text-sm">
+                                        <h4 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">Import Successful!</h4>
+                                        <p className="text-text-secondary text-sm">
                                             Found <b>{importResult.imported}</b> new holdings<br />
                                             Updated <b>{importResult.updated}</b> existing holdings
                                         </p>
                                         {importResult.errors && importResult.errors.length > 0 && (
-                                            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-left">
-                                                <p className="text-xs font-bold text-red-700 dark:text-red-400 mb-1">Errors ({importResult.errors.length}):</p>
-                                                <ul className="text-xs text-red-600 dark:text-red-300 max-h-32 overflow-y-auto list-disc pl-4">
+                                            <div className="mt-4 p-3 bg-accent-error/10 dark:bg-accent-error/20 rounded-lg text-left">
+                                                <p className="text-xs font-bold text-accent-error dark:text-accent-error mb-1">Errors ({importResult.errors.length}):</p>
+                                                <ul className="text-xs text-accent-error/80 dark:text-accent-error/80 max-h-32 overflow-y-auto list-disc pl-4">
                                                     {importResult.errors.map((e, i) => <li key={i}>{e}</li>)}
                                                 </ul>
                                             </div>
                                         )}
                                         <button
                                             onClick={handleClose}
-                                            className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                                            className="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
                                         >
                                             Done
                                         </button>
@@ -167,13 +167,13 @@ export default function ImportInvestmentsModal({ isOpen, onClose }) {
                                     <div className="space-y-6">
                                         {/* Account Selection */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                                 Target Account
                                             </label>
                                             <select
                                                 value={selectedAccountId || ''}
                                                 onChange={(e) => setSelectedAccountId(Number(e.target.value))}
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                             >
                                                 <option value="" disabled>Select an account...</option>
                                                 {accounts.map(acc => (
@@ -185,8 +185,8 @@ export default function ImportInvestmentsModal({ isOpen, onClose }) {
                                         {/* File Upload Area */}
                                         <div
                                             className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${dragActive
-                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10'
-                                                    : 'border-slate-300 dark:border-slate-600 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                                ? 'border-primary bg-primary/10'
+                                                : 'border-border dark:border-border-dark hover:border-primary/50 hover:bg-surface dark:hover:bg-surface-dark'
                                                 }`}
                                             onDragEnter={handleDrag}
                                             onDragLeave={handleDrag}
@@ -204,28 +204,28 @@ export default function ImportInvestmentsModal({ isOpen, onClose }) {
 
                                             {file ? (
                                                 <div className="flex flex-col items-center gap-2">
-                                                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
                                                         <FileText size={24} />
                                                     </div>
-                                                    <span className="font-medium text-slate-900 dark:text-white">{file.name}</span>
-                                                    <span className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB</span>
+                                                    <span className="font-medium text-text-primary dark:text-text-primary-dark">{file.name}</span>
+                                                    <span className="text-xs text-text-secondary">{(file.size / 1024).toFixed(1)} KB</span>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                                                        className="text-xs text-red-500 hover:underline mt-2"
+                                                        className="text-xs text-accent-error hover:underline mt-2"
                                                     >
                                                         Remove
                                                     </button>
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <UploadCloud className="h-10 w-10 text-slate-400 mb-3" />
-                                                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                                    <UploadCloud className="h-10 w-10 text-text-muted mb-3" />
+                                                    <p className="text-sm font-medium text-text-primary dark:text-text-primary-dark">
                                                         Click or Drag to Upload CSV
                                                     </p>
-                                                    <p className="text-xs text-slate-500 mt-1">
+                                                    <p className="text-xs text-text-muted mt-1">
                                                         Supported: .csv
                                                     </p>
-                                                    <div className="mt-4 text-xs text-slate-400 bg-slate-50 dark:bg-slate-800 p-2 rounded text-left w-full max-w-xs">
+                                                    <div className="mt-4 text-xs text-text-muted bg-surface dark:bg-surface-dark p-2 rounded text-left w-full max-w-xs">
                                                         Required Headers: <code>Ticker</code>, <code>Quantity</code><br />
                                                         Optional: <code>Cost Basis</code>, <code>Name</code>
                                                     </div>
@@ -235,12 +235,12 @@ export default function ImportInvestmentsModal({ isOpen, onClose }) {
 
                                         {/* Error State */}
                                         {importResult && !importResult.ok && (
-                                            <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-start gap-2">
-                                                <AlertCircle className="shrink-0 text-red-600 dark:text-red-400 mt-0.5" size={16} />
+                                            <div className="p-3 bg-accent-error/10 dark:bg-accent-error/20 rounded-lg flex items-start gap-2">
+                                                <AlertCircle className="shrink-0 text-accent-error mt-0.5" size={16} />
                                                 <div className="space-y-1">
-                                                    <p className="text-sm font-medium text-red-700 dark:text-red-300">Import Failed</p>
+                                                    <p className="text-sm font-medium text-accent-error">Import Failed</p>
                                                     {importResult.errors.map((e, i) => (
-                                                        <p key={i} className="text-xs text-red-600 dark:text-red-400">{e}</p>
+                                                        <p key={i} className="text-xs text-accent-error/80">{e}</p>
                                                     ))}
                                                 </div>
                                             </div>
@@ -249,14 +249,14 @@ export default function ImportInvestmentsModal({ isOpen, onClose }) {
                                         <div className="flex justify-end pt-2">
                                             <button
                                                 onClick={handleClose}
-                                                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 mr-3"
+                                                className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary dark:text-text-secondary-dark mr-3"
                                             >
                                                 Cancel
                                             </button>
                                             <button
                                                 onClick={() => importMutation.mutate()}
                                                 disabled={!file || !selectedAccountId || importMutation.isPending}
-                                                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                             >
                                                 {importMutation.isPending ? 'Importing...' : 'Import Holdings'}
                                             </button>

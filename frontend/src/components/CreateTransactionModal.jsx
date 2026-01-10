@@ -104,12 +104,12 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-card dark:bg-card-dark rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Add Transaction</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                <div className="px-6 py-4 border-b border-border dark:border-border-dark flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark">Add Transaction</h3>
+                    <button onClick={onClose} className="text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark transition">
                         <X size={20} />
                     </button>
                 </div>
@@ -118,13 +118,13 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
 
                     {/* Type Toggle */}
-                    <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+                    <div className="flex p-1 bg-surface dark:bg-surface-dark rounded-lg">
                         <button
                             type="button"
                             onClick={() => setFormData({ ...formData, type: 'expense' })}
                             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${formData.type === 'expense'
-                                ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
-                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                ? 'bg-card dark:bg-card-dark text-text-primary dark:text-text-primary-dark shadow-sm'
+                                : 'text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark'}`}
                         >
                             Expense
                         </button>
@@ -132,8 +132,8 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
                             type="button"
                             onClick={() => setFormData({ ...formData, type: 'income' })}
                             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${formData.type === 'income'
-                                ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
-                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                ? 'bg-card dark:bg-card-dark text-text-primary dark:text-text-primary-dark shadow-sm'
+                                : 'text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark'}`}
                         >
                             Income
                         </button>
@@ -142,22 +142,22 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
                     {/* Date & Amount Row */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</label>
+                            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Date</label>
                             <div className="relative">
-                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                                 <input
                                     type="date"
                                     required
                                     value={formData.date}
                                     onChange={e => setFormData({ ...formData, date: e.target.value })}
-                                    className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                                    className="w-full pl-10 pr-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none transition"
                                 />
                             </div>
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</label>
+                            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Amount</label>
                             <div className="relative">
-                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                                 <input
                                     type="number"
                                     step="0.01"
@@ -165,7 +165,7 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
                                     placeholder="0.00"
                                     value={formData.amount}
                                     onChange={e => setFormData({ ...formData, amount: e.target.value })}
-                                    className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition font-mono"
+                                    className="w-full pl-10 pr-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none transition font-mono"
                                 />
                             </div>
                         </div>
@@ -173,61 +173,61 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
 
                     {/* Description */}
                     <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</label>
+                        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Description</label>
                         <div className="relative">
-                            <AlignLeft className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                            <AlignLeft className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                             <input
                                 type="text"
                                 required
                                 placeholder="e.g. Woolworths Groceries"
                                 value={formData.description}
                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                                className="w-full pl-10 pr-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none transition"
                             />
                         </div>
                     </div>
 
                     {/* Category */}
                     <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Category</label>
+                        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Category</label>
                         <div className="relative">
-                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                             <select
                                 value={formData.bucket_id}
                                 onChange={e => setFormData({ ...formData, bucket_id: e.target.value })}
-                                className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition appearance-none cursor-pointer"
+                                className="w-full pl-10 pr-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none transition appearance-none cursor-pointer"
                             >
                                 <option value="">Uncategorized</option>
                                 {renderCategoryOptions(bucketsTree)}
                             </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted text-xs">▼</div>
                         </div>
                     </div>
 
                     {/* Spender & Verified */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Spender</label>
+                            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Spender</label>
                             <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                                 <select
                                     value={formData.spender}
                                     onChange={e => setFormData({ ...formData, spender: e.target.value })}
-                                    className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition appearance-none cursor-pointer"
+                                    className="w-full pl-10 pr-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none transition appearance-none cursor-pointer"
                                 >
                                     <option value="Joint">Joint</option>
                                     {members.map(m => (
                                         <option key={m.id} value={m.name}>{m.name}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted text-xs">▼</div>
                             </div>
                         </div>
 
                         {/* Verified Toggle */}
                         <div className="flex items-center pt-6">
                             <label className="flex items-center gap-2 cursor-pointer group">
-                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition ${formData.is_verified ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-600'}`}>
+                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition ${formData.is_verified ? 'bg-primary border-primary' : 'border-input dark:border-border-dark'}`}>
                                     {formData.is_verified && <CheckCircle size={14} className="text-white" />}
                                 </div>
                                 <input
@@ -236,17 +236,17 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
                                     checked={formData.is_verified}
                                     onChange={e => setFormData({ ...formData, is_verified: e.target.checked })}
                                 />
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 transition">Mark as Verified</span>
+                                <span className="text-sm font-medium text-text-muted group-hover:text-primary transition">Mark as Verified</span>
                             </label>
                         </div>
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700 mt-2">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-border dark:border-border-dark mt-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition"
+                            className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark transition"
                         >
                             Cancel
                         </button>

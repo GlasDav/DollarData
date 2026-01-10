@@ -15,9 +15,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 const FEEDBACK_TYPES = [
-    { id: 'bug', label: 'Report a Bug', icon: BugAntIcon, color: '#ef4444' },
-    { id: 'feature', label: 'Request Feature', icon: LightBulbIcon, color: '#f59e0b' },
-    { id: 'feedback', label: 'General Feedback', icon: ChatBubbleLeftRightIcon, color: '#3b82f6' },
+    { id: 'bug', label: 'Report a Bug', icon: BugAntIcon, color: 'var(--color-accent-error)' },
+    { id: 'feature', label: 'Request Feature', icon: LightBulbIcon, color: 'var(--color-accent-warning)' },
+    { id: 'feedback', label: 'General Feedback', icon: ChatBubbleLeftRightIcon, color: 'var(--color-primary)' },
 ];
 
 export function FeedbackModal({ isOpen, onClose }) {
@@ -85,7 +85,7 @@ export function FeedbackModal({ isOpen, onClose }) {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-black bg-opacity-25" />
+                    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
                 </Transition.Child>
 
                 <div className="fixed inset-0 overflow-y-auto">
@@ -99,14 +99,14 @@ export function FeedbackModal({ isOpen, onClose }) {
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all">
+                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card dark:bg-card-dark p-6 shadow-xl transition-all border border-border dark:border-border-dark">
                                 <div className="flex justify-between items-center mb-4">
-                                    <Dialog.Title className="text-lg font-semibold text-gray-900">
+                                    <Dialog.Title className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">
                                         {isSubmitted ? 'Thank You!' : 'Send Feedback'}
                                     </Dialog.Title>
                                     <button
                                         onClick={handleClose}
-                                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                                        className="text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark transition-colors"
                                     >
                                         <XMarkIcon className="h-5 w-5" />
                                     </button>
@@ -114,17 +114,17 @@ export function FeedbackModal({ isOpen, onClose }) {
 
                                 {isSubmitted ? (
                                     <div className="text-center py-8">
-                                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <div className="w-16 h-16 bg-accent-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-8 h-8 text-accent-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
-                                        <p className="text-gray-600 mb-4">
+                                        <p className="text-text-secondary dark:text-text-secondary-dark mb-4">
                                             Your feedback has been received. We appreciate you taking the time to help improve Principal!
                                         </p>
                                         <button
                                             onClick={handleClose}
-                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
                                         >
                                             Close
                                         </button>
@@ -142,15 +142,15 @@ export function FeedbackModal({ isOpen, onClose }) {
                                                         type="button"
                                                         onClick={() => setFeedbackType(type.id)}
                                                         className={`flex-1 flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${isSelected
-                                                            ? 'border-blue-500 bg-blue-50'
-                                                            : 'border-gray-200 hover:border-gray-300'
+                                                            ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                                                            : 'border-border dark:border-border-dark hover:border-text-muted dark:hover:border-text-muted-dark bg-surface dark:bg-surface-dark'
                                                             }`}
                                                     >
                                                         <Icon
                                                             className="h-5 w-5"
-                                                            style={{ color: isSelected ? type.color : '#9ca3af' }}
+                                                            style={{ color: isSelected ? type.color : 'var(--color-text-muted)' }}
                                                         />
-                                                        <span className={`text-xs ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                                                        <span className={`text-xs ${isSelected ? 'text-text-primary dark:text-text-primary-dark font-medium' : 'text-text-muted'}`}>
                                                             {type.label}
                                                         </span>
                                                     </button>
@@ -160,7 +160,7 @@ export function FeedbackModal({ isOpen, onClose }) {
 
                                         {/* Message Input */}
                                         <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                                 {feedbackType === 'bug' ? 'Describe the issue' :
                                                     feedbackType === 'feature' ? 'Describe your idea' :
                                                         'Your feedback'}
@@ -176,24 +176,24 @@ export function FeedbackModal({ isOpen, onClose }) {
                                                             : "Share your thoughts..."
                                                 }
                                                 rows={4}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                                className="w-full px-3 py-2 border border-input dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-primary resize-none placeholder-text-muted/50"
                                                 required
                                             />
                                         </div>
 
                                         {/* Email (Optional) */}
                                         <div className="mb-6">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Email <span className="text-gray-400">(optional)</span>
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
+                                                Email <span className="text-text-muted">(optional)</span>
                                             </label>
                                             <input
                                                 type="email"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 placeholder="your@email.com"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-3 py-2 border border-input dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-primary placeholder-text-muted/50"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-text-muted mt-1">
                                                 Include if you'd like us to follow up
                                             </p>
                                         </div>
@@ -203,8 +203,8 @@ export function FeedbackModal({ isOpen, onClose }) {
                                             type="submit"
                                             disabled={isSubmitting || !message.trim()}
                                             className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${isSubmitting || !message.trim()
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                                                ? 'bg-surface dark:bg-surface-dark text-text-muted cursor-not-allowed'
+                                                : 'bg-primary text-white hover:bg-primary-hover'
                                                 }`}
                                         >
                                             {isSubmitting ? (
@@ -240,7 +240,7 @@ export function FeedbackButton({ onClick }) {
     return (
         <button
             onClick={onClick}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:scale-110 transition-all flex items-center justify-center z-40"
+            className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover hover:scale-110 transition-all flex items-center justify-center z-40"
             title="Send Feedback"
         >
             <ChatBubbleLeftRightIcon className="h-6 w-6" />

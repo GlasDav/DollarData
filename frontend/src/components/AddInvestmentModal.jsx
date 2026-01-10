@@ -149,14 +149,14 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-6 text-left align-middle shadow-xl transition-all border border-slate-200 dark:border-slate-700">
+                            <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-card dark:bg-card-dark p-6 text-left align-middle shadow-xl transition-all border border-border dark:border-border-dark">
                                 <div className="flex justify-between items-start mb-6">
-                                    <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-slate-900 dark:text-white">
+                                    <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-text-primary dark:text-text-primary-dark">
                                         Add Investment
                                     </Dialog.Title>
                                     <button
                                         onClick={onClose}
-                                        className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 focus:outline-none"
+                                        className="text-text-muted hover:text-text-primary dark:hover:text-text-primary-dark focus:outline-none"
                                     >
                                         <X size={20} />
                                     </button>
@@ -165,13 +165,13 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     {/* Account Selection */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                             Investment Account
                                         </label>
                                         {loadingAccounts ? (
-                                            <div className="h-10 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse" />
+                                            <div className="h-10 bg-surface dark:bg-surface-dark rounded-lg animate-pulse" />
                                         ) : accounts.length === 0 ? (
-                                            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900/30">
+                                            <div className="p-3 text-sm text-accent-error bg-accent-error/10 dark:bg-accent-error/20 rounded-lg border border-accent-error/20 dark:border-accent-error/30">
                                                 No investment accounts found. Please create one in Net Worth page first.
                                             </div>
                                         ) : (
@@ -179,7 +179,7 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                                                 value={selectedAccountId || ''}
                                                 onChange={(e) => setSelectedAccountId(Number(e.target.value))}
                                                 required
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                             >
                                                 <option value="" disabled>Select an account...</option>
                                                 {accounts.map(acc => (
@@ -192,7 +192,7 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                                     {/* Ticker Search */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                                 Ticker Symbol
                                             </label>
                                             <TickerSearch
@@ -203,21 +203,21 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                                         </div>
 
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                                 Asset Name
                                             </label>
                                             <input
                                                 type="text"
                                                 value={form.name}
                                                 readOnly
-                                                className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-500 cursor-not-allowed"
+                                                className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-muted cursor-not-allowed"
                                                 placeholder="Auto-filled from ticker..."
                                             />
                                         </div>
 
                                         {/* Quantity */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                                 Quantity
                                             </label>
                                             <input
@@ -226,13 +226,13 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                                                 required
                                                 value={form.quantity}
                                                 onChange={(e) => setForm(prev => ({ ...prev, quantity: e.target.value }))}
-                                                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                             />
                                         </div>
 
                                         {/* Price */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                                 Current Price ({form.currency})
                                             </label>
                                             <input
@@ -241,15 +241,15 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                                                 required
                                                 value={form.price}
                                                 onChange={(e) => setForm(prev => ({ ...prev, price: e.target.value }))}
-                                                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                             />
                                         </div>
 
                                         {/* Cost Basis */}
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                                 Total Cost Basis ({form.currency})
-                                                <span className="text-xs font-normal text-slate-400 ml-2">(Total amount you paid)</span>
+                                                <span className="text-xs font-normal text-text-muted ml-2">(Total amount you paid)</span>
                                             </label>
                                             <input
                                                 type="number"
@@ -258,7 +258,7 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                                                 value={form.cost_basis}
                                                 onChange={(e) => setForm(prev => ({ ...prev, cost_basis: e.target.value }))}
                                                 placeholder="e.g. 5000.00"
-                                                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                             />
                                         </div>
                                     </div>
@@ -268,14 +268,14 @@ export default function AddInvestmentModal({ isOpen, onClose }) {
                                         <button
                                             type="button"
                                             onClick={onClose}
-                                            className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                            className="px-4 py-2 text-sm font-medium text-text-secondary dark:text-text-secondary-dark bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg hover:bg-surface-hover dark:hover:bg-surface-dark-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             type="submit"
                                             disabled={createHoldingMutation.isPending || !selectedAccountId}
-                                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                         >
                                             {createHoldingMutation.isPending ? (
                                                 <>Saving...</>

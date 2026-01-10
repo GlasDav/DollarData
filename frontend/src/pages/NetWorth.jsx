@@ -196,13 +196,13 @@ export default function NetWorth() {
             {activeTab === 'overview' && (
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Net Worth</h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-1">Track your assets and liabilities over time.</p>
+                        <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark">Net Worth</h1>
+                        <p className="text-text-muted dark:text-text-muted-dark mt-1">Track your assets and liabilities over time.</p>
                     </div>
                     <div>
                         <button
                             onClick={() => setIsCheckInOpen(true)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition"
+                            className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition"
                         >
                             <Plus size={20} />
                             Monthly Check-in
@@ -212,16 +212,16 @@ export default function NetWorth() {
             )}
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-700 mb-6">
+            <div className="flex border-b border-border dark:border-border-dark mb-6">
                 <button
                     onClick={() => setActiveTab('overview')}
-                    className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'overview' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                    className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-primary dark:text-text-muted-dark dark:hover:text-text-primary-dark'}`}
                 >
                     Overview
                 </button>
                 <button
                     onClick={() => setActiveTab('investments')}
-                    className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'investments' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                    className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'investments' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-primary dark:text-text-muted-dark dark:hover:text-text-primary-dark'}`}
                 >
                     Investments
                 </button>
@@ -231,10 +231,10 @@ export default function NetWorth() {
                 <>
                     {/* Overview Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Worth</p>
+                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
+                            <p className="text-sm font-medium text-text-muted dark:text-text-muted-dark">Net Worth</p>
                             <div className="flex items-end gap-3 mt-1">
-                                <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                                <span className="text-3xl font-bold text-text-primary dark:text-text-primary-dark">
                                     {formatCurrency(currentNetWorth)}
                                 </span>
                                 {history.length > 1 && (
@@ -245,14 +245,14 @@ export default function NetWorth() {
                                 )}
                             </div>
                         </div>
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Assets</p>
+                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
+                            <p className="text-sm font-medium text-text-muted dark:text-text-muted-dark">Total Assets</p>
                             <p className="text-3xl font-bold text-emerald-600 mt-1">
                                 {formatCurrency(latestSnapshot?.total_assets || 0)}
                             </p>
                         </div>
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Liabilities</p>
+                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
+                            <p className="text-sm font-medium text-text-muted dark:text-text-muted-dark">Total Liabilities</p>
                             <p className="text-3xl font-bold text-red-600 mt-1">
                                 {formatCurrency(latestSnapshot?.total_liabilities || 0)}
                             </p>
@@ -263,10 +263,10 @@ export default function NetWorth() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Left Col: Chart & History */}
                         <div className="lg:col-span-2 space-y-8">
-                            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-96 flex flex-col">
+                            <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark h-96 flex flex-col">
                                 <div className="flex justify-between items-center mb-6 shrink-0">
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                        <LineChart size={20} className="text-indigo-500" />
+                                    <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
+                                        <LineChart size={20} className="text-primary" />
                                         History
                                     </h3>
                                     <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
@@ -324,8 +324,8 @@ export default function NetWorth() {
                                                     if (active && payload && payload.length) {
                                                         const data = payload[0].payload;
                                                         return (
-                                                            <div className="bg-white dark:bg-slate-800 p-4 border border-slate-100 dark:border-slate-700 shadow-xl rounded-xl">
-                                                                <p className="text-sm font-medium text-slate-500 mb-2">{new Date(label).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</p>
+                                                            <div className="bg-card dark:bg-card-dark p-4 border border-border dark:border-border-dark shadow-xl rounded-xl">
+                                                                <p className="text-sm font-medium text-text-muted mb-2">{new Date(label).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</p>
                                                                 <div className="space-y-1">
                                                                     <p className="text-lg font-bold text-indigo-600 flex justify-between gap-8">
                                                                         <span>{chartMode === 'net_worth' ? 'Net Worth' : 'Value'}</span>
@@ -379,9 +379,9 @@ export default function NetWorth() {
                         </div>
 
                         {/* Allocation Chart */}
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-96">
+                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark h-96">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
                                     <Wallet size={20} className="text-emerald-500" />
                                     Asset Allocation
                                 </h3>
@@ -422,10 +422,10 @@ export default function NetWorth() {
                     {/* Right Col: Accounts List */}
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Accounts</h3>
+                            <h3 className="text-xl font-bold text-text-primary dark:text-text-primary-dark">Accounts</h3>
                             <button
                                 onClick={() => setIsAddAccountOpen(!isAddAccountOpen)}
-                                className="text-sm text-indigo-600 font-medium hover:text-indigo-700"
+                                className="text-sm text-primary font-medium hover:text-primary-hover"
                             >
                                 {isAddAccountOpen ? 'Cancel' : '+ Add Account'}
                             </button>
@@ -433,10 +433,10 @@ export default function NetWorth() {
 
                         {
                             isAddAccountOpen && (
-                                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
+                                <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark animate-in fade-in slide-in-from-top-2">
                                     <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">New Account</h3>
-                                        <button onClick={() => setIsAddAccountOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                        <h3 className="text-sm font-bold text-text-primary dark:text-text-primary-dark uppercase tracking-wider">New Account</h3>
+                                        <button onClick={() => setIsAddAccountOpen(false)} className="text-text-muted hover:text-text-primary">
                                             <X size={18} />
                                         </button>
                                     </div>
@@ -456,20 +456,20 @@ export default function NetWorth() {
                                         setNewAccountName("");
                                     }} className="flex flex-col md:flex-row gap-4">
                                         <div className="w-full md:w-96">
-                                            <label className="block text-xs font-medium text-slate-500 mb-1">Account Name</label>
+                                            <label className="block text-xs font-medium text-text-muted mb-1">Account Name</label>
                                             <input
                                                 type="text"
                                                 placeholder="e.g. Chase Checkings"
                                                 required={newAccountCategory !== 'Investment'}
-                                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full rounded-lg border-input dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                                                 value={newAccountName}
                                                 onChange={(e) => setNewAccountName(e.target.value)}
                                             />
                                         </div>
                                         <div className="w-full md:w-28">
-                                            <label className="block text-xs font-medium text-slate-500 mb-1">Type</label>
+                                            <label className="block text-xs font-medium text-text-muted mb-1">Type</label>
                                             <select
-                                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full rounded-lg border-input dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                                                 value={newAccountType}
                                                 onChange={(e) => {
                                                     setNewAccountType(e.target.value);
@@ -481,9 +481,9 @@ export default function NetWorth() {
                                             </select>
                                         </div>
                                         <div className="w-full md:w-48">
-                                            <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                                            <label className="block text-xs font-medium text-text-muted mb-1">Category</label>
                                             <select
-                                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full rounded-lg border-input dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                                                 value={newAccountCategory}
                                                 onChange={(e) => setNewAccountCategory(e.target.value)}
                                             >
@@ -505,14 +505,14 @@ export default function NetWorth() {
                                             </select>
                                         </div>
                                         <div className="flex items-end">
-                                            <button type="submit" className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 py-2 text-sm font-medium transition flex items-center gap-2 justify-center">
+                                            <button type="submit" className="w-full md:w-auto bg-primary hover:bg-primary-hover text-white rounded-lg px-6 py-2 text-sm font-medium transition flex items-center gap-2 justify-center">
                                                 <Plus size={18} />
                                                 {newAccountCategory === 'Investment' ? 'Add Holdings' : 'Create'}
                                             </button>
                                         </div>
                                     </form>
                                     {newAccountType === 'Asset' && newAccountCategory === 'Investment' && (
-                                        <p className="mt-3 text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2 rounded-lg">
+                                        <p className="mt-3 text-xs text-primary bg-primary/10 px-3 py-2 rounded-lg">
                                             💡 Click <strong>Add Holdings</strong> to search for and add stocks, ETFs, and track their prices!
                                         </p>
                                     )}
@@ -522,11 +522,11 @@ export default function NetWorth() {
 
                         <div className="space-y-4">
                             {loadingAccounts ? (
-                                <div className="text-center text-slate-500 py-8">Loading accounts...</div>
+                                <div className="text-center text-text-muted py-8">Loading accounts...</div>
                             ) : (
                                 <>
                                     <div>
-                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
                                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             Assets
                                         </h4>
@@ -534,14 +534,14 @@ export default function NetWorth() {
                                             {accounts.filter(a => a.type === 'Asset').map(account => {
                                                 const Icon = getCategoryIcon(account.category, 'Asset');
                                                 return (
-                                                    <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-indigo-100 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
+                                                    <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-card dark:bg-card-dark p-3 rounded-xl border border-border dark:border-border-dark hover:border-primary/30 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
                                                         <div className="flex items-center gap-3">
                                                             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-lg group-hover:bg-emerald-100 transition-colors">
                                                                 <Icon size={18} />
                                                             </div>
                                                             <div>
-                                                                <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{account.name}</p>
-                                                                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{account.category}</p>
+                                                                <p className="font-semibold text-text-primary dark:text-text-primary-dark text-sm">{account.name}</p>
+                                                                <p className="text-[10px] text-text-muted uppercase tracking-wide font-medium">{account.category}</p>
                                                             </div>
                                                         </div>
                                                         <p className="text-sm font-semibold text-emerald-600">
@@ -550,12 +550,12 @@ export default function NetWorth() {
                                                     </div>
                                                 );
                                             })}
-                                            {accounts.filter(a => a.type === 'Asset').length === 0 && <p className="text-sm text-slate-400 italic pl-2">No assets yet.</p>}
+                                            {accounts.filter(a => a.type === 'Asset').length === 0 && <p className="text-sm text-text-muted italic pl-2">No assets yet.</p>}
                                         </div>
                                     </div>
 
                                     <div>
-                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
                                             <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                                             Liabilities
                                         </h4>
@@ -563,14 +563,14 @@ export default function NetWorth() {
                                             {accounts.filter(a => a.type === 'Liability').map(account => {
                                                 const Icon = getCategoryIcon(account.category, 'Liability');
                                                 return (
-                                                    <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-red-100 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
+                                                    <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-card dark:bg-card-dark p-3 rounded-xl border border-border dark:border-border-dark hover:border-red-100 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
                                                         <div className="flex items-center gap-3">
                                                             <div className="p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg group-hover:bg-red-100 transition-colors">
                                                                 <Icon size={18} />
                                                             </div>
                                                             <div>
-                                                                <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{account.name}</p>
-                                                                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{account.category}</p>
+                                                                <p className="font-semibold text-text-primary dark:text-text-primary-dark text-sm">{account.name}</p>
+                                                                <p className="text-[10px] text-text-muted uppercase tracking-wide font-medium">{account.category}</p>
                                                             </div>
                                                         </div>
                                                         <p className="text-sm font-semibold text-red-500">
@@ -579,7 +579,7 @@ export default function NetWorth() {
                                                     </div>
                                                 );
                                             })}
-                                            {accounts.filter(a => a.type === 'Liability').length === 0 && <p className="text-sm text-slate-400 italic pl-2">No liabilities yet.</p>}
+                                            {accounts.filter(a => a.type === 'Liability').length === 0 && <p className="text-sm text-text-muted italic pl-2">No liabilities yet.</p>}
                                         </div>
                                     </div>
                                 </>
