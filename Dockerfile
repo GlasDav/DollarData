@@ -13,7 +13,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Update CA certificates
+RUN update-ca-certificates
 
 # Install Python dependencies
 COPY backend/requirements.txt .
