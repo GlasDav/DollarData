@@ -5,6 +5,14 @@ FROM node:20-alpine as builder
 
 WORKDIR /app
 
+# Build arguments
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+# Set as environment variables for build
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
 # Copy package files
 COPY frontend/package*.json ./
 
