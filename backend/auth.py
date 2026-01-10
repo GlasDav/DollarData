@@ -265,8 +265,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_JWT_KEY = os.getenv("SUPABASE_JWT_KEY")
     
     try:
         # Inspect Header to determine Algorithm
@@ -278,11 +277,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         
         payload = None
         
-        # Strategy: Always try HS256 first with the JWT secret (Supabase's standard approach)
-        # Only fall back to JWKS if HS256 fails and token uses RS256/ES256
-        
+        # Strategy 1: HS256 (Symmetric Secret)
         if SUPABASE_JWT_SECRET:
-            logger.info(f"Attempting HS256 verification (secret length: {len(SUPABASE_JWT_SECRET)})")
             try:
                 payload = jwt.decode(
                     token, 
@@ -291,30 +287,49 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
                     audience="authenticated"
                 )
                 logger.info("JWT verified successfully with HS256")
+                # Return immediately if successful
             except JWTError as hs256_error:
-                logger.error(f"HS256 verification failed: {hs256_error}")
-                # HS256 failed, try JWKS if algorithm is RS256/ES256
-                if alg in ["RS256", "ES256"] and SUPABASE_URL:
-                    logger.info(f"Falling back to JWKS for {alg} verification...")
-                    try:
-                        jwks = await get_supabase_jwks(SUPABASE_URL)
-                        payload = jwt.decode(
-                            token, 
-                            jwks, 
-                            algorithms=["RS256", "ES256"], 
-                            audience="authenticated",
-                        )
-                        logger.info(f"JWT verified successfully with {alg} via JWKS")
-                    except Exception as jwks_error:
-                        logger.error(f"JWKS verification also failed: {jwks_error}")
-                        raise credentials_exception
-                else:
-                    # No fallback available
-                    logger.error(f"HS256 failed and no JWKS fallback (alg={alg})")
-                    raise credentials_exception
-        elif alg in ["RS256", "ES256"] and SUPABASE_URL:
-            # No JWT secret, try JWKS directly
+                # Only log error if token claimed to be HS256
+                if alg == "HS256":
+                     logger.error(f"HS256 verification failed: {hs256_error}")
+                     raise credentials_exception
+                # Otherwise, just debug log and fall through to Asymmetric check
+                logger.debug(f"HS256 check failed (expected for ES256/RS256): {hs256_error}")
+
+        if payload: 
+             pass # Already verified
+
+        # Strategy 2: Static JWK Check (ES256/RS256)
+        elif SUPABASE_JWT_KEY and alg in ["RS256", "ES256"]:
+            logger.info("Attempting verification with statically configured SUPABASE_JWT_KEY")
             try:
+                # Parse the JSON key
+                import json
+                jwk_data = json.loads(SUPABASE_JWT_KEY)
+                
+                # Check if kid matches (if present in both)
+                if kid and jwk_data.get("kid") and kid != jwk_data.get("kid"):
+                     logger.warning(f"Key ID mismatch: Token={kid}, Config={jwk_data.get('kid')}")
+                
+                 # Python-Jose can accept the JWK dict directly
+                payload = jwt.decode(
+                    token, 
+                    jwk_data, 
+                    algorithms=[alg], 
+                    audience="authenticated"
+                )
+                logger.info(f"JWT verified successfully with {alg} using static key")
+            except Exception as e:
+                logger.error(f"Static key verification failed: {e}")
+                # Don't raise yet, try JWKS fallback if configured? 
+                # Actually, if static key is provided, we probably rely on it.
+                # But let's allow fallback just in case.
+                pass
+
+        # Strategy 3: Dynamic JWKS Fetch (Fallback)
+        if not payload and alg in ["RS256", "ES256"] and SUPABASE_URL:
+             logger.info(f"Attempting dynamic JWKS fetch for {alg} verification...")
+             try:
                 jwks = await get_supabase_jwks(SUPABASE_URL)
                 payload = jwt.decode(
                     token, 
@@ -322,16 +337,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
                     algorithms=["RS256", "ES256"], 
                     audience="authenticated",
                 )
-            except Exception as e:
-                logger.error(f"JWKS verification failed: {e}")
+                logger.info(f"JWT verified successfully with {alg} via JWKS")
+             except Exception as jwks_error:
+                logger.error(f"JWKS verification failed: {jwks_error}")
                 raise credentials_exception
-        else:
-            logger.error(f"No SUPABASE_JWT_SECRET and cannot use JWKS (alg={alg}, URL set={bool(SUPABASE_URL)})")
-            raise credentials_exception
-        
-        if payload is None:
-            raise credentials_exception
 
+        if not payload:
+            logger.error(f"All verification strategies failed for alg={alg}")
+            raise credentials_exception
+            
         user_id: str = payload.get("sub")
         email: str = payload.get("email")
         
