@@ -117,6 +117,7 @@ export default function Reports() {
             };
             if (categoryFilters.length > 0) {
                 params.bucket_ids = categoryFilters.join(',');
+                params.exact_bucket_ids = true; // Respect exact selection, don't auto-expand
             }
             if (accountFilter !== "All Accounts") {
                 params.account_id = accountFilter;

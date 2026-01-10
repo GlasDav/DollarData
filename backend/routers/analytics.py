@@ -357,7 +357,8 @@ def get_analytics_history(
     spender: str = Query(default="Combined"), # Combined, User A, User B
     account_id: Optional[int] = Query(None), # Filter by Account
     bucket_id: Optional[int] = Query(None),
-    bucket_ids: Optional[str] = Query(None), # Comma-separated bucket IDs
+    bucket_ids: Optional[str] = Query(None), # Comma-separated bucket IDs (expands to include children)
+    exact_bucket_ids: Optional[bool] = Query(False), # If True, do NOT expand to children
     group: Optional[str] = Query(None), # Non-Discretionary, Discretionary
     tags: Optional[str] = Query(None), # Comma-separated tags (OR logic)
     db: Session = Depends(get_db),
@@ -397,25 +398,29 @@ def get_analytics_history(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid bucket_ids format. Use comma-separated integers.")
         
-        # Fetch all hierarchy info for user
-        hierarchy = db.query(models.BudgetBucket.id, models.BudgetBucket.parent_id).filter(models.BudgetBucket.user_id == user.id).all()
-        
-        # Build adjacency list
-        adj = {}
-        for bid, pid in hierarchy:
-            if pid:
-                adj.setdefault(pid, []).append(bid)
-        
-        # For each selected bucket, find all descendants
-        subtree_ids = set(selected_ids)
-        queue = list(selected_ids)
-        while queue:
-            curr = queue.pop(0)
-            children = adj.get(curr, [])
-            for child in children:
-                if child not in subtree_ids:
-                    subtree_ids.add(child)
-                    queue.append(child)
+        if exact_bucket_ids:
+            # Use exactly the IDs provided - no hierarchy expansion
+            subtree_ids = set(selected_ids)
+        else:
+            # Fetch all hierarchy info for user
+            hierarchy = db.query(models.BudgetBucket.id, models.BudgetBucket.parent_id).filter(models.BudgetBucket.user_id == user.id).all()
+            
+            # Build adjacency list
+            adj = {}
+            for bid, pid in hierarchy:
+                if pid:
+                    adj.setdefault(pid, []).append(bid)
+            
+            # For each selected bucket, find all descendants
+            subtree_ids = set(selected_ids)
+            queue = list(selected_ids)
+            while queue:
+                curr = queue.pop(0)
+                children = adj.get(curr, [])
+                for child in children:
+                    if child not in subtree_ids:
+                        subtree_ids.add(child)
+                        queue.append(child)
         
         buckets_query = buckets_query.filter(models.BudgetBucket.id.in_(subtree_ids))
     elif bucket_id:
