@@ -375,31 +375,33 @@ export default function Reports() {
                     )}
                 </div>
 
-                {/* Tag Filter (Simple Multi-select for now) */}
-                <div className="relative group">
-                    <select
-                        multiple
-                        value={tagFilters}
-                        onChange={(e) => {
-                            const values = Array.from(e.target.selectedOptions, option => option.value);
-                            setTagFilters(values);
-                        }}
-                        className="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 min-w-[120px]"
-                        title="Hold Ctrl/Cmd to select multiple tags"
-                    >
-                        {availableTags.map(tag => (
-                            <option key={tag.id} value={tag.name}>{tag.name}</option>
-                        ))}
-                    </select>
-                    {tagFilters.length > 0 && (
-                        <button
-                            onClick={() => setTagFilters([])}
-                            className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-0.5 hover:bg-red-200 shadow-sm"
+                {/* Tag Filter - Only show if tags exist */}
+                {availableTags.length > 0 && (
+                    <div className="relative group">
+                        <select
+                            multiple
+                            value={tagFilters}
+                            onChange={(e) => {
+                                const values = Array.from(e.target.selectedOptions, option => option.value);
+                                setTagFilters(values);
+                            }}
+                            className="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 min-w-[120px] max-h-24"
+                            title="Hold Ctrl/Cmd to select multiple tags"
                         >
-                            <X size={10} />
-                        </button>
-                    )}
-                </div>
+                            {availableTags.map(tag => (
+                                <option key={tag.id} value={tag.name}>{tag.name}</option>
+                            ))}
+                        </select>
+                        {tagFilters.length > 0 && (
+                            <button
+                                onClick={() => setTagFilters([])}
+                                className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-0.5 hover:bg-red-200 shadow-sm"
+                            >
+                                <X size={10} />
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Clear Filters */}
                 {(spenderFilter !== "Combined" || accountFilter !== "All Accounts" || categoryFilters.length > 0 || tagFilters.length > 0) && (
