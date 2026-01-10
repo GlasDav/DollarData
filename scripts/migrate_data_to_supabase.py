@@ -51,14 +51,12 @@ print(f"✅ Loaded {len(ID_MAPPING)} user mappings.")
 # Define migration order (parents first)
 TABLES = [
     # Core
-    'households', # Has owner_id
-    'household_members', # Has user_id, linked to household? Wait, existing schema?
-    # Actually, let's just do bulk tables.
-    # We must replace 'user_id' in all of them.
     'users', # We need to populate public.users from legacy users info
+    'households', # Has owner_id
+    'household_members', 
+    'accounts', # Accounts before Goals
     'goals',
-    'accounts',
-    'budget_buckets',
+    'budget_buckets', # Needs 2-pass
     # Children
     'transactions',
     'subscriptions',
@@ -69,7 +67,6 @@ TABLES = [
     'notifications',
     # Deep children
     'investment_holdings',
-    'household_members', # Wait, verify dependency
     'budget_limits',
     'categorization_rules',
     'net_worth_snapshots', 
@@ -100,6 +97,7 @@ async def migrate_table(table_name):
 
     records = []
     skipped = 0
+    parent_updates = [] # For buckets 2nd pass
     
     for row in rows:
         # Convert row to dict
@@ -113,8 +111,6 @@ async def migrate_table(table_name):
             if legacy_uid in ID_MAPPING:
                 data['user_id'] = ID_MAPPING[legacy_uid]
             else:
-                # User not migrated? Skip record?
-                # print(f"   Warning: User ID {legacy_uid} not in mapping. Skipping.")
                 skipped += 1
                 continue
                 
@@ -132,22 +128,22 @@ async def migrate_table(table_name):
 
         # 4. Handle 'users' table specifically for public.users
         if table_name == 'users':
-            # Remap ID to UUID
             legacy_id = data.pop('id') # Remove integer ID
             if legacy_id in ID_MAPPING:
                 data['id'] = ID_MAPPING[legacy_id]
             else:
                 continue
-            # Remove password hash
             if 'hashed_password' in data: 
                 del data['hashed_password']
+
+        # 5. Handle Buckets (Self-Referential)
+        if table_name == 'budget_buckets':
+            # Save parent_id for later update
+            if 'parent_id' in data and data['parent_id'] is not None:
+                parent_updates.append({'id': data['id'], 'parent_id': data['parent_id']})
+                data['parent_id'] = None # Remove for first pass
             
-            # Remove columns that don't exist in public.users?
-            # Ideally we only insert valid columns. 
-            # Supabase-py will complain if extra keys exist.
-            # We assume target schema matches.
-            
-        # 5. Clean Data Types
+        # 6. Clean Data Types
         for k, v in data.items():
             if isinstance(v, (datetime, date)):
                 data[k] = v.isoformat()
@@ -165,13 +161,24 @@ async def migrate_table(table_name):
     for i in range(0, len(records), batch_size):
         batch = records[i:i+batch_size]
         try:
-            # We use 'upsert' to be safe? Or insert.
-            # upsert requires PK. 
             response = supabase.table(table_name).upsert(batch).execute()
-            # print(f"   Batch {i//batch_size + 1}: Success")
         except Exception as e:
             print(f"   ❌ Error inserting batch: {str(e)}")
-            # print(batch[0]) # Limit log
+            # If buckets failed, we shouldn't try update
+            if table_name == 'budget_buckets':
+                print("   (Skipping parent_id updates for this batch due to error)")
+                continue
+
+    # 3. Second Pass for Buckets
+    if table_name == 'budget_buckets' and parent_updates:
+        print(f"   Updating {len(parent_updates)} parent relationships...")
+        for i in range(0, len(parent_updates), batch_size):
+            batch = parent_updates[i:i+batch_size]
+            try:
+                # Upsert again? Or update? upsert valid.
+                response = supabase.table(table_name).upsert(batch).execute()
+            except Exception as e:
+                 print(f"   ❌ Error updating parents: {str(e)}")
 
     print(f"   ✅ Done. (Skipped {skipped} records due to missing user map)")
 
