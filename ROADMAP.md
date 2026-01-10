@@ -47,6 +47,7 @@ This document outlines the planned features, improvements, and future direction 
 
 ## ⚙️ Account & Settings
 
+- [x] **Supabase Auth Migration:** Migrated to Supabase authentication with ES256 JWT verification and JIT user provisioning.
 - [ ] **Family Invites:** Email invitation flow for new household members (create own login for same account).
 - [ ] **Security (MFA):** Multi-Factor Authentication setup.
 - [ ] **Email Verification:** Verify user email addresses for security.

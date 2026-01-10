@@ -63,7 +63,7 @@ When adding a new column to any model:
 | **State Management** | TanStack Query v5 | Server-state caching |
 | **Routing** | react-router-dom v7 | Client-side navigation |
 | **Styling** | Tailwind CSS v4 | Utility-first CSS |
-| **Auth** | JWT + Refresh Tokens | Stateless authentication |
+| **Auth** | Supabase Auth (JWT) | Managed Authentication |
 | **Deployment** | Docker + Binary Lane VPS | Containerized hosting |
 | **Error Monitoring** | Sentry | Production error tracking |
 
@@ -77,10 +77,27 @@ When adding a new column to any model:
 | `backend/routers/` | API route handlers organized by domain (16 routers) |
 | `backend/services/` | Business logic, AI services, third-party integrations |
 | `backend/migrations/` | Database schema migrations |
-| `backend/models.py` | SQLAlchemy ORM models (27+ entities) |
+| `backend/models.py` | SQLAlchemy ORM models (27+ entities). `User` maps to `public.profiles`. |
 | `backend/schemas.py` | Pydantic request/response schemas |
 | `frontend/` | React application - UI components and pages |
 | `frontend/src/pages/` | Page-level components (26 pages) |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string (Supabase Pooler) |
+| `SUPABASE_URL` | Yes | Supabase Project URL (for JWKS/API) |
+| `SUPABASE_JWT_SECRET` | Yes | HS256 JWT Verification Secret |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Admin API Access |
+| `ENVIRONMENT` | No | `development` / `production` |
+| `CORS_ORIGINS` | No | Allowed frontend origins |
+| `GEMINI_API_KEY` | No | AI features |
+| `BASIQ_API_KEY` | No | Bank integration |
+| `SENTRY_DSN` | No | Error monitoring |
+| `REDIS_URL` | No | Caching |
 | `frontend/src/components/` | Reusable UI components (62 components in 5 subdirs) |
 | `frontend/src/components/widgets/` | Dashboard widget components (14 widgets) |
 | `frontend/src/components/settings/` | Settings tab components (10 components) |
@@ -400,6 +417,29 @@ docker compose exec backend python /app/seed_demo_user.py
 5. **Toast Notifications** - Custom `ToastContext` replaces browser alerts
 6. **Command Palette** - `Cmd/Ctrl+K` for quick navigation
 7. **Demo Account** - `demo@principal.finance` / `demo123` with realistic sample data
+
+---
+
+## 📋 Recent Changes & Fixes
+
+\u003e Last updated: 2026-01-10
+
+### **Supabase JWT Authentication Migration**
+- Migrated from legacy JWT auth to Supabase Auth with ES256 token signing
+- Added static JWK verification using `SUPABASE_JWT_KEY` environment variable  
+- Implemented Just-In-Time (JIT) user provisioning from Supabase to local database
+- Key files: `backend/auth.py`, `docker-compose.yml`, `.env`
+
+### **UUID Serialization Fixes**
+- Fixed Pydantic `ResponseValidationError` where database returned UUID objects but schemas expected strings
+- Added `field_validator` to convert UUIDs to strings in response models
+- Fixed schemas: `User`, `HouseholdMember`, `Goal`, `Subscription`, `Rule`
+- Key file: `backend/schemas.py`
+
+### **FastAPI Routing Improvements**
+- Fixed 307 redirect issues caused by trailing slash mismatch between frontend and backend
+- Updated route decorators to handle both `/endpoint` and `/endpoint/` patterns
+- Affected routers: `transactions.py`, `goals.py`
 
 ---
 
