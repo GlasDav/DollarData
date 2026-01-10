@@ -169,29 +169,100 @@ async def migrate_table(table_name):
                 print("   (Skipping parent_id updates for this batch due to error)")
                 continue
 
-    # 3. Second Pass for Buckets
+
+    # 3. Second Pass for Buckets: UPDATE properly
     if table_name == 'budget_buckets' and parent_updates:
         print(f"   Updating {len(parent_updates)} parent relationships...")
         for i in range(0, len(parent_updates), batch_size):
             batch = parent_updates[i:i+batch_size]
-            try:
-                # Upsert again? Or update? upsert valid.
-                response = supabase.table(table_name).upsert(batch).execute()
-            except Exception as e:
-                 print(f"   ❌ Error updating parents: {str(e)}")
+            for item in batch:
+                try:
+                    # Must use update() with ID match
+                    supabase.schema('public').table(table_name).update({'parent_id': item['parent_id']}).eq('id', item['id']).execute()
+                except Exception as e:
+                     print(f"   ❌ Error updating parent for Bucket {item['id']}: {str(e)}")
 
-    print(f"   ✅ Done. (Skipped {skipped} records due to missing user map)")
+
+async def migrate_transactions(rows):
+    """Special handler for transactions to deal with splits (parent_transaction_id)"""
+    # Separate parents and children (splits)
+    columns = rows[0].keys()
+    
+    parents = []
+    splits = []
+    
+    for row in rows:
+        data = dict(zip(columns, row))
+        
+        # --- Common Transformation ---
+        # 1. Map user_id
+        if 'user_id' in data and data['user_id'] in ID_MAPPING:
+            data['user_id'] = ID_MAPPING[data['user_id']]
+        else:
+            # Skip if user not found
+            continue
+            
+        # Clean Dates
+        for k, v in data.items():
+            if isinstance(v, (datetime, date)):
+                data[k] = v.isoformat()
+        
+        # --- Split Logic ---
+        if data.get('parent_transaction_id'):
+            splits.append(data)
+        else:
+            parents.append(data)
+            
+    print(f"   Split Logic: {len(parents)} parents, {len(splits)} splits.")
+    
+    # 1. Push Parents
+    batch_size = 100
+    for i in range(0, len(parents), batch_size):
+        batch = parents[i:i+batch_size]
+        try:
+            supabase.schema('public').table('transactions').upsert(batch).execute()
+        except Exception as e:
+             print(f"   ❌ Error inserting transactions batch: {str(e)}")
+
+    # 2. Push Splits
+    for i in range(0, len(splits), batch_size):
+        batch = splits[i:i+batch_size]
+        try:
+            supabase.schema('public').table('transactions').upsert(batch).execute()
+        except Exception as e:
+             print(f"   ❌ Error inserting splits batch: {str(e)}")
+
 
 
 async def main():
-    print("🚀 Starting Data Migration to SupabaseDB...")
+    print("🚀 Starting Data Migration to SupabaseDB... (v2 - Explicit Schema)")
     
     # 0. Migrate Public User Profiles
-    await migrate_table('users') 
+    # Explicitly spec schema to avoid cache issues
+    try:
+        await migrate_table('users') 
+    except Exception as e:
+        print(f"CRITICAL ERROR migrating users: {e}")
+ 
     
     # 1. Iterate Tables
     for table in TABLES:
         if table == 'users': continue
+        
+        # Special case for transactions
+        if table == 'transactions':
+            print(f"\n🔄 Migrating table: {table}")
+            try:
+                result = session.execute(text(f"SELECT * FROM {table}"))
+                rows = result.fetchall()
+                if rows:
+                    await migrate_transactions(rows)
+                else:
+                    print("   No transactions found.")
+            except Exception as e:
+                print(f"   ⚠️  Skipping/Error transactions: {e}")
+            continue
+
         await migrate_table(table)
         
     print("\n\n✨ Migration Complete.")
