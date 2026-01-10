@@ -23,6 +23,7 @@ services:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - SUPABASE_JWT_KEY=${SUPABASE_JWT_KEY}
     depends_on:
       db:
         condition: service_healthy
