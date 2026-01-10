@@ -24,13 +24,17 @@ if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     logger.info("Using SQLite database (development mode)")
 else:
     # PostgreSQL and other databases
+    connect_args = {}
+    if "supabase.co" in SQLALCHEMY_DATABASE_URL or "sslmode=require" in SQLALCHEMY_DATABASE_URL:
+        connect_args["sslmode"] = "require"
+    
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
         pool_size=5,
         max_overflow=10,
-        pool_pre_ping=True,  # Verify connections before use
-        pool_recycle=300,    # Recycle connections every 5 minutes to prevent stale connections
-        connect_args={"sslmode": "require"} # Require SSL for Supabase
+        pool_pre_ping=True,
+        pool_recycle=300,
+        connect_args=connect_args
     )
     logger.info("Using PostgreSQL database (production mode)")
 
