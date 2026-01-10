@@ -179,7 +179,7 @@ export default function Dashboard() {
     const upcomingBills = Array.isArray(upcomingBillsRaw) ? upcomingBillsRaw : [];
 
     // --- Loading / Error States ---
-    if (isLoading) return <div className="p-8 text-center text-slate-500">Loading Dashboard...</div>;
+    if (isLoading) return <div className="p-8 text-center text-text-muted dark:text-text-muted-dark">Loading Dashboard...</div>;
     if (!dashboardData) return <div className="p-8 text-center text-red-500">Error loading data. Please check connection.</div>;
 
     const { buckets: rawBuckets, totals } = dashboardData;
@@ -235,7 +235,7 @@ export default function Dashboard() {
             {/* Filter Controls */}
             <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Financial Overview</h2>
+                    <h2 className="text-xl font-bold text-text-primary dark:text-text-primary-dark">Financial Overview</h2>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
@@ -243,7 +243,7 @@ export default function Dashboard() {
                     <select
                         value={rangeType}
                         onChange={(e) => setRangeType(e.target.value)}
-                        className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none cursor-pointer"
+                        className="bg-card dark:bg-card-dark border border-border dark:border-border-dark text-text-primary dark:text-text-primary-dark text-sm rounded-lg focus:ring-primary focus:border-primary block p-2.5 outline-none cursor-pointer"
                     >
                         <option>This Month</option>
                         <option>Last Month</option>
@@ -261,25 +261,25 @@ export default function Dashboard() {
                                 type="date"
                                 value={customStart}
                                 onChange={(e) => setCustomStart(e.target.value)}
-                                className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none"
+                                className="bg-card dark:bg-card-dark border border-border dark:border-border-dark text-text-primary dark:text-text-primary-dark text-sm rounded-lg focus:ring-primary focus:border-primary block p-2.5 outline-none"
                             />
-                            <span className="text-slate-400">-</span>
+                            <span className="text-text-muted dark:text-text-muted-dark">-</span>
                             <input
                                 type="date"
                                 value={customEnd}
                                 onChange={(e) => setCustomEnd(e.target.value)}
-                                className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none"
+                                className="bg-card dark:bg-card-dark border border-border dark:border-border-dark text-text-primary dark:text-text-primary-dark text-sm rounded-lg focus:ring-primary focus:border-primary block p-2.5 outline-none"
                             />
                         </div>
                     )}
 
                     {/* Spender Mode Toggle */}
-                    <div className="bg-slate-100 dark:bg-slate-700 p-1 rounded-lg flex items-center">
+                    <div className="bg-surface dark:bg-card-dark p-1 rounded-lg flex items-center">
                         <button
                             onClick={() => setSpenderMode('Combined')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition ${spenderMode === 'Combined'
-                                ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm'
-                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                ? 'bg-card dark:bg-card-dark shadow-sm text-primary dark:text-text-primary-dark'
+                                : 'text-text-muted dark:text-text-muted-dark hover:text-text-primary dark:hover:text-text-primary-dark'
                                 }`}
                         >
                             Combined

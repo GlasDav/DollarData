@@ -66,16 +66,16 @@ function NavItem({ to, icon: Icon, children, end = false }) {
       className={({ isActive }) => `
         group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200
         ${isActive
-          ? 'bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/30 dark:to-transparent text-indigo-600 dark:text-indigo-400 font-medium'
-          : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-700 dark:hover:text-slate-300'
+          ? 'bg-gradient-to-r from-primary/10 to-transparent dark:from-primary/20 dark:to-transparent text-primary dark:text-primary-light font-medium'
+          : 'text-text-muted dark:text-text-muted-dark hover:bg-surface dark:hover:bg-card-dark/50 hover:text-text-primary dark:hover:text-text-primary-dark'
         }
       `}
     >
       {({ isActive }) => (
         <>
           {/* Left accent indicator */}
-          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full transition-all duration-200 ${isActive ? 'h-5 bg-gradient-to-b from-indigo-500 to-violet-500' : 'h-0 bg-transparent'}`}></div>
-          <Icon size={18} className={`transition-transform duration-200 ${isActive ? 'text-indigo-500' : 'group-hover:scale-110'}`} />
+          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full transition-all duration-200 ${isActive ? 'h-5 bg-gradient-to-b from-primary to-primary-hover' : 'h-0 bg-transparent'}`}></div>
+          <Icon size={18} className={`transition-transform duration-200 ${isActive ? 'text-primary' : 'group-hover:scale-110'}`} />
           <span className="transition-transform duration-200 group-hover:translate-x-1">{children}</span>
         </>
       )}
@@ -107,8 +107,8 @@ function Header() {
   const title = PAGE_TITLES[location.pathname] || 'Principal';
 
   return (
-    <header className="h-[72px] bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shadow-sm z-10">
-      <h1 className="text-lg font-semibold text-slate-800 dark:text-white">{title}</h1>
+    <header className="h-[72px] bg-card dark:bg-card-dark border-b border-border dark:border-border-dark flex items-center justify-between px-6 shadow-sm z-10">
+      <h1 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">{title}</h1>
       <NotificationBell />
     </header>
   );
@@ -121,21 +121,21 @@ function Layout() {
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
+    <div className="flex h-screen bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark font-sans">
       {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+      <div className="w-64 bg-card dark:bg-card-dark border-r border-border dark:border-border-dark flex flex-col">
         {/* Logo */}
-        <div className="h-[72px] px-4 border-b border-slate-100 dark:border-slate-700 flex items-center">
+        <div className="h-[72px] px-4 border-b border-border dark:border-border-dark flex items-center">
           <div className="flex items-center gap-2.5">
             <img src="/logo.svg" alt="Principal Finance" className="w-10 h-10" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Principal</h1>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">Principal</h1>
           </div>
         </div>
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           {/* Overview */}
           <div className="mb-4">
-            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Overview</div>
+            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted dark:text-text-muted-dark opacity-70">Overview</div>
             <NavItem to="/" icon={LayoutDashboard} end>Dashboard</NavItem>
           </div>
 
@@ -163,10 +163,10 @@ function Layout() {
           </div>
         </nav>
 
-        <div className="p-3 border-t border-slate-100 dark:border-slate-700">
+        <div className="p-3 border-t border-border dark:border-border-dark">
           <button
             onClick={() => setShowFeedback(true)}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 w-full transition-all duration-200 mb-1"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-muted dark:text-text-muted-dark hover:bg-surface dark:hover:bg-card-dark w-full transition-all duration-200 mb-1"
           >
             <MessageCircle size={18} />
             Send Feedback
@@ -183,7 +183,7 @@ function Layout() {
 
       {/* Main Content - wrapped in error boundary */}
       {/* Main Content - wrapped in error boundary */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
+      <div className="flex-1 flex flex-col overflow-hidden bg-surface dark:bg-surface-dark">
         <Header />
 
         <div className="flex-1 overflow-auto">

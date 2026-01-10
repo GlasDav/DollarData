@@ -110,10 +110,10 @@ export default function CommandPalette() {
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
 
             <div className="fixed inset-0 flex items-start justify-center pt-[20vh] px-4">
-                <Dialog.Panel className="w-full max-w-xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <Dialog.Panel className="w-full max-w-xl bg-card dark:bg-card-dark rounded-2xl shadow-2xl border border-border dark:border-border-dark overflow-hidden">
                     {/* Search Input */}
-                    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                        <Search className="w-5 h-5 text-slate-400" />
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-border dark:border-border-dark">
+                        <Search className="w-5 h-5 text-text-muted dark:text-text-muted-dark" />
                         <input
                             ref={inputRef}
                             type="text"
@@ -121,9 +121,9 @@ export default function CommandPalette() {
                             onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
                             onKeyDown={handleKeyDown}
                             placeholder="Search commands..."
-                            className="flex-1 bg-transparent outline-none text-slate-900 dark:text-white placeholder-slate-400 text-lg"
+                            className="flex-1 bg-transparent outline-none text-text-primary dark:text-text-primary-dark placeholder-text-muted dark:placeholder-text-muted-dark text-lg"
                         />
-                        <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-700 rounded">
+                        <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs font-medium text-text-muted dark:text-text-muted-dark bg-surface dark:bg-card-dark rounded">
                             <Command size={12} /> K
                         </kbd>
                     </div>
@@ -131,13 +131,13 @@ export default function CommandPalette() {
                     {/* Results */}
                     <div className="max-h-80 overflow-y-auto py-2">
                         {filteredCommands.length === 0 ? (
-                            <div className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                            <div className="px-4 py-8 text-center text-text-muted dark:text-text-muted-dark">
                                 No commands found for "{query}"
                             </div>
                         ) : (
                             Object.entries(groupedCommands).map(([category, commands]) => (
                                 <div key={category}>
-                                    <div className="px-4 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                    <div className="px-4 py-2 text-xs font-semibold text-text-muted dark:text-text-muted-dark opacity-70 uppercase tracking-wider">
                                         {category}
                                     </div>
                                     {commands.map((cmd, idx) => {
@@ -152,17 +152,17 @@ export default function CommandPalette() {
                                                 onClick={() => handleSelect(cmd)}
                                                 onMouseEnter={() => setSelectedIndex(globalIndex)}
                                                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isActive
-                                                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                                                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                                    ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light'
+                                                    : 'text-text-primary dark:text-text-primary-dark hover:bg-surface dark:hover:bg-card-dark/50'
                                                     }`}
                                             >
-                                                <Icon size={18} className={isActive ? 'text-indigo-500' : 'text-slate-400'} />
+                                                <Icon size={18} className={isActive ? 'text-primary' : 'text-text-muted dark:text-text-muted-dark'} />
                                                 <span className="flex-1 font-medium">{cmd.label}</span>
                                                 {isCurrentPage && (
-                                                    <span className="text-xs text-slate-400 dark:text-slate-500">Current</span>
+                                                    <span className="text-xs text-text-muted dark:text-text-muted-dark">Current</span>
                                                 )}
                                                 {isActive && (
-                                                    <CornerDownLeft size={14} className="text-indigo-400" />
+                                                    <CornerDownLeft size={14} className="text-primary" />
                                                 )}
                                             </button>
                                         );
@@ -173,11 +173,11 @@ export default function CommandPalette() {
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between px-4 py-2 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center justify-between px-4 py-2 border-t border-border dark:border-border-dark bg-surface dark:bg-surface-dark/50 text-xs text-text-muted dark:text-text-muted-dark">
                         <div className="flex items-center gap-3">
                             <span className="flex items-center gap-1">
-                                <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 rounded shadow-sm">↑</kbd>
-                                <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 rounded shadow-sm">↓</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-card dark:bg-card-dark rounded shadow-sm">↑</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-card dark:bg-card-dark rounded shadow-sm">↓</kbd>
                                 to navigate
                             </span>
                             <span className="flex items-center gap-1">

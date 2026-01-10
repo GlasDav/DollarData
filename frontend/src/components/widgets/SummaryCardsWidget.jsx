@@ -12,23 +12,23 @@ export default function SummaryCardsWidget({ totals, netWorth, formatCurrency })
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Income</p>
+            <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
+                <p className="text-sm font-medium text-text-muted dark:text-text-muted-dark">Total Income</p>
                 <p className="text-2xl font-bold text-emerald-600 mt-1">{formatCurrency(safeTotal.income)}</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Expenses</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{formatCurrency(safeTotal.expenses)}</p>
+            <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
+                <p className="text-sm font-medium text-text-muted dark:text-text-muted-dark">Total Expenses</p>
+                <p className="text-2xl font-bold text-text-primary dark:text-text-primary-dark mt-1">{formatCurrency(safeTotal.expenses)}</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Savings</p>
+            <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
+                <p className="text-sm font-medium text-text-muted dark:text-text-muted-dark">Net Savings</p>
                 <p className={`text-2xl font-bold mt-1 ${safeTotal.net_savings >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                     {formatCurrency(safeTotal.net_savings)}
                 </p>
             </div>
-            <Link to="/net-worth" className="bg-gradient-to-br from-indigo-500 to-violet-600 p-6 rounded-2xl shadow-sm text-white hover:shadow-md transition-shadow relative overflow-hidden group">
+            <Link to="/net-worth" className="bg-gradient-to-br from-primary to-primary-hover p-6 rounded-2xl shadow-sm text-white hover:shadow-md transition-shadow relative overflow-hidden group">
                 <div className="relative z-10">
-                    <p className="text-sm font-medium text-indigo-100 flex items-center gap-2">
+                    <p className="text-sm font-medium text-primary-light/80 flex items-center gap-2">
                         <Wallet size={16} /> Net Worth
                     </p>
                     <p className="text-2xl font-bold mt-1">
