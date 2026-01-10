@@ -4,17 +4,17 @@ from sqlalchemy.sql import func
 from .database import Base
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "profiles"
 
     id = Column(String, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True) # Renamed from username, now Email
-    hashed_password = Column(String) # New: Auth
+    email = Column(String, unique=True, index=True) 
+    # hashed_password removed (Supabase Auth)
     # Personal Info
-    name = Column(String, nullable=True) # Defaults to User A or just Name
-    currency_symbol = Column(String, default="AUD")  # ISO 4217 currency code (was "A$")
-    is_email_verified = Column(Boolean, default=False)  # Email verification status
-    token_version = Column(Integer, default=0)  # Incremented to invalidate all tokens
-    created_at = Column(DateTime, default=func.now())  # When the account was created
+    name = Column(String, nullable=True) 
+    currency_symbol = Column(String, default="AUD")  
+    is_email_verified = Column(Boolean, default=False) 
+    # token_version removed
+    created_at = Column(DateTime, default=func.now())  
     
     # Household (Family Sharing) - use_alter defers FK creation until after households table exists
     household_id = Column(Integer, ForeignKey("households.id", use_alter=True, name="fk_user_household"), nullable=True)
@@ -36,7 +36,7 @@ class BudgetBucket(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     icon_name = Column(String, default="Wallet") # New: Lucide icon name
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
 
     is_shared = Column(Boolean, default=False)  # Shared between household members
     is_rollover = Column(Boolean, default=False) # New: Sinking Funds
@@ -97,7 +97,7 @@ class Transaction(Base):
     is_verified = Column(Boolean, default=False)
     
     bucket_id = Column(Integer, ForeignKey("budget_buckets.id"), nullable=True) # Nullable until categorized
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     
     parent_transaction_id = Column(Integer, ForeignKey("transactions.id"), nullable=True) # Split Logic
     
@@ -122,7 +122,7 @@ class Account(Base):
     __tablename__ = "accounts"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id")) # New: Auth
+    user_id = Column(String, ForeignKey("profiles.id")) # New: Auth
     name = Column(String, index=True)
     type = Column(String) # "Asset" or "Liability"
     category = Column(String) # e.g. "Cash", "Investment", "Real Estate", "Credit Card"
@@ -161,7 +161,7 @@ class NetWorthSnapshot(Base):
     __tablename__ = "net_worth_snapshots"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id")) # New: Auth
+    user_id = Column(String, ForeignKey("profiles.id")) # New: Auth
     date = Column(Date, index=True) # First of the month
     total_assets = Column(Float)
     total_liabilities = Column(Float)
@@ -183,7 +183,7 @@ class CategorizationRule(Base):
     __tablename__ = "categorization_rules"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     bucket_id = Column(Integer, ForeignKey("budget_buckets.id"))
     keywords = Column(String) # Comma separated or regex
     priority = Column(Integer, default=0) # Higher executes first
@@ -202,7 +202,7 @@ class Goal(Base):
     __tablename__ = "goals"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     name = Column(String, index=True)
     target_amount = Column(Float)
     target_date = Column(Date, nullable=True)
@@ -216,7 +216,7 @@ class Subscription(Base):
     __tablename__ = "subscriptions"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     name = Column(String)
     amount = Column(Float)
     type = Column(String, default="Expense") # "Expense" or "Income"
@@ -234,7 +234,7 @@ class TaxSettings(Base):
     __tablename__ = "tax_settings"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     
     filing_status = Column(String, default="Resident") # "Resident" or "Non-Resident"
     use_standard_deduction = Column(Boolean, default=False)
@@ -251,7 +251,7 @@ class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     token_hash = Column(String, index=True)  # Hashed token for security
     expires_at = Column(DateTime)
     used_at = Column(DateTime, nullable=True)  # Null until used
@@ -265,7 +265,7 @@ class EmailVerificationToken(Base):
     __tablename__ = "email_verification_tokens"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     token_hash = Column(String, index=True)  # Hashed token for security
     expires_at = Column(DateTime)
     used_at = Column(DateTime, nullable=True)  # Null until used
@@ -277,7 +277,7 @@ class HouseholdMember(Base):
     __tablename__ = "household_members"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     name = Column(String)
     color = Column(String, default="#6366f1") # Hex color for UI
     avatar = Column(String, default="User") # Lucide icon name
@@ -301,7 +301,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     type = Column(String)  # 'budget', 'bill', 'goal'
     message = Column(String)
     is_read = Column(Boolean, default=False)
@@ -314,7 +314,7 @@ class CategoryGoal(Base):
     __tablename__ = "category_goals"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     bucket_id = Column(Integer, ForeignKey("budget_buckets.id"))
     target_amount = Column(Float, nullable=True) # If None, use bucket budget
     start_date = Column(Date, default=func.now())
@@ -329,7 +329,7 @@ class NotificationSettings(Base):
     __tablename__ = "notification_settings"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"), unique=True)
+    user_id = Column(String, ForeignKey("profiles.id"), unique=True)
     
     # Toggle settings
     budget_alerts = Column(Boolean, default=True)
@@ -350,7 +350,7 @@ class ApiKey(Base):
     __tablename__ = "api_keys"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     name = Column(String)  # User-provided label, e.g., "Zapier Integration"
     key_prefix = Column(String, index=True)  # First 8 chars for identification (e.g., "pk_live_")
     key_hash = Column(String, unique=True, index=True)  # Hashed full key
@@ -383,7 +383,7 @@ class Household(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, default="My Household")  # e.g., "Glasser Family"
     created_at = Column(DateTime, default=func.now())
-    owner_id = Column(String, ForeignKey("users.id"), nullable=True)  # Original creator
+    owner_id = Column(String, ForeignKey("profiles.id"), nullable=True)  # Original creator
     
     # Relationships
     members = relationship("User", back_populates="household", foreign_keys="User.household_id")
@@ -400,7 +400,7 @@ class HouseholdUser(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     household_id = Column(Integer, ForeignKey("households.id"))
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     member_id = Column(Integer, ForeignKey("household_members.id"), nullable=True)  # Link to spender profile
     
     role = Column(String, default="member")  # "owner", "admin", "member"
@@ -431,7 +431,7 @@ class HouseholdInvite(Base):
     expires_at = Column(DateTime)
     accepted_at = Column(DateTime, nullable=True)
     
-    invited_by_id = Column(String, ForeignKey("users.id"))
+    invited_by_id = Column(String, ForeignKey("profiles.id"))
     created_at = Column(DateTime, default=func.now())
     
     # Relationships
@@ -446,7 +446,7 @@ class IgnoredRulePattern(Base):
     __tablename__ = "ignored_rule_patterns"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("profiles.id"))
     keyword = Column(String, index=True)
     created_at = Column(DateTime, default=func.now())
     

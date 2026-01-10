@@ -1,17 +1,16 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 import logging
 import os
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
 from .database import get_db
-from . import models, schemas
+from . import models
 
 # Configure logging
 logging.basicConfig(
@@ -23,51 +22,201 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # CONSTANTS - Environment Configuration
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    # In development, allow a default but warn loudly
-    if os.getenv("ENVIRONMENT", "development") == "production":
-        raise RuntimeError("SECRET_KEY environment variable is required in production")
-    else:
-        SECRET_KEY = "dev-only-insecure-key-do-not-use-in-production"
-        logger.warning("⚠️  Using insecure default SECRET_KEY - set SECRET_KEY env var for production!")
+# Legacy SECRET_KEY might be used for signing other things, but Supabase uses SUPABASE_JWT_SECRET
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-only")
 
-ALGORITHM = "HS256"
-# Short lived access token (e.g. 60 mins)
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
-# Long lived refresh token (e.g. 7 days)
-REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
-
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+def create_default_user_setup(user: models.User, db: Session):
+    """Create default accounts and buckets for a new user with hierarchical categories."""
     
-    to_encode.update({"exp": expire, "type": "access"})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    # Default Balance Sheet Accounts
+    default_accounts = [
+        {"name": "Checking Account", "type": "Asset", "category": "Cash"},
+        {"name": "Savings Account", "type": "Asset", "category": "Cash"},
+        {"name": "Credit Card", "type": "Liability", "category": "Credit Card"},
+    ]
     
-    to_encode.update({"exp": expire, "type": "refresh"})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    for account_data in default_accounts:
+        account = models.Account(
+            user_id=user.id,
+            name=account_data["name"],
+            type=account_data["type"],
+            category=account_data["category"],
+            is_active=True
+        )
+        db.add(account)
+    
+    # === HIERARCHICAL BUDGET CATEGORIES ===
+    DEFAULT_CATEGORIES = {
+        "Income": {
+            "icon": "TrendingUp",
+            "group": "Income",
+            "children": [
+                {"name": "Salaries", "icon": "Briefcase"},
+                {"name": "Interest", "icon": "TrendingUp"},
+                {"name": "Business", "icon": "Building"},
+                {"name": "Other Income", "icon": "DollarSign"},
+            ]
+        },
+        "Household Expenses": {
+            "icon": "Home",
+            "group": "Non-Discretionary",
+            "children": [
+                {"name": "Gas & Electricity", "icon": "Zap"},
+                {"name": "Water", "icon": "Droplet"},
+                {"name": "Internet", "icon": "Wifi"},
+                {"name": "Mobile Phone", "icon": "Smartphone"},
+                {"name": "Mortgage/Rent", "icon": "Home"},
+                {"name": "Strata Levies", "icon": "Building"},
+                {"name": "Council Rates", "icon": "Landmark"},
+                {"name": "Subscriptions", "icon": "CreditCard"},
+                {"name": "Maintenance", "icon": "Wrench"},
+                {"name": "Household General", "icon": "Home"},
+            ]
+        },
+        "Vehicle": {
+            "icon": "Car",
+            "group": "Non-Discretionary",
+            "children": [
+                {"name": "Petrol", "icon": "Fuel"},
+                {"name": "Insurance & Registration", "icon": "Shield"},
+                {"name": "Vehicle Maintenance", "icon": "Settings"},
+            ]
+        },
+        "Food": {
+            "icon": "Utensils",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Groceries", "icon": "ShoppingCart"},
+                {"name": "Dining Out", "icon": "Utensils"},
+                {"name": "Coffee", "icon": "Coffee"},
+                {"name": "Snacks", "icon": "Cookie"},
+            ]
+        },
+        "Lifestyle": {
+            "icon": "Heart",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Personal", "icon": "User"},
+                {"name": "Homewares", "icon": "Sofa"},
+                {"name": "Beauty", "icon": "Sparkles"},
+                {"name": "Health & Fitness", "icon": "Dumbbell"},
+                {"name": "Clothing", "icon": "Shirt"},
+                {"name": "Leisure", "icon": "Film"},
+                {"name": "Dates", "icon": "Heart"},
+                {"name": "Gifts", "icon": "Gift"},
+                {"name": "Parking & Tolls", "icon": "ParkingCircle"},
+                {"name": "Public Transport", "icon": "Train"},
+                {"name": "Taxi & Rideshare", "icon": "Car"},
+            ]
+        },
+        "Health & Wellness": {
+            "icon": "HeartPulse",
+            "group": "Non-Discretionary",
+            "children": [
+                {"name": "Medical", "icon": "Stethoscope"},
+                {"name": "Dental", "icon": "Smile"},
+                {"name": "Pharmacy", "icon": "Pill"},
+                {"name": "Fitness", "icon": "Dumbbell"},
+            ]
+        },
+        "Kids": {
+            "icon": "Baby",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Childcare", "icon": "Baby"},
+                {"name": "Education", "icon": "GraduationCap"},
+                {"name": "Kids Expenses", "icon": "ShoppingBag"},
+                {"name": "Activities", "icon": "Gamepad"},
+            ]
+        },
+        "Rollover/Non-Monthly": {
+            "icon": "Calendar",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Donations", "icon": "HandHeart"},
+                {"name": "Renovations", "icon": "Hammer"},
+                {"name": "Travel", "icon": "Plane"},
+                {"name": "Major Purchases", "icon": "ShoppingBag"},
+            ]
+        },
+        "Financial": {
+            "icon": "Landmark",
+            "group": "Non-Discretionary",
+            "children": [
+                {"name": "Cash & ATM Fees", "icon": "Banknote"},
+                {"name": "Financial Fees", "icon": "Building2"},
+                {"name": "Investment Contributions", "icon": "TrendingUp"},
+                {"name": "Accounting", "icon": "Calculator"},
+            ]
+        },
+        "Other": {
+            "icon": "MoreHorizontal",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Work Expenses", "icon": "Briefcase"},
+                {"name": "Business Expenses", "icon": "Building"},
+                {"name": "Miscellaneous", "icon": "MoreHorizontal"},
+                {"name": "Uncategorised", "icon": "HelpCircle"},
+            ]
+        },
+    }
+    
+    display_order = 0
+    
+    for parent_name, config in DEFAULT_CATEGORIES.items():
+        parent_bucket = models.BudgetBucket(
+            user_id=user.id,
+            name=parent_name,
+            icon_name=config.get("icon", "Wallet"),
+            group=config.get("group", "Discretionary"),
+            display_order=display_order
+        )
+        db.add(parent_bucket)
+        db.flush()
+        display_order += 1
+        
+        child_order = 0
+        for child in config.get("children", []):
+            child_bucket = models.BudgetBucket(
+                user_id=user.id,
+                name=child["name"],
+                icon_name=child.get("icon", "Wallet"),
+                group=config.get("group", "Discretionary"),
+                parent_id=parent_bucket.id,
+                display_order=child_order
+            )
+            db.add(child_bucket)
+            child_order += 1
+    
+    # Special Buckets
+    db.add(models.BudgetBucket(
+        user_id=user.id, name="Transfers", icon_name="ArrowLeftRight",
+        group="Non-Discretionary", is_transfer=True, display_order=display_order
+    ))
+    display_order += 1
+    
+    db.add(models.BudgetBucket(
+        user_id=user.id, name="Investments", icon_name="TrendingUp",
+        group="Non-Discretionary", is_investment=True, display_order=display_order
+    ))
+    display_order += 1
+    
+    db.add(models.BudgetBucket(
+        user_id=user.id, name="One Off", icon_name="Zap",
+        group="Non-Discretionary", is_one_off=True, display_order=display_order
+    ))
+    display_order += 1
+    
+    db.add(models.BudgetBucket(
+        user_id=user.id, name="Reimbursable", icon_name="ReceiptText",
+        group="Non-Discretionary", display_order=display_order
+    ))
+    
+    db.commit()
+    logger.info(f"Created default configuration for user {user.email}")
+
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -85,6 +234,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     try:
         # Verify Supabase Token
         # Supabase tokens use HS256 and have 'authenticated' audience
+        # NOTE: If Supabase uses RS256, we need parsing. But Supabase typically gives HS256 with JWT secret.
         payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
         user_id: str = payload.get("sub")
         email: str = payload.get("email")
@@ -92,18 +242,36 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         if not user_id:
              raise credentials_exception
 
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT Verification failed: {e}")
         raise credentials_exception
 
-    # Query User by ID (UUID)
+    # Query User (from public.profiles)
     user = db.query(models.User).filter(models.User.id == user_id).first()
     
     if user is None:
-        # Optional: Auto-create user record if they exist in Auth but not in public.users?
-        # This handles the "JIT" creation if migration missed something or new signup.
-        # But we should trust our migration.
-        # logger.warning(f"User {user_id} ({email}) found in Token but not in DB.")
-        raise credentials_exception
+        logger.info(f"User {user_id} ({email}) authenticated but not found in profiles. Provisioning JIT...")
+        
+        # JIT Provisioning
+        # 1. Create Profile
+        new_user = models.User(
+            id=user_id,
+            email=email,
+            name="User" # Default name
+            # currency_symbol defaults to AUD in model
+        )
+        db.add(new_user)
+        try:
+            db.commit()
+            db.refresh(new_user)
+            
+            # 2. Setup Default Data
+            create_default_user_setup(new_user, db)
+            
+            return new_user
+        except Exception as e:
+            logger.error(f"Failed to provision user {user_id}: {e}")
+            db.rollback()
+            raise credentials_exception
     
     return user
-
