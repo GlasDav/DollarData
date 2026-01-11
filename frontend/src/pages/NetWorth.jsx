@@ -11,6 +11,7 @@ import AccountDetailsModal from '../components/AccountDetailsModal';
 import AddInvestmentModal from '../components/AddInvestmentModal';
 import InvestmentsTab from '../components/InvestmentsTab';
 import ImportNetWorthModal from '../components/ImportNetWorthModal';
+import { CHART_COLORS, CHART_TOOLTIP_STYLE } from '../constants/chartColors';
 
 const getCategoryIcon = (category, type) => {
     const c = (category || '').toLowerCase();
@@ -142,8 +143,6 @@ export default function NetWorth() {
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
     }, [accounts, accountBalances]);
-
-    const ALLOCATION_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
     // Chart Data Config
     const chartData = useMemo(() => {
@@ -406,31 +405,31 @@ export default function NetWorth() {
                             </div>
                             {
                                 allocationData.length > 0 ? (
-                                    <div className="h-56 w-full">
+                                    <div className="h-64 w-full flex flex-col items-center">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie
                                                     data={allocationData}
                                                     cx="50%"
-                                                    cy="50%"
-                                                    innerRadius={35}
-                                                    outerRadius={55}
+                                                    cy="45%"
+                                                    innerRadius={50}
+                                                    outerRadius={80}
                                                     paddingAngle={3}
                                                     dataKey="value"
                                                 >
                                                     {allocationData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={ALLOCATION_COLORS[index % ALLOCATION_COLORS.length]} />
+                                                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                                     ))}
                                                 </Pie>
                                                 <Tooltip
                                                     formatter={(val) => formatCurrency(val)}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    contentStyle={CHART_TOOLTIP_STYLE}
                                                 />
                                                 <Legend
-                                                    layout="vertical"
-                                                    align="right"
-                                                    verticalAlign="middle"
-                                                    wrapperStyle={{ fontSize: '10px', lineHeight: '16px' }}
+                                                    layout="horizontal"
+                                                    align="center"
+                                                    verticalAlign="bottom"
+                                                    wrapperStyle={{ fontSize: '11px', paddingTop: '12px' }}
                                                     formatter={(value) => {
                                                         const item = allocationData.find(d => d.name === value);
                                                         const total = allocationData.reduce((sum, d) => sum + d.value, 0);

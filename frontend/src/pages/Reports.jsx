@@ -6,9 +6,7 @@ import { Download, RefreshCw, Filter, Calendar as CalendarIcon, PieChart, BarCha
 import { ComposedChart, Bar, Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import MultiSelectCategoryFilter from '../components/MultiSelectCategoryFilter';
 import TransactionTable from '../components/TransactionTable';
-
-
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+import { CHART_COLORS, INCOME_COLORS } from '../constants/chartColors';
 
 export default function Reports() {
     // State
@@ -494,7 +492,7 @@ export default function Reports() {
                                             dataKey="value"
                                         >
                                             {pieChartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                             ))}
                                         </Pie>
                                         <Tooltip
@@ -534,7 +532,7 @@ export default function Reports() {
                                                 dataKey="value"
                                             >
                                                 {incomeChartData.map((entry, index) => (
-                                                    <Cell key={`cell-income-${index}`} fill={['#10b981', '#34d399', '#6ee7b7', '#a7f3d0'][index % 4]} />
+                                                    <Cell key={`cell-income-${index}`} fill={INCOME_COLORS[index % INCOME_COLORS.length]} />
                                                 ))}
                                             </Pie>
                                             <Tooltip

@@ -170,10 +170,6 @@ def import_history(
         ).first()
         
         if existing_snapshot:
-            # Delete existing balances for this snapshot (we'll recreate them)
-            db.query(models.AccountBalance).filter(
-                models.AccountBalance.snapshot_id == existing_snapshot.id
-            ).delete()
             snapshot = existing_snapshot
         else:
             # Create new snapshot
@@ -189,10 +185,7 @@ def import_history(
             db.refresh(snapshot)
             imported_snapshots += 1
         
-        # Process accounts and balances for this date
-        total_assets = 0.0
-        total_liabilities = 0.0
-        
+        # Process accounts and balances for this date (UPSERT logic)
         for row_data in rows:
             account_key = row_data["account_name"].lower()
             
@@ -223,19 +216,37 @@ def import_history(
             # Update account's current balance to the latest imported value
             account.balance = row_data["balance"]
             
-            # Create account balance record
-            balance_record = models.AccountBalance(
-                snapshot_id=snapshot.id,
-                account_id=account.id,
-                balance=row_data["balance"]
-            )
-            db.add(balance_record)
+            # Upsert account balance record (find existing or create new)
+            existing_balance = db.query(models.AccountBalance).filter(
+                models.AccountBalance.snapshot_id == snapshot.id,
+                models.AccountBalance.account_id == account.id
+            ).first()
             
-            # Accumulate totals
-            if row_data["account_type"] == "Asset":
-                total_assets += row_data["balance"]
+            if existing_balance:
+                existing_balance.balance = row_data["balance"]
             else:
-                total_liabilities += row_data["balance"]
+                balance_record = models.AccountBalance(
+                    snapshot_id=snapshot.id,
+                    account_id=account.id,
+                    balance=row_data["balance"]
+                )
+                db.add(balance_record)
+        
+        # Recalculate snapshot totals from ALL balances for this snapshot (not just imported)
+        all_balances = db.query(models.AccountBalance).filter(
+            models.AccountBalance.snapshot_id == snapshot.id
+        ).all()
+        
+        total_assets = 0.0
+        total_liabilities = 0.0
+        
+        for bal in all_balances:
+            acc = db.query(models.Account).filter(models.Account.id == bal.account_id).first()
+            if acc:
+                if acc.type == "Asset":
+                    total_assets += bal.balance
+                else:
+                    total_liabilities += bal.balance
         
         # Update snapshot totals
         snapshot.total_assets = total_assets
