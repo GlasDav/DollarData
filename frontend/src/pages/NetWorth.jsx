@@ -489,8 +489,8 @@ export default function NetWorth() {
                                         />
                                         {chartMode === 'breakdown' ? (
                                             <>
-                                                {/* Zero reference line */}
-                                                <ReferenceLine y={0} stroke="#64748b" strokeWidth={2} />
+                                                {/* Zero reference line - black for emphasis */}
+                                                <ReferenceLine y={0} stroke="#000000" strokeWidth={2} />
                                                 {/* All category areas */}
                                                 {displayCategories.map((cat) => (
                                                     <Area
@@ -519,27 +519,35 @@ export default function NetWorth() {
                                                 <Legend
                                                     verticalAlign="bottom"
                                                     height={48}
-                                                    content={({ payload }) => (
-                                                        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2 px-3 py-2 bg-white/80 dark:bg-slate-800/90 rounded-lg">
-                                                            {payload?.map((entry, idx) => (
-                                                                <div key={idx} className="flex items-center gap-1.5 text-xs">
-                                                                    {entry.dataKey === 'Net Worth' ? (
-                                                                        // Dashed line for Net Worth - slate gray visible in both modes
-                                                                        <svg width="20" height="12">
-                                                                            <line x1="0" y1="6" x2="20" y2="6" stroke="#64748b" strokeWidth="3" strokeDasharray="4 2" />
-                                                                        </svg>
-                                                                    ) : (
-                                                                        // Filled rectangle for areas
-                                                                        <div
-                                                                            className="w-3 h-3 rounded-sm"
-                                                                            style={{ backgroundColor: entry.color }}
-                                                                        />
-                                                                    )}
-                                                                    <span className="text-text-primary dark:text-text-primary-dark">{entry.value}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
+                                                    content={({ payload }) => {
+                                                        // Sort payload to put Net Worth at the end
+                                                        const sortedPayload = payload ? [...payload].sort((a, b) => {
+                                                            if (a.dataKey === 'Net Worth') return 1;
+                                                            if (b.dataKey === 'Net Worth') return -1;
+                                                            return 0;
+                                                        }) : [];
+                                                        return (
+                                                            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2 px-3 py-2 bg-white/80 dark:bg-slate-800/90 rounded-lg">
+                                                                {sortedPayload.map((entry, idx) => (
+                                                                    <div key={idx} className="flex items-center gap-1.5 text-xs">
+                                                                        {entry.dataKey === 'Net Worth' ? (
+                                                                            // Dashed line for Net Worth - slate gray visible in both modes
+                                                                            <svg width="20" height="12">
+                                                                                <line x1="0" y1="6" x2="20" y2="6" stroke="#64748b" strokeWidth="3" strokeDasharray="4 2" />
+                                                                            </svg>
+                                                                        ) : (
+                                                                            // Filled rectangle for areas
+                                                                            <div
+                                                                                className="w-3 h-3 rounded-sm"
+                                                                                style={{ backgroundColor: entry.color }}
+                                                                            />
+                                                                        )}
+                                                                        <span className="text-text-primary dark:text-text-primary-dark">{entry.value}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    }}
                                                 />
                                             </>
                                         ) : (
