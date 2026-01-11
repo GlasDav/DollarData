@@ -110,32 +110,45 @@ def import_history(
         row_number += 1
         normalized = normalize_row(row)
         
+        # Skip empty rows or comment rows (reference key section)
+        date_value = normalized.get("date", "")
+        if not date_value or date_value.startswith("#"):
+            continue
+        
         # Validate and parse date (supports dd/mm/yyyy format)
         try:
             from datetime import datetime
-            parsed_date = datetime.strptime(normalized["date"], "%d/%m/%Y").date()
+            parsed_date = datetime.strptime(date_value, "%d/%m/%Y").date()
         except ValueError:
-            errors.append(f"Row {row_number}: Invalid date format '{normalized['date']}'. Use DD/MM/YYYY.")
+            errors.append(f"Row {row_number}: Invalid date format '{date_value}'. Use DD/MM/YYYY.")
             continue
         
         # Validate account_type
-        account_type = normalized["account_type"].title()
+        account_type = normalized.get("account_type", "").title()
         if account_type not in ["Asset", "Liability"]:
-            errors.append(f"Row {row_number}: account_type must be 'Asset' or 'Liability', got '{normalized['account_type']}'")
+            errors.append(f"Row {row_number}: account_type must be 'Asset' or 'Liability', got '{normalized.get('account_type', '')}'")
             continue
         
         # Validate balance (strip currency symbols and commas)
         try:
-            balance_str = normalized["balance"].replace("$", "").replace(",", "").strip()
+            balance_str = normalized.get("balance", "").replace("$", "").replace(",", "").strip()
+            if not balance_str:
+                errors.append(f"Row {row_number}: Balance is empty")
+                continue
             balance = float(balance_str)
         except ValueError:
-            errors.append(f"Row {row_number}: Invalid balance '{normalized['balance']}'")
+            errors.append(f"Row {row_number}: Invalid balance '{normalized.get('balance', '')}'")
+            continue
+        
+        account_name = normalized.get("account_name", "").strip()
+        if not account_name:
+            errors.append(f"Row {row_number}: Account name is empty")
             continue
         
         date_groups[parsed_date].append({
-            "account_name": normalized["account_name"],
+            "account_name": account_name,
             "account_type": account_type,
-            "account_category": normalized["account_category"].title() or "Other",
+            "account_category": normalized.get("account_category", "Other").title() or "Other",
             "balance": balance
         })
     

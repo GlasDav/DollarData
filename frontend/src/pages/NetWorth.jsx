@@ -143,7 +143,7 @@ export default function NetWorth() {
             .sort((a, b) => b.value - a.value);
     }, [accounts, accountBalances]);
 
-    const ALLOCATION_COLORS = ['#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B'];
+    const ALLOCATION_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
     // Chart Data Config
     const chartData = useMemo(() => {
@@ -397,8 +397,8 @@ export default function NetWorth() {
                         </div>
 
                         {/* Allocation Chart */}
-                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark h-96">
-                            <div className="flex justify-between items-center mb-6">
+                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
+                            <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
                                     <Wallet size={20} className="text-emerald-500" />
                                     Asset Allocation
@@ -406,30 +406,43 @@ export default function NetWorth() {
                             </div>
                             {
                                 allocationData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={allocationData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={100}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
-                                                {allocationData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={ALLOCATION_COLORS[index % ALLOCATION_COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip
-                                                formatter={(val) => `$${val.toLocaleString()}`}
-                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                            />
-                                            <Legend verticalAlign="middle" align="right" layout="vertical" />
-                                        </PieChart>
-                                    </ResponsiveContainer>
+                                    <div className="h-56 w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={allocationData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={35}
+                                                    outerRadius={55}
+                                                    paddingAngle={3}
+                                                    dataKey="value"
+                                                >
+                                                    {allocationData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={ALLOCATION_COLORS[index % ALLOCATION_COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip
+                                                    formatter={(val) => formatCurrency(val)}
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                />
+                                                <Legend
+                                                    layout="vertical"
+                                                    align="right"
+                                                    verticalAlign="middle"
+                                                    wrapperStyle={{ fontSize: '10px', lineHeight: '16px' }}
+                                                    formatter={(value) => {
+                                                        const item = allocationData.find(d => d.name === value);
+                                                        const total = allocationData.reduce((sum, d) => sum + d.value, 0);
+                                                        const pct = total > 0 ? Math.round((item?.value / total) * 100) : 0;
+                                                        return `${value} ${pct}%`;
+                                                    }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
                                 ) : (
-                                    <div className="flex items-center justify-center h-full text-slate-400">
+                                    <div className="flex items-center justify-center h-48 text-text-muted dark:text-text-muted-dark">
                                         No asset data available
                                     </div>
                                 )
@@ -631,7 +644,8 @@ export default function NetWorth() {
                 </>
             ) : (
                 <InvestmentsTab />
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
