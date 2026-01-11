@@ -508,16 +508,17 @@ export default function NetWorth() {
                                                 {newAccountType === 'Asset' ? (
                                                     <>
                                                         <option value="Cash">Cash</option>
-                                                        <option value="Savings">Savings</option>
                                                         <option value="Investment">Investment (Stocks)</option>
                                                         <option value="Superannuation">Superannuation</option>
                                                         <option value="Property">Property</option>
+                                                        <option value="Other">Other</option>
                                                     </>
                                                 ) : (
                                                     <>
                                                         <option value="Loan">Loan</option>
                                                         <option value="Mortgage">Mortgage</option>
                                                         <option value="Credit Card">Credit Card</option>
+                                                        <option value="Other">Other</option>
                                                     </>
                                                 )}
                                             </select>

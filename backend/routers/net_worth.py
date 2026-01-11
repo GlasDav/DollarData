@@ -31,12 +31,23 @@ def download_template(current_user: models.User = Depends(auth.get_current_user)
     writer.writerow(["date", "account_name", "account_type", "account_category", "balance"])
     
     # Example rows to guide the user
-    writer.writerow(["2024-01-01", "Savings Account", "Asset", "Cash", "10000.00"])
-    writer.writerow(["2024-01-01", "Home Loan", "Liability", "Real Estate", "350000.00"])
-    writer.writerow(["2024-01-01", "Brokerage Account", "Asset", "Investment", "25000.00"])
-    writer.writerow(["2024-02-01", "Savings Account", "Asset", "Cash", "11500.00"])
-    writer.writerow(["2024-02-01", "Home Loan", "Liability", "Real Estate", "349200.00"])
-    writer.writerow(["2024-02-01", "Brokerage Account", "Asset", "Investment", "26500.00"])
+    writer.writerow(["01/01/2024", "Savings Account", "Asset", "Cash", "10000.00"])
+    writer.writerow(["01/01/2024", "Home Loan", "Liability", "Mortgage", "350000.00"])
+    writer.writerow(["01/01/2024", "Brokerage Account", "Asset", "Investment", "25000.00"])
+    writer.writerow(["01/02/2024", "Savings Account", "Asset", "Cash", "11500.00"])
+    writer.writerow(["01/02/2024", "Home Loan", "Liability", "Mortgage", "349200.00"])
+    writer.writerow(["01/02/2024", "Brokerage Account", "Asset", "Investment", "26500.00"])
+    
+    # Blank row before key
+    writer.writerow([])
+    
+    # Reference key section
+    writer.writerow(["# REFERENCE KEY - Delete these rows before importing"])
+    writer.writerow(["# account_type options:", "Asset", "Liability", "", ""])
+    writer.writerow(["# Asset categories:", "Cash", "Investment", "Superannuation", "Property", "Other"])
+    writer.writerow(["# Liability categories:", "Loan", "Mortgage", "Credit Card", "Other", ""])
+    writer.writerow(["# date format:", "DD/MM/YYYY", "", "", ""])
+    writer.writerow(["# balance:", "Enter as POSITIVE numbers (including liabilities)", "", "", ""])
     
     output.seek(0)
     
@@ -99,12 +110,12 @@ def import_history(
         row_number += 1
         normalized = normalize_row(row)
         
-        # Validate and parse date
+        # Validate and parse date (supports dd/mm/yyyy format)
         try:
             from datetime import datetime
-            parsed_date = datetime.strptime(normalized["date"], "%Y-%m-%d").date()
+            parsed_date = datetime.strptime(normalized["date"], "%d/%m/%Y").date()
         except ValueError:
-            errors.append(f"Row {row_number}: Invalid date format '{normalized['date']}'. Use YYYY-MM-DD.")
+            errors.append(f"Row {row_number}: Invalid date format '{normalized['date']}'. Use DD/MM/YYYY.")
             continue
         
         # Validate account_type

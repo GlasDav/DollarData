@@ -48,7 +48,7 @@ docker compose down && docker compose up -d --build
 
 ## Quick One-Liner (after finding app path)
 ```bash
-cd /opt/dollardata && git pull origin main && docker compose down && docker compose up -d --build
+cd /opt/dollardata && git pull && docker compose down && docker compose up -d --build
 ```
 
 ## Troubleshooting
