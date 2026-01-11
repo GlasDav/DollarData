@@ -273,9 +273,10 @@ export default function NetWorth() {
         allocationData.forEach((item, idx) => {
             map[item.name] = CHART_COLORS[idx % CHART_COLORS.length];
         });
-        // Add special colors for simplified categories
-        map['Net Property'] = '#10b981'; // Emerald for property
-        map['Liabilities'] = '#ef4444'; // Red for liabilities
+        // Net Property uses Property's color from donut
+        map['Net Property'] = map['Property'] || '#6366f1';
+        // Liabilities is always red
+        map['Liabilities'] = '#ef4444';
         return map;
     }, [allocationData]);
 
@@ -511,13 +512,34 @@ export default function NetWorth() {
                                                     dataKey="Net Worth"
                                                     stroke="#1e293b"
                                                     strokeWidth={3}
+                                                    strokeDasharray="8 4"
                                                     dot={false}
                                                     activeDot={{ r: 5, fill: '#1e293b', stroke: '#fff', strokeWidth: 2 }}
                                                 />
                                                 <Legend
                                                     verticalAlign="bottom"
-                                                    height={36}
-                                                    wrapperStyle={{ fontSize: '11px' }}
+                                                    height={48}
+                                                    content={({ payload }) => (
+                                                        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2 px-3 py-2 bg-white/80 dark:bg-slate-800/90 rounded-lg">
+                                                            {payload?.map((entry, idx) => (
+                                                                <div key={idx} className="flex items-center gap-1.5 text-xs">
+                                                                    {entry.dataKey === 'Net Worth' ? (
+                                                                        // Dashed line for Net Worth
+                                                                        <svg width="20" height="12">
+                                                                            <line x1="0" y1="6" x2="20" y2="6" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        // Filled rectangle for areas
+                                                                        <div
+                                                                            className="w-3 h-3 rounded-sm"
+                                                                            style={{ backgroundColor: entry.color }}
+                                                                        />
+                                                                    )}
+                                                                    <span className="text-text-primary dark:text-text-primary-dark">{entry.value}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 />
                                             </>
                                         ) : (

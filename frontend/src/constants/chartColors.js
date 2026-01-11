@@ -4,15 +4,16 @@
  */
 
 // Primary chart color palette - 8 colors for pie/bar charts
+// Note: Red moved to end so it's reserved for liabilities/errors
 export const CHART_COLORS = [
     '#6366f1', // Indigo (primary)
     '#10b981', // Emerald (success)
     '#f59e0b', // Amber (warning)
-    '#ef4444', // Red (error)
     '#8b5cf6', // Violet
     '#ec4899', // Pink
     '#06b6d4', // Cyan
     '#84cc16', // Lime
+    '#ef4444', // Red (error) - kept last to avoid use in general charts
 ];
 
 // Income-specific greens (for income pie charts)
