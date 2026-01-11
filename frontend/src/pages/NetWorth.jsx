@@ -510,11 +510,11 @@ export default function NetWorth() {
                                                     name="Net Worth"
                                                     type="monotone"
                                                     dataKey="Net Worth"
-                                                    stroke="#1e293b"
+                                                    stroke="#64748b"
                                                     strokeWidth={3}
                                                     strokeDasharray="8 4"
                                                     dot={false}
-                                                    activeDot={{ r: 5, fill: '#1e293b', stroke: '#fff', strokeWidth: 2 }}
+                                                    activeDot={{ r: 5, fill: '#64748b', stroke: '#fff', strokeWidth: 2 }}
                                                 />
                                                 <Legend
                                                     verticalAlign="bottom"
@@ -524,9 +524,9 @@ export default function NetWorth() {
                                                             {payload?.map((entry, idx) => (
                                                                 <div key={idx} className="flex items-center gap-1.5 text-xs">
                                                                     {entry.dataKey === 'Net Worth' ? (
-                                                                        // Dashed line for Net Worth
+                                                                        // Dashed line for Net Worth - slate gray visible in both modes
                                                                         <svg width="20" height="12">
-                                                                            <line x1="0" y1="6" x2="20" y2="6" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
+                                                                            <line x1="0" y1="6" x2="20" y2="6" stroke="#64748b" strokeWidth="3" strokeDasharray="4 2" />
                                                                         </svg>
                                                                     ) : (
                                                                         // Filled rectangle for areas

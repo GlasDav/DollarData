@@ -4,16 +4,17 @@
  */
 
 // Primary chart color palette - 8 colors for pie/bar charts
-// Note: Red moved to end so it's reserved for liabilities/errors
+// Note: Ordered for maximum distinction (colorblind-friendly)
+// Red moved to end so it's reserved for liabilities/errors
 export const CHART_COLORS = [
-    '#6366f1', // Indigo (primary)
-    '#10b981', // Emerald (success)
-    '#f59e0b', // Amber (warning)
-    '#8b5cf6', // Violet
+    '#f59e0b', // Amber - Cash (warm, distinct)
+    '#06b6d4', // Cyan - Other (cool, distinct from amber)
+    '#6366f1', // Indigo - Property (primary)
+    '#10b981', // Emerald - Superannuation (success)
     '#ec4899', // Pink
-    '#06b6d4', // Cyan
     '#84cc16', // Lime
-    '#ef4444', // Red (error) - kept last to avoid use in general charts
+    '#8b5cf6', // Violet
+    '#ef4444', // Red (error) - kept last for liabilities
 ];
 
 // Income-specific greens (for income pie charts)
