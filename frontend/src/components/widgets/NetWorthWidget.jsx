@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import { ASSET_COLOR, LIABILITY_COLOR } from '../../constants/chartColors';
 
 /**
  * NetWorthWidget - Mini net worth chart with sparkline
@@ -52,14 +53,14 @@ export default function NetWorthWidget({ history: historyProp = [], formatCurren
                             <AreaChart data={chartData.length === 1 ? [chartData[0], chartData[0]] : chartData}>
                                 <defs>
                                     <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={isPositive ? "#10B981" : "#EF4444"} stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor={isPositive ? "#10B981" : "#EF4444"} stopOpacity={0} />
+                                        <stop offset="5%" stopColor={isPositive ? ASSET_COLOR : LIABILITY_COLOR} stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor={isPositive ? ASSET_COLOR : LIABILITY_COLOR} stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <Area
                                     type="monotone"
                                     dataKey="value"
-                                    stroke={isPositive ? "#10B981" : "#EF4444"}
+                                    stroke={isPositive ? ASSET_COLOR : LIABILITY_COLOR}
                                     strokeWidth={2}
                                     fill="url(#netWorthGradient)"
                                 />

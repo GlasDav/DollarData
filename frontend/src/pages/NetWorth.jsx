@@ -12,7 +12,7 @@ import AddInvestmentModal from '../components/AddInvestmentModal';
 import InvestmentsTab from '../components/InvestmentsTab';
 import ImportNetWorthModal from '../components/ImportNetWorthModal';
 import AccountsHistoryTab from '../components/AccountsHistoryTab';
-import { CHART_COLORS, CHART_TOOLTIP_STYLE } from '../constants/chartColors';
+import { CHART_COLORS, CHART_TOOLTIP_STYLE, NET_WORTH_COLOR, ASSET_COLOR, LIABILITY_COLOR } from '../constants/chartColors';
 
 const getCategoryIcon = (category, type) => {
     const c = (category || '').toLowerCase();
@@ -190,7 +190,7 @@ export default function NetWorth() {
 
     const activeData = (chartMode === 'net_worth' && showProjection) ? unifiedData : chartData;
     const chartDataKey = chartMode === 'net_worth' ? 'net_worth' : 'value';
-    const chartColor = chartMode === 'net_worth' ? '#6366f1' : '#8b5cf6';
+    const chartColor = chartMode === 'net_worth' ? NET_WORTH_COLOR : CHART_COLORS[4]; // Violet for investments
 
     return (
         <div className="max-w-7xl mx-auto p-8 space-y-8">

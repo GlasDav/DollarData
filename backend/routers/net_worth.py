@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 from datetime import date
 from ..database import get_db
 from .. import models, schemas, auth
@@ -57,6 +58,45 @@ def download_template(current_user: models.User = Depends(auth.get_current_user)
         headers={"Content-Disposition": "attachment; filename=net_worth_template.csv"}
     )
 
+
+
+# --- Helpers ---
+
+class BalanceUpdate(BaseModel):
+    date: date
+    balance: float
+
+def recalculate_snapshot(db: Session, snapshot_id: int):
+    """
+    Recalculates total_assets, total_liabilities, and net_worth for a given snapshot
+    based on all account balances associated with it.
+    """
+    snapshot = db.query(models.NetWorthSnapshot).get(snapshot_id)
+    if not snapshot: return
+
+    # Get all balances with account info
+    # We join Account to get the type (Asset/Liability)
+    results = db.query(models.AccountBalance, models.Account).join(
+        models.Account, models.AccountBalance.account_id == models.Account.id
+    ).filter(
+        models.AccountBalance.snapshot_id == snapshot_id
+    ).all()
+
+    total_assets = 0.0
+    total_liabilities = 0.0
+
+    for bal, acc in results:
+        if acc.type == "Asset":
+            total_assets += bal.balance
+        else:
+            total_liabilities += bal.balance
+            
+    snapshot.total_assets = total_assets
+    snapshot.total_liabilities = total_liabilities
+    snapshot.net_worth = total_assets - total_liabilities
+    
+    db.commit()
+    db.refresh(snapshot)
 
 @router.post("/import-history", response_model=schemas.NetWorthImportResult)
 def import_history(
@@ -232,26 +272,10 @@ def import_history(
                 )
                 db.add(balance_record)
         
-        # Recalculate snapshot totals from ALL balances for this snapshot (not just imported)
-        all_balances = db.query(models.AccountBalance).filter(
-            models.AccountBalance.snapshot_id == snapshot.id
-        ).all()
         
-        total_assets = 0.0
-        total_liabilities = 0.0
-        
-        for bal in all_balances:
-            acc = db.query(models.Account).filter(models.Account.id == bal.account_id).first()
-            if acc:
-                if acc.type == "Asset":
-                    total_assets += bal.balance
-                else:
-                    total_liabilities += bal.balance
-        
-        # Update snapshot totals
-        snapshot.total_assets = total_assets
-        snapshot.total_liabilities = total_liabilities
-        snapshot.net_worth = total_assets - total_liabilities
+        # Recalculate snapshot totals using helper (ensures DB consistency)
+        recalculate_snapshot(db, snapshot.id)
+
         
         db.commit()
     
@@ -284,16 +308,23 @@ def get_accounts_history(db: Session = Depends(get_db), current_user: models.Use
     Get historical account balances organized by month.
     Returns a matrix of account balances for display in a spreadsheet-style table.
     """
-    from datetime import datetime
-    from dateutil.relativedelta import relativedelta
-    
     # Get all snapshots for this user, ordered by date
     snapshots = db.query(models.NetWorthSnapshot).filter(
         models.NetWorthSnapshot.user_id == current_user.id
     ).order_by(models.NetWorthSnapshot.date.asc()).all()
     
     if not snapshots:
-        return {"months": [], "accounts": [], "totals": {"assets_by_month": [], "liabilities_by_month": [], "net_worth_by_month": []}}
+        return {"months": [], "dates": [], "accounts": [], "totals": {"assets_by_month": [], "liabilities_by_month": [], "net_worth_by_month": []}}
+    
+    # Filter to one snapshot per month (the latest one) to avoid column duplication
+    snapshots_by_month = {}
+    for s in snapshots:
+        label = s.date.strftime("%b %y")
+        snapshots_by_month[label] = s # Keeps latest due to date sorting
+    
+    unique_snapshots = list(snapshots_by_month.values())
+    months = list(snapshots_by_month.keys())
+    dates = [s.date for s in unique_snapshots]
     
     # Get all active accounts for this user
     accounts = db.query(models.Account).filter(
@@ -301,25 +332,11 @@ def get_accounts_history(db: Session = Depends(get_db), current_user: models.Use
         models.Account.is_active == True
     ).order_by(models.Account.type, models.Account.category, models.Account.name).all()
     
-    # Generate month labels from snapshots
-    months = []
-    snapshot_by_date = {}
-    for snapshot in snapshots:
-        month_label = snapshot.date.strftime("%b %y")
-        if month_label not in months:
-            months.append(month_label)
-        snapshot_by_date[snapshot.date] = snapshot
-    
     # Build account balance matrix
     account_data = []
     for account in accounts:
         balances = []
-        for snapshot in snapshots:
-            # Get the first snapshot of each unique month
-            month_label = snapshot.date.strftime("%b %y")
-            if months.count(month_label) > 1:
-                continue  # Skip duplicate months
-                
+        for snapshot in unique_snapshots:
             # Find balance for this account in this snapshot
             balance_record = db.query(models.AccountBalance).filter(
                 models.AccountBalance.snapshot_id == snapshot.id,
@@ -341,20 +358,14 @@ def get_accounts_history(db: Session = Depends(get_db), current_user: models.Use
     liabilities_by_month = []
     net_worth_by_month = []
     
-    # Use snapshot data for totals (already calculated correctly)
-    seen_months = set()
-    for snapshot in snapshots:
-        month_label = snapshot.date.strftime("%b %y")
-        if month_label in seen_months:
-            continue
-        seen_months.add(month_label)
-        
+    for snapshot in unique_snapshots:
         assets_by_month.append(snapshot.total_assets)
         liabilities_by_month.append(snapshot.total_liabilities)
         net_worth_by_month.append(snapshot.net_worth)
     
     return {
-        "months": list(dict.fromkeys(months)),  # Deduplicate while preserving order
+        "months": months,
+        "dates": dates,
         "accounts": account_data,
         "totals": {
             "assets_by_month": assets_by_month,
@@ -373,8 +384,85 @@ def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(db_account)
     return db_account
+    return db_account
 
-@router.put("/accounts/{account_id}", response_model=schemas.Account)
+@router.patch("/accounts/{account_id}/balance", response_model=schemas.NetWorthSnapshot)
+def update_account_balance_history(
+    account_id: int, 
+    update: BalanceUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Updates the balance of an account for a specific month (snapshot).
+    Creates the snapshot if it doesn't exist.
+    Recalculates totals.
+    Return the updated Snapshot.
+    """
+    # 1. Verify Account
+    account = db.query(models.Account).filter(models.Account.id == account_id, models.Account.user_id == current_user.id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    # 2. Find or Create Snapshot for the date (normalized to day 1, or exact date?)
+    # Generally snapshots are monthly, often stored as YYYY-MM-01 or specific date.
+    # The frontend usually passes the exact date key from the column.
+    # Let's trust the date passed.
+    
+    snapshot = db.query(models.NetWorthSnapshot).filter(
+        models.NetWorthSnapshot.user_id == current_user.id,
+        models.NetWorthSnapshot.date == update.date
+    ).first()
+    
+    if not snapshot:
+        # Create new snapshot
+        snapshot = models.NetWorthSnapshot(
+            user_id=current_user.id,
+            date=update.date,
+            total_assets=0,
+            total_liabilities=0,
+            net_worth=0
+        )
+        db.add(snapshot)
+        db.commit()
+        db.refresh(snapshot)
+    
+    # 3. Update/Create Balance Record
+    balance_record = db.query(models.AccountBalance).filter(
+        models.AccountBalance.snapshot_id == snapshot.id,
+        models.AccountBalance.account_id == account_id
+    ).first()
+    
+    if balance_record:
+        balance_record.balance = update.balance
+    else:
+        balance_record = models.AccountBalance(
+            snapshot_id=snapshot.id,
+            account_id=account_id,
+            balance=update.balance
+        )
+        db.add(balance_record)
+    
+    db.commit()
+    
+    # 4. Recalculate
+    recalculate_snapshot(db, snapshot.id)
+    
+    return snapshot
+
+@router.post("/recalculate-all")
+def recalculate_all_snapshots(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """
+    Force recalculation of all snapshot totals based on underlying balances.
+    Useful for fixing data inconsistencies.
+    """
+    snapshots = db.query(models.NetWorthSnapshot).filter(models.NetWorthSnapshot.user_id == current_user.id).all()
+    count = 0
+    for s in snapshots:
+        recalculate_snapshot(db, s.id)
+        count += 1
+    return {"recalculated": count}
+
 def update_account(account_id: int, account_update: schemas.AccountCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_account = db.query(models.Account).filter(models.Account.id == account_id, models.Account.user_id == current_user.id).first()
     if not db_account:

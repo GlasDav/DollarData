@@ -2,6 +2,7 @@ import React from 'react';
 import { LineChart } from 'lucide-react';
 import { ComposedChart, Bar, Line, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import MultiSelectCategoryFilter from '../MultiSelectCategoryFilter';
+import { CHART_COLORS, LIABILITY_COLOR } from '../../constants/chartColors';
 
 /**
  * SpendingTrendsWidget - Historical spending chart with multi-select category filter
@@ -94,8 +95,8 @@ export default function SpendingTrendsWidget({
                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             formatter={(val) => [`$${val.toLocaleString()}`, ""]}
                         />
-                        <Bar dataKey="spent" name="Spent" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                        <Line type="monotone" dataKey="limit" name="Budget Limit" stroke="#ef4444" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                        <Bar dataKey="spent" name="Spent" fill={CHART_COLORS[0]} radius={[4, 4, 0, 0]} maxBarSize={50} />
+                        <Line type="monotone" dataKey="limit" name="Budget Limit" stroke={LIABILITY_COLOR} strokeWidth={2} dot={false} strokeDasharray="5 5" />
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>
