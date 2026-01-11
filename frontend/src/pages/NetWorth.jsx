@@ -6,7 +6,6 @@ import {
     Landmark, CreditCard, Wallet, LineChart, RefreshCw, X, Home, PiggyBank, Download, Upload
 } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import CheckInModal from '../components/CheckInModal';
 import AccountDetailsModal from '../components/AccountDetailsModal';
 import AddInvestmentModal from '../components/AddInvestmentModal';
 import InvestmentsTab from '../components/InvestmentsTab';
@@ -28,7 +27,7 @@ const getCategoryIcon = (category, type) => {
 export default function NetWorth() {
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('overview');
-    const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+
     const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -36,6 +35,7 @@ export default function NetWorth() {
     const [showProjection, setShowProjection] = useState(false);
     const [isInvestmentModalOpen, setIsInvestmentModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [selectedCategories, setSelectedCategories] = useState(null); // null = all categories
 
     // Helper
     const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
@@ -54,6 +54,12 @@ export default function NetWorth() {
     const { data: investmentHistory = [], isLoading: loadingInvHistory } = useQuery({
         queryKey: ['investmentHistory'],
         queryFn: getInvestmentHistory
+    });
+
+    // Accounts History for Stacked Breakdown Chart
+    const { data: accountsHistory = { months: [], dates: [], accounts: [], totals: {} } } = useQuery({
+        queryKey: ['accountsHistory'],
+        queryFn: async () => (await api.get('/net-worth/accounts-history')).data
     });
 
     // Projection Data
@@ -192,6 +198,42 @@ export default function NetWorth() {
     const chartDataKey = chartMode === 'net_worth' ? 'net_worth' : 'value';
     const chartColor = chartMode === 'net_worth' ? NET_WORTH_COLOR : CHART_COLORS[4]; // Violet for investments
 
+    // Stacked Breakdown Chart Data (by Category)
+    const { breakdownData, categories } = useMemo(() => {
+        if (!accountsHistory.accounts?.length || !accountsHistory.dates?.length) {
+            return { breakdownData: [], categories: [] };
+        }
+
+        // Get unique categories from accounts
+        const categorySet = new Set();
+        accountsHistory.accounts.forEach(acc => {
+            if (acc.type === 'Asset' && acc.category) {
+                categorySet.add(acc.category);
+            }
+        });
+        const allCategories = Array.from(categorySet).sort();
+
+        // Build data points for each date
+        const data = accountsHistory.dates.map((date, idx) => {
+            const point = { date: date };
+
+            // Aggregate balances by category
+            accountsHistory.accounts.forEach(acc => {
+                if (acc.type === 'Asset') {
+                    const balance = acc.balances_by_month[idx] || 0;
+                    point[acc.category] = (point[acc.category] || 0) + balance;
+                }
+            });
+
+            return point;
+        });
+
+        return { breakdownData: data, categories: allCategories };
+    }, [accountsHistory]);
+
+    // Filter categories based on selection
+    const visibleCategories = selectedCategories || categories;
+
     return (
         <div className="max-w-7xl mx-auto p-8 space-y-8">
             {/* Header - Only Show in Overview */}
@@ -218,13 +260,7 @@ export default function NetWorth() {
                             <Upload size={18} />
                             Import
                         </button>
-                        <button
-                            onClick={() => setIsCheckInOpen(true)}
-                            className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition"
-                        >
-                            <Plus size={20} />
-                            Monthly Check-in
-                        </button>
+
                     </div>
                 </header>
             )}
@@ -301,6 +337,12 @@ export default function NetWorth() {
                                         Net Worth
                                     </button>
                                     <button
+                                        onClick={() => setChartMode('breakdown')}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${chartMode === 'breakdown' ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                                    >
+                                        Breakdown
+                                    </button>
+                                    <button
                                         onClick={() => setChartMode('investments')}
                                         className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${chartMode === 'investments' ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}
                                     >
@@ -319,12 +361,22 @@ export default function NetWorth() {
                             </div>
                             <div className="flex-1 min-h-0 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={activeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                    <AreaChart
+                                        data={chartMode === 'breakdown' ? breakdownData : activeData}
+                                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                        stackOffset={chartMode === 'breakdown' ? 'none' : undefined}
+                                    >
                                         <defs>
                                             <linearGradient id="colorNw" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} />
                                                 <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
                                             </linearGradient>
+                                            {categories.map((cat, idx) => (
+                                                <linearGradient key={cat} id={`color${idx}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor={CHART_COLORS[idx % CHART_COLORS.length]} stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor={CHART_COLORS[idx % CHART_COLORS.length]} stopOpacity={0.3} />
+                                                </linearGradient>
+                                            ))}
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                         <XAxis
@@ -351,21 +403,39 @@ export default function NetWorth() {
                                                         <div className="bg-card dark:bg-card-dark p-4 border border-border dark:border-border-dark shadow-xl rounded-xl">
                                                             <p className="text-sm font-medium text-text-muted mb-2">{new Date(label).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</p>
                                                             <div className="space-y-1">
-                                                                <p className="text-lg font-bold text-indigo-600 flex justify-between gap-8">
-                                                                    <span>{chartMode === 'net_worth' ? 'Net Worth' : 'Value'}</span>
-                                                                    <span>{formatCurrency(data[chartDataKey])}</span>
-                                                                </p>
-                                                                {chartMode === 'net_worth' && (
+                                                                {chartMode === 'breakdown' ? (
                                                                     <>
+                                                                        {payload.map((entry, idx) => (
+                                                                            <p key={idx} className="text-sm flex justify-between gap-4" style={{ color: entry.color }}>
+                                                                                <span>{entry.dataKey}</span>
+                                                                                <span className="font-medium">{formatCurrency(entry.value)}</span>
+                                                                            </p>
+                                                                        ))}
                                                                         <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
-                                                                        <p className="text-sm text-emerald-600 flex justify-between gap-8">
-                                                                            <span>Assets</span>
-                                                                            <span>+{formatCurrency(data.total_assets)}</span>
+                                                                        <p className="text-sm font-bold text-text-primary flex justify-between gap-4">
+                                                                            <span>Total</span>
+                                                                            <span>{formatCurrency(payload.reduce((sum, p) => sum + (p.value || 0), 0))}</span>
                                                                         </p>
-                                                                        <p className="text-sm text-red-500 flex justify-between gap-8">
-                                                                            <span>Liabilities</span>
-                                                                            <span>-{formatCurrency(data.total_liabilities)}</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <p className="text-lg font-bold text-indigo-600 flex justify-between gap-8">
+                                                                            <span>{chartMode === 'net_worth' ? 'Net Worth' : 'Value'}</span>
+                                                                            <span>{formatCurrency(data[chartDataKey])}</span>
                                                                         </p>
+                                                                        {chartMode === 'net_worth' && (
+                                                                            <>
+                                                                                <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
+                                                                                <p className="text-sm text-emerald-600 flex justify-between gap-8">
+                                                                                    <span>Assets</span>
+                                                                                    <span>+{formatCurrency(data.total_assets)}</span>
+                                                                                </p>
+                                                                                <p className="text-sm text-red-500 flex justify-between gap-8">
+                                                                                    <span>Liabilities</span>
+                                                                                    <span>-{formatCurrency(data.total_liabilities)}</span>
+                                                                                </p>
+                                                                            </>
+                                                                        )}
                                                                     </>
                                                                 )}
                                                             </div>
@@ -375,26 +445,49 @@ export default function NetWorth() {
                                                 return null;
                                             }}
                                         />
-                                        <Area
-                                            type="monotone"
-                                            dataKey={chartMode === 'net_worth' ? 'net_worth' : 'value'}
-                                            stroke={chartColor}
-                                            strokeWidth={3}
-                                            fillOpacity={1}
-                                            fill="url(#colorNw)"
-                                        />
-                                        {showProjection && chartMode === 'net_worth' && (
-                                            <Area
-                                                type="monotone"
-                                                dataKey="projected_net_worth"
-                                                stroke={chartColor}
-                                                strokeWidth={3}
-                                                strokeDasharray="5 5"
-                                                fillOpacity={0.1}
-                                                fill={chartColor}
-                                                connectNulls={true}
-                                                activeDot={{ r: 6, fill: chartColor, stroke: "#fff", strokeWidth: 2 }}
-                                            />
+                                        {chartMode === 'breakdown' ? (
+                                            <>
+                                                {visibleCategories.map((cat, idx) => (
+                                                    <Area
+                                                        key={cat}
+                                                        type="monotone"
+                                                        dataKey={cat}
+                                                        stackId="1"
+                                                        stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                                        strokeWidth={1}
+                                                        fill={`url(#color${idx})`}
+                                                    />
+                                                ))}
+                                                <Legend
+                                                    verticalAlign="bottom"
+                                                    height={36}
+                                                    wrapperStyle={{ fontSize: '11px' }}
+                                                />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey={chartMode === 'net_worth' ? 'net_worth' : 'value'}
+                                                    stroke={chartColor}
+                                                    strokeWidth={3}
+                                                    fillOpacity={1}
+                                                    fill="url(#colorNw)"
+                                                />
+                                                {showProjection && chartMode === 'net_worth' && (
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="projected_net_worth"
+                                                        stroke={chartColor}
+                                                        strokeWidth={3}
+                                                        strokeDasharray="5 5"
+                                                        fillOpacity={0.1}
+                                                        fill={chartColor}
+                                                        connectNulls={true}
+                                                        activeDot={{ r: 6, fill: chartColor, stroke: "#fff", strokeWidth: 2 }}
+                                                    />
+                                                )}
+                                            </>
                                         )}
                                     </AreaChart>
                                 </ResponsiveContainer>
@@ -455,12 +548,7 @@ export default function NetWorth() {
                         </div>
                     </div>
 
-                    <CheckInModal
-                        isOpen={isCheckInOpen}
-                        onClose={() => setIsCheckInOpen(false)}
-                        accounts={accounts}
-                        onSuccess={() => queryClient.invalidateQueries(['netWorthHistory'])}
-                    />
+
 
                     <AccountDetailsModal
                         isOpen={isDetailsOpen}

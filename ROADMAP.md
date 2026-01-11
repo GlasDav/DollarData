@@ -12,7 +12,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Transaction Notes:** Add ability to annotate transactions with custom notes (pending Basiq integration).
 - [ ] **Basiq Integration:** Full bank feed integration for automatic transaction import.
 - [ ] **Amazon Extension:** Browser extension or integration to categorize Amazon purchases automatically.
-- [x] **Bug:** Recent transactions widget on dashboard isn't showing any transactions.
+- [ ] **Achievements Overhaul:** Clear hurdles with multiple levels, visible achievements list. Needs brainstorming for more achievements.
 
 ## 📊 Reports & Analytics
 
@@ -20,6 +20,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Filtered Reports:** Advanced filtering (tags, dates, categories, accounts) for custom reports.
 - [ ] **Monthly Expense Breakdown:** Clickable monthly totals to drill down into expense specifics.
 - [ ] **Professional Exports:** High-quality PDF/Excel reports suitable for sharing with accountants/banks.
+- [ ] **Cash Flow Forecast Overhaul:** Improve forecasting methodology using budget categories for better accuracy.
 
 ## 💰 Budget & Goals
 
@@ -30,7 +31,8 @@ This document outlines the planned features, improvements, and future direction 
     - Analytics columns (average spend, variance from budget, etc.)
     - Click on a column to show performance vs budget for that period
 - [x] **New Default Categories:** Add 'Reimbursable' and 'Mobile Phone' to default category list.
-- [x] **Budget Score:** Revised methodology to be more intuitive (Velocity + Weighted Adherence).
+
+- [ ] **Budget Score Overhaul:** Redesign widget (too bright) and intuitive methodology (currently confusing).
 - [x] **Category Goals:** specific expenditure goals (e.g., "Under budget on clothing for 3 months").
 - [x] **Goal Tracking:** Visual progress for specific saving/spending goals.
 
@@ -43,7 +45,10 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Asset Split (Investments):** Distinguish between stocks and ETFs in Investments tab.
 - [ ] **HECS Debt:** Add HECS debt account type/calculator.
 - [ ] **Trade Logic:** Rename 'Add Investment' to 'Add Trade', add trade date, and implement Buy/Sell logic.
-- [ ] **Terminology:** Change 'Monthly check in' to 'Record Values'.
+
+
+- [x] **Remove Monthly Check-in:** Remove redundant button from Net Worth page.
+- [x] **Net Worth History Chart:** Upgraded to stacked Area Chart showing underlying components (categories). Added "Breakdown" mode toggle.
 
 ## ⚙️ Account & Settings
 
@@ -70,7 +75,8 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Family Invites:** Email invitation flow for new household members (create own login for same account).
 - [ ] **Security (MFA):** Multi-Factor Authentication setup.
 - [ ] **Email Verification:** Verify user email addresses for security.
-- [ ] **Notifications:** Robust notification customization.
+
+- [ ] **Notifications Overhaul:** Fix currently broken notifications system and improve customization.
 - [x] **Scrap API Settings:** Simplify or remove exposed API configuration where possible.
 
 ## 🎨 UI/UX Improvements
@@ -87,7 +93,9 @@ This document outlines the planned features, improvements, and future direction 
     - Skip/Exit option.
     - Pre-import guidance (Categories & Rules setup first).
     - Comprehensive guide covering all features.
+
     - Help/FAQ section.
+- [ ] **Public Landing Page:** Design landing page for unauthenticated users.
 
 ## 🚀 Commercialization
 
