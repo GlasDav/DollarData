@@ -124,9 +124,10 @@ def import_history(
             errors.append(f"Row {row_number}: account_type must be 'Asset' or 'Liability', got '{normalized['account_type']}'")
             continue
         
-        # Validate balance
+        # Validate balance (strip currency symbols and commas)
         try:
-            balance = float(normalized["balance"].replace(",", ""))
+            balance_str = normalized["balance"].replace("$", "").replace(",", "").strip()
+            balance = float(balance_str)
         except ValueError:
             errors.append(f"Row {row_number}: Invalid balance '{normalized['balance']}'")
             continue
