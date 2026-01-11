@@ -60,6 +60,8 @@ This document outlines the planned features, improvements, and future direction 
   - [ ] Rename VPS folder: `mv /opt/principal /opt/dollardata`
   - [x] Update deploy workflow (`.agent/workflows/deploy.md`)
 - [x] **Update Logo:** Replace placeholder logo with new DollarData branding assets.
+  - [x] Optimize SVG (crop whitespace)
+  - [x] Implement Dark Mode support (White text logo)
 - [ ] **Configure dollardata.au Domain:**
   - [ ] Complete GoDaddy ID verification
   - [ ] Add A records pointing to VPS (43.224.182.196)

@@ -100,3 +100,24 @@ import { CHART_COLORS, ASSET_COLOR, LIABILITY_COLOR } from '../constants/chartCo
 // Area/Line Charts
 <Area stroke={ASSET_COLOR} fill={ASSET_COLOR} ... />
 ```
+
+---
+
+## Logo Assets
+
+The application uses specific SVG assets for branding. Do not use text-only replacements.
+
+| Asset | File | Description |
+|-------|------|-------------|
+| **Full Logo (Light)** | `/brand-logo.svg` | Icon + Black Text. Used in Light Mode. |
+| **Full Logo (Dark)** | `/brand-logo-dark.svg` | Icon + White Text. Used in Dark Mode. |
+| **Favicon** | `/favicon.svg` | Cropped Icon-only. Used for browser tab. |
+
+**Dark Mode Implementation:**
+
+Use Tailwind's `dark:` modifier to swap images.
+
+```jsx
+<img src="/brand-logo.svg" className="dark:hidden" />
+<img src="/brand-logo-dark.svg" className="hidden dark:block" />
+```

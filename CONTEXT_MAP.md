@@ -475,7 +475,13 @@ docker compose exec backend python /app/seed_demo_user.py
 ### **Net Worth Repair (Jan 2026)**
 - **Gap Filling:** Upgraded `recalculate_all_snapshots` to automatically backfill missing balance records from previous months.
 - **Chart Colors:** Standardized all charts to use `chartColors.js` palette (Indigo/Red/Rainbow).
+
 - **Files:** `backend/routers/net_worth.py`, `frontend/src/constants/chartColors.js`.
+
+### **Visual Branding Upgrade (Jan 2026)**
+- **Logo Optimization:** Created optimized SVGs (cropped) for `brand-logo.svg` and `favicon.svg`.
+- **Dark Mode Support:** Implemented `brand-logo-dark.svg` (white text) and toggle logic in Login/App Header to ensure visibility in all themes.
+
 
 ---
 
