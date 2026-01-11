@@ -244,7 +244,9 @@ export default function NetWorth() {
         return {
             breakdownData: data,
             assetCategories: assetCats,
-            liabilityCategories: liabilityCats.map(c => `Liability: ${c}`)
+            liabilityCategories: liabilityCats.map(c => `Liability: ${c}`),
+            // Store clean liability names for legend display
+            liabilityCatClean: liabilityCats
         };
     }, [accountsHistory]);
 
@@ -257,6 +259,18 @@ export default function NetWorth() {
         });
         return map;
     }, [allocationData]);
+
+    // Create color map for liabilities - use different colors (offset by 4 in the palette)
+    const liabilityColorMap = useMemo(() => {
+        const map = {};
+        // Get unique liability categories and assign colors
+        const liabCats = liabilityCategories.map(c => c.replace('Liability: ', ''));
+        liabCats.forEach((cat, idx) => {
+            // Use different part of color palette for liabilities (offset by 4)
+            map[cat] = CHART_COLORS[(idx + 4) % CHART_COLORS.length];
+        });
+        return map;
+    }, [liabilityCategories]);
 
     // All categories for the chart (assets + liabilities)
     const allBreakdownCategories = [...assetCategories, ...liabilityCategories];
@@ -398,20 +412,6 @@ export default function NetWorth() {
                                                 <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} />
                                                 <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
                                             </linearGradient>
-                                            {/* Asset gradients using categoryColorMap for consistent colors */}
-                                            {assetCategories.map((cat) => (
-                                                <linearGradient key={cat} id={`color-${cat.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={categoryColorMap[cat] || CHART_COLORS[0]} stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor={categoryColorMap[cat] || CHART_COLORS[0]} stopOpacity={0.3} />
-                                                </linearGradient>
-                                            ))}
-                                            {/* Liability gradients - red tones */}
-                                            {liabilityCategories.map((cat, idx) => (
-                                                <linearGradient key={cat} id={`color-${cat.replace(/[\s:]+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={LIABILITY_COLOR} stopOpacity={0.6} />
-                                                    <stop offset="95%" stopColor={LIABILITY_COLOR} stopOpacity={0.2} />
-                                                </linearGradient>
-                                            ))}
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                         <XAxis
@@ -497,44 +497,57 @@ export default function NetWorth() {
                                         {chartMode === 'breakdown' ? (
                                             <>
                                                 {/* Zero reference line */}
-                                                <ReferenceLine y={0} stroke="#94A3B8" strokeDasharray="3 3" />
-                                                {/* Asset areas (stacked above zero) */}
+                                                <ReferenceLine y={0} stroke="#64748b" strokeWidth={2} />
+                                                {/* Asset areas (stacked above zero) - solid fills */}
                                                 {assetCategories.map((cat) => (
                                                     <Area
                                                         key={cat}
+                                                        name={cat}
                                                         type="monotone"
                                                         dataKey={cat}
                                                         stackId="assets"
                                                         stroke={categoryColorMap[cat] || CHART_COLORS[0]}
                                                         strokeWidth={1}
-                                                        fill={`url(#color-${cat.replace(/\s+/g, '-')})`}
+                                                        fill={categoryColorMap[cat] || CHART_COLORS[0]}
+                                                        fillOpacity={0.85}
                                                     />
                                                 ))}
-                                                {/* Liability areas (stacked below zero) */}
-                                                {liabilityCategories.map((cat) => (
-                                                    <Area
-                                                        key={cat}
-                                                        type="monotone"
-                                                        dataKey={cat}
-                                                        stackId="liabilities"
-                                                        stroke={LIABILITY_COLOR}
-                                                        strokeWidth={1}
-                                                        fill={`url(#color-${cat.replace(/[\s:]+/g, '-')})`}
-                                                    />
-                                                ))}
+                                                {/* Liability areas (stacked below zero) - unique colors */}
+                                                {liabilityCategories.map((cat) => {
+                                                    const cleanName = cat.replace('Liability: ', '');
+                                                    return (
+                                                        <Area
+                                                            key={cat}
+                                                            name={cleanName}
+                                                            type="monotone"
+                                                            dataKey={cat}
+                                                            stackId="liabilities"
+                                                            stroke={liabilityColorMap[cleanName] || CHART_COLORS[4]}
+                                                            strokeWidth={1}
+                                                            fill={liabilityColorMap[cleanName] || CHART_COLORS[4]}
+                                                            fillOpacity={0.85}
+                                                        />
+                                                    );
+                                                })}
                                                 {/* Net worth line overlay */}
                                                 <Line
+                                                    name="Net Worth"
                                                     type="monotone"
                                                     dataKey="net_worth"
-                                                    stroke={NET_WORTH_COLOR}
+                                                    stroke="#1e293b"
                                                     strokeWidth={3}
                                                     dot={false}
-                                                    activeDot={{ r: 5, fill: NET_WORTH_COLOR, stroke: '#fff', strokeWidth: 2 }}
+                                                    activeDot={{ r: 5, fill: '#1e293b', stroke: '#fff', strokeWidth: 2 }}
                                                 />
                                                 <Legend
                                                     verticalAlign="bottom"
-                                                    height={36}
-                                                    wrapperStyle={{ fontSize: '11px' }}
+                                                    height={50}
+                                                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                                                    formatter={(value, entry) => {
+                                                        // Clean up legend labels
+                                                        if (value === 'net_worth') return 'Net Worth';
+                                                        return value;
+                                                    }}
                                                 />
                                             </>
                                         ) : (
