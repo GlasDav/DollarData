@@ -59,7 +59,9 @@ export default function DebugNetWorth() {
                 <br />
                 If an account is listed in <strong>Zeros</strong>, it means the database explicitly has $0.
                 <br />
-                If it's in <strong>Missing</strong>, it means the snapshot has no record for that account (a Gap).
+                <strong>Note:</strong> Red text in past years is normal if those accounts (e.g. Loans) didn't exist back then.
+                <br />
+                <strong>Check the TOP ROW (Jan 2026)</strong> to see if it is fixed.
             </p>
             <div className="flex gap-4 mb-6">
                 <button
@@ -98,7 +100,7 @@ export default function DebugNetWorth() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {data.map((row, i) => (
+                            {[...data].reverse().map((row, i) => (
                                 <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                                     <td className="p-4 text-slate-900 dark:text-white font-mono">{new Date(row.date).toLocaleDateString()}</td>
                                     <td className="p-4 text-slate-900 dark:text-white font-mono font-medium">${(row.net_worth || 0).toLocaleString()}</td>
