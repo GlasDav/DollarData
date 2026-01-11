@@ -128,7 +128,8 @@ function Layout() {
         {/* Logo */}
         <div className="h-[72px] px-4 border-b border-border dark:border-border-dark flex items-center">
           <div className="flex items-center">
-            <img src="/brand-logo.svg" alt="DollarData" className="h-10 w-auto" />
+            <img src="/brand-logo.svg" alt="DollarData" className="h-10 w-auto dark:hidden" />
+            <img src="/brand-logo-dark.svg" alt="DollarData" className="h-10 w-auto hidden dark:block" />
           </div>
         </div>
 

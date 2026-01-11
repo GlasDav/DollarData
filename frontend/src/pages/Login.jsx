@@ -99,7 +99,8 @@ export default function Login() {
                 {/* Logo and branding */}
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-6">
-                        <img src="/brand-logo.svg" alt="DollarData" className="h-16 w-auto" />
+                        <img src="/brand-logo.svg" alt="DollarData" className="h-16 w-auto dark:hidden" />
+                        <img src="/brand-logo-dark.svg" alt="DollarData" className="h-16 w-auto hidden dark:block" />
                     </div>
                     <p className="text-text-muted">Take control of your finances</p>
                 </div>
