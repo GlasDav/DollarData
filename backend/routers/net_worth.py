@@ -474,14 +474,45 @@ def update_account_balance_history(
 def recalculate_all_snapshots(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     """
     Force recalculation of all snapshot totals based on underlying balances.
-    Useful for fixing data inconsistencies.
+    Performs 'Gap Filling' (Carry Forward) to fix missing data in historical snapshots.
     """
-    snapshots = db.query(models.NetWorthSnapshot).filter(models.NetWorthSnapshot.user_id == current_user.id).all()
+    # 1. Get all snapshots ordered by Date
+    snapshots = db.query(models.NetWorthSnapshot)\
+        .filter(models.NetWorthSnapshot.user_id == current_user.id)\
+        .order_by(models.NetWorthSnapshot.date.asc())\
+        .all()
+        
+    last_known = {}
+    total_repaired = 0
     count = 0
+    
     for s in snapshots:
+        # Get current balances for this snapshot
+        bals = db.query(models.AccountBalance).filter(models.AccountBalance.snapshot_id == s.id).all()
+        current_map = {b.account_id: b.balance for b in bals}
+        
+        # 1. Update 'Last Known' with data present in this snapshot
+        for aid, val in current_map.items():
+            last_known[aid] = val
+            
+        # 2. Fill Gaps: If we know an account has a balance but it's missing here, carry it forward
+        for aid, known_val in last_known.items():
+            if aid not in current_map:
+                # GAP DETECTED - Insert carry-forward balance
+                db.add(models.AccountBalance(
+                    snapshot_id=s.id,
+                    account_id=aid,
+                    balance=known_val
+                ))
+                total_repaired += 1
+        
+        db.commit() # Commit repairs for this snapshot
+        
+        # 3. Recalculate Totals (now uses repaired data)
         recalculate_snapshot(db, s.id)
         count += 1
-    return {"recalculated": count}
+        
+    return {"recalculated": count, "repaired_entries": total_repaired}
 
 def update_account(account_id: int, account_update: schemas.AccountCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_account = db.query(models.Account).filter(models.Account.id == account_id, models.Account.user_id == current_user.id).first()
