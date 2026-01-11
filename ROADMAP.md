@@ -49,6 +49,10 @@ This document outlines the planned features, improvements, and future direction 
 
 - [x] **Remove Monthly Check-in:** Remove redundant button from Net Worth page.
 - [x] **Net Worth History Chart:** Upgraded to stacked Area Chart showing underlying components (categories). Added "Breakdown" mode toggle.
+  - [x] Simplified categories: "Net Property" (property - mortgage), combined "Liabilities"
+  - [x] Colorblind-accessible color palette (Amber/Cyan/Indigo/Emerald ordering)
+  - [x] Dark mode legend visibility with background container
+  - [x] Dashed Net Worth line overlay with custom legend icons
 
 ## ⚙️ Account & Settings
 

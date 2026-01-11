@@ -478,6 +478,15 @@ docker compose exec backend python /app/seed_demo_user.py
 
 - **Files:** `backend/routers/net_worth.py`, `frontend/src/constants/chartColors.js`.
 
+### **Breakdown Chart Refinements (Jan 2026)**
+- **Simplified Categories:** "Net Property" (property assets - mortgage), combined "Liabilities", and other asset categories.
+- **Colorblind Accessibility:** Reordered `CHART_COLORS` palette (Amber-Cyan-Indigo-Emerald) for maximum color distinction.
+- **Dark Mode Legend:** Added semi-transparent background container for legend visibility in both themes.
+- **Net Worth Line:** Dashed line overlay (#64748b slate gray) with custom legend icon.
+- **Zero Line:** Black reference line for clear asset/liability separation.
+
+- **Files:** `frontend/src/pages/NetWorth.jsx`, `frontend/src/constants/chartColors.js`.
+
 ### **Visual Branding Upgrade (Jan 2026)**
 - **Logo Optimization:** Created optimized SVGs (cropped) for `brand-logo.svg` and `favicon.svg`.
 - **Dark Mode Support:** Implemented `brand-logo-dark.svg` (white text) and toggle logic in Login/App Header to ensure visibility in all themes.
