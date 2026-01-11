@@ -5,7 +5,7 @@ import {
     TrendingUp, TrendingDown, Plus, DollarSign,
     Landmark, CreditCard, Wallet, LineChart, RefreshCw, X, Home, PiggyBank, Download, Upload
 } from 'lucide-react';
-import { AreaChart, Area, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, Line, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import AccountDetailsModal from '../components/AccountDetailsModal';
 import AddInvestmentModal from '../components/AddInvestmentModal';
 import InvestmentsTab from '../components/InvestmentsTab';
@@ -199,40 +199,67 @@ export default function NetWorth() {
     const chartColor = chartMode === 'net_worth' ? NET_WORTH_COLOR : CHART_COLORS[4]; // Violet for investments
 
     // Stacked Breakdown Chart Data (by Category)
-    const { breakdownData, categories } = useMemo(() => {
+    const { breakdownData, assetCategories, liabilityCategories } = useMemo(() => {
         if (!accountsHistory.accounts?.length || !accountsHistory.dates?.length) {
-            return { breakdownData: [], categories: [] };
+            return { breakdownData: [], assetCategories: [], liabilityCategories: [] };
         }
 
-        // Get unique categories from accounts
-        const categorySet = new Set();
+        // Get unique categories from accounts (Assets and Liabilities)
+        const assetCatSet = new Set();
+        const liabilityCatSet = new Set();
         accountsHistory.accounts.forEach(acc => {
             if (acc.type === 'Asset' && acc.category) {
-                categorySet.add(acc.category);
+                assetCatSet.add(acc.category);
+            } else if (acc.type === 'Liability' && acc.category) {
+                liabilityCatSet.add(acc.category);
             }
         });
-        const allCategories = Array.from(categorySet).sort();
+        const assetCats = Array.from(assetCatSet).sort();
+        const liabilityCats = Array.from(liabilityCatSet).sort();
 
         // Build data points for each date
         const data = accountsHistory.dates.map((date, idx) => {
             const point = { date: date };
+            let totalAssets = 0;
+            let totalLiabilities = 0;
 
             // Aggregate balances by category
             accountsHistory.accounts.forEach(acc => {
+                const balance = acc.balances_by_month[idx] || 0;
                 if (acc.type === 'Asset') {
-                    const balance = acc.balances_by_month[idx] || 0;
                     point[acc.category] = (point[acc.category] || 0) + balance;
+                    totalAssets += balance;
+                } else if (acc.type === 'Liability') {
+                    // Store liabilities as negative for display below zero
+                    const liabKey = `Liability: ${acc.category}`;
+                    point[liabKey] = (point[liabKey] || 0) - balance;
+                    totalLiabilities += balance;
                 }
             });
 
+            point.net_worth = totalAssets - totalLiabilities;
             return point;
         });
 
-        return { breakdownData: data, categories: allCategories };
+        return {
+            breakdownData: data,
+            assetCategories: assetCats,
+            liabilityCategories: liabilityCats.map(c => `Liability: ${c}`)
+        };
     }, [accountsHistory]);
 
-    // Filter categories based on selection
-    const visibleCategories = selectedCategories || categories;
+    // Create color map for categories based on donut chart ordering (by value descending)
+    const categoryColorMap = useMemo(() => {
+        const map = {};
+        // Match donut chart ordering - allocationData is sorted by value descending
+        allocationData.forEach((item, idx) => {
+            map[item.name] = CHART_COLORS[idx % CHART_COLORS.length];
+        });
+        return map;
+    }, [allocationData]);
+
+    // All categories for the chart (assets + liabilities)
+    const allBreakdownCategories = [...assetCategories, ...liabilityCategories];
 
     return (
         <div className="max-w-7xl mx-auto p-8 space-y-8">
@@ -371,10 +398,18 @@ export default function NetWorth() {
                                                 <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} />
                                                 <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
                                             </linearGradient>
-                                            {categories.map((cat, idx) => (
-                                                <linearGradient key={cat} id={`color${idx}`} x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={CHART_COLORS[idx % CHART_COLORS.length]} stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor={CHART_COLORS[idx % CHART_COLORS.length]} stopOpacity={0.3} />
+                                            {/* Asset gradients using categoryColorMap for consistent colors */}
+                                            {assetCategories.map((cat) => (
+                                                <linearGradient key={cat} id={`color-${cat.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor={categoryColorMap[cat] || CHART_COLORS[0]} stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor={categoryColorMap[cat] || CHART_COLORS[0]} stopOpacity={0.3} />
+                                                </linearGradient>
+                                            ))}
+                                            {/* Liability gradients - red tones */}
+                                            {liabilityCategories.map((cat, idx) => (
+                                                <linearGradient key={cat} id={`color-${cat.replace(/[\s:]+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor={LIABILITY_COLOR} stopOpacity={0.6} />
+                                                    <stop offset="95%" stopColor={LIABILITY_COLOR} stopOpacity={0.2} />
                                                 </linearGradient>
                                             ))}
                                         </defs>
@@ -405,17 +440,31 @@ export default function NetWorth() {
                                                             <div className="space-y-1">
                                                                 {chartMode === 'breakdown' ? (
                                                                     <>
-                                                                        {payload.map((entry, idx) => (
+                                                                        {/* Net Worth at top */}
+                                                                        <p className="text-lg font-bold flex justify-between gap-8" style={{ color: NET_WORTH_COLOR }}>
+                                                                            <span>Net Worth</span>
+                                                                            <span>{formatCurrency(data.net_worth)}</span>
+                                                                        </p>
+                                                                        <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
+                                                                        {/* Asset categories */}
+                                                                        {payload.filter(p => !p.dataKey.startsWith('Liability:') && p.dataKey !== 'net_worth').map((entry, idx) => (
                                                                             <p key={idx} className="text-sm flex justify-between gap-4" style={{ color: entry.color }}>
                                                                                 <span>{entry.dataKey}</span>
                                                                                 <span className="font-medium">{formatCurrency(entry.value)}</span>
                                                                             </p>
                                                                         ))}
-                                                                        <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
-                                                                        <p className="text-sm font-bold text-text-primary flex justify-between gap-4">
-                                                                            <span>Total</span>
-                                                                            <span>{formatCurrency(payload.reduce((sum, p) => sum + (p.value || 0), 0))}</span>
-                                                                        </p>
+                                                                        {/* Liability categories */}
+                                                                        {payload.filter(p => p.dataKey.startsWith('Liability:')).length > 0 && (
+                                                                            <>
+                                                                                <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
+                                                                                {payload.filter(p => p.dataKey.startsWith('Liability:')).map((entry, idx) => (
+                                                                                    <p key={idx} className="text-sm flex justify-between gap-4" style={{ color: LIABILITY_COLOR }}>
+                                                                                        <span>{entry.dataKey.replace('Liability: ', '')}</span>
+                                                                                        <span className="font-medium">{formatCurrency(Math.abs(entry.value))}</span>
+                                                                                    </p>
+                                                                                ))}
+                                                                            </>
+                                                                        )}
                                                                     </>
                                                                 ) : (
                                                                     <>
@@ -447,17 +496,41 @@ export default function NetWorth() {
                                         />
                                         {chartMode === 'breakdown' ? (
                                             <>
-                                                {visibleCategories.map((cat, idx) => (
+                                                {/* Zero reference line */}
+                                                <ReferenceLine y={0} stroke="#94A3B8" strokeDasharray="3 3" />
+                                                {/* Asset areas (stacked above zero) */}
+                                                {assetCategories.map((cat) => (
                                                     <Area
                                                         key={cat}
                                                         type="monotone"
                                                         dataKey={cat}
-                                                        stackId="1"
-                                                        stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                                        stackId="assets"
+                                                        stroke={categoryColorMap[cat] || CHART_COLORS[0]}
                                                         strokeWidth={1}
-                                                        fill={`url(#color${idx})`}
+                                                        fill={`url(#color-${cat.replace(/\s+/g, '-')})`}
                                                     />
                                                 ))}
+                                                {/* Liability areas (stacked below zero) */}
+                                                {liabilityCategories.map((cat) => (
+                                                    <Area
+                                                        key={cat}
+                                                        type="monotone"
+                                                        dataKey={cat}
+                                                        stackId="liabilities"
+                                                        stroke={LIABILITY_COLOR}
+                                                        strokeWidth={1}
+                                                        fill={`url(#color-${cat.replace(/[\s:]+/g, '-')})`}
+                                                    />
+                                                ))}
+                                                {/* Net worth line overlay */}
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="net_worth"
+                                                    stroke={NET_WORTH_COLOR}
+                                                    strokeWidth={3}
+                                                    dot={false}
+                                                    activeDot={{ r: 5, fill: NET_WORTH_COLOR, stroke: '#fff', strokeWidth: 2 }}
+                                                />
                                                 <Legend
                                                     verticalAlign="bottom"
                                                     height={36}
