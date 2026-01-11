@@ -198,56 +198,72 @@ export default function NetWorth() {
     const chartDataKey = chartMode === 'net_worth' ? 'net_worth' : 'value';
     const chartColor = chartMode === 'net_worth' ? NET_WORTH_COLOR : CHART_COLORS[4]; // Violet for investments
 
-    // Stacked Breakdown Chart Data (by Category)
-    const { breakdownData, assetCategories, liabilityCategories } = useMemo(() => {
+    // Stacked Breakdown Chart Data (simplified categories)
+    const { breakdownData, displayCategories } = useMemo(() => {
         if (!accountsHistory.accounts?.length || !accountsHistory.dates?.length) {
-            return { breakdownData: [], assetCategories: [], liabilityCategories: [] };
+            return { breakdownData: [], displayCategories: [] };
         }
 
-        // Get unique categories from accounts (Assets and Liabilities)
+        // Get unique asset categories (excluding Property which will be netted)
         const assetCatSet = new Set();
-        const liabilityCatSet = new Set();
         accountsHistory.accounts.forEach(acc => {
-            if (acc.type === 'Asset' && acc.category) {
+            if (acc.type === 'Asset' && acc.category && acc.category !== 'Property') {
                 assetCatSet.add(acc.category);
-            } else if (acc.type === 'Liability' && acc.category) {
-                liabilityCatSet.add(acc.category);
             }
         });
-        const assetCats = Array.from(assetCatSet).sort();
-        const liabilityCats = Array.from(liabilityCatSet).sort();
+        const otherAssetCats = Array.from(assetCatSet).sort();
 
         // Build data points for each date
         const data = accountsHistory.dates.map((date, idx) => {
             const point = { date: date };
             let totalAssets = 0;
             let totalLiabilities = 0;
+            let propertyAssets = 0;
+            let mortgageLiabilities = 0;
+            let otherLiabilities = 0;
 
-            // Aggregate balances by category
+            // Aggregate balances
             accountsHistory.accounts.forEach(acc => {
                 const balance = acc.balances_by_month[idx] || 0;
                 if (acc.type === 'Asset') {
-                    point[acc.category] = (point[acc.category] || 0) + balance;
                     totalAssets += balance;
+                    if (acc.category === 'Property') {
+                        propertyAssets += balance;
+                    } else {
+                        // Other asset categories
+                        point[acc.category] = (point[acc.category] || 0) + balance;
+                    }
                 } else if (acc.type === 'Liability') {
-                    // Store liabilities as negative for display below zero
-                    const liabKey = `Liability: ${acc.category}`;
-                    point[liabKey] = (point[liabKey] || 0) - balance;
                     totalLiabilities += balance;
+                    if (acc.category === 'Mortgage') {
+                        mortgageLiabilities += balance;
+                    } else {
+                        otherLiabilities += balance;
+                    }
                 }
             });
 
-            point.net_worth = totalAssets - totalLiabilities;
+            // Net Property = Property assets - Mortgage liabilities
+            point['Net Property'] = propertyAssets - mortgageLiabilities;
+
+            // Combined Liabilities (negative for display below zero, excluding mortgage which is netted)
+            if (otherLiabilities > 0) {
+                point['Liabilities'] = -otherLiabilities;
+            }
+
+            point['Net Worth'] = totalAssets - totalLiabilities;
             return point;
         });
 
-        return {
-            breakdownData: data,
-            assetCategories: assetCats,
-            liabilityCategories: liabilityCats.map(c => `Liability: ${c}`),
-            // Store clean liability names for legend display
-            liabilityCatClean: liabilityCats
-        };
+        // Build display categories: other assets + Net Property + Liabilities (if exists)
+        const cats = [...otherAssetCats, 'Net Property'];
+        // Only add Liabilities if there are any
+        const hasLiabilities = data.some(d => d['Liabilities'] && d['Liabilities'] < 0);
+        if (hasLiabilities) {
+            cats.push('Liabilities');
+        }
+
+        return { breakdownData: data, displayCategories: cats };
     }, [accountsHistory]);
 
     // Create color map for categories based on donut chart ordering (by value descending)
@@ -257,23 +273,11 @@ export default function NetWorth() {
         allocationData.forEach((item, idx) => {
             map[item.name] = CHART_COLORS[idx % CHART_COLORS.length];
         });
+        // Add special colors for simplified categories
+        map['Net Property'] = '#10b981'; // Emerald for property
+        map['Liabilities'] = '#ef4444'; // Red for liabilities
         return map;
     }, [allocationData]);
-
-    // Create color map for liabilities - use different colors (offset by 4 in the palette)
-    const liabilityColorMap = useMemo(() => {
-        const map = {};
-        // Get unique liability categories and assign colors
-        const liabCats = liabilityCategories.map(c => c.replace('Liability: ', ''));
-        liabCats.forEach((cat, idx) => {
-            // Use different part of color palette for liabilities (offset by 4)
-            map[cat] = CHART_COLORS[(idx + 4) % CHART_COLORS.length];
-        });
-        return map;
-    }, [liabilityCategories]);
-
-    // All categories for the chart (assets + liabilities)
-    const allBreakdownCategories = [...assetCategories, ...liabilityCategories];
 
     return (
         <div className="max-w-7xl mx-auto p-8 space-y-8">
@@ -441,30 +445,18 @@ export default function NetWorth() {
                                                                 {chartMode === 'breakdown' ? (
                                                                     <>
                                                                         {/* Net Worth at top */}
-                                                                        <p className="text-lg font-bold flex justify-between gap-8" style={{ color: NET_WORTH_COLOR }}>
+                                                                        <p className="text-lg font-bold flex justify-between gap-8" style={{ color: '#1e293b' }}>
                                                                             <span>Net Worth</span>
-                                                                            <span>{formatCurrency(data.net_worth)}</span>
+                                                                            <span>{formatCurrency(data['Net Worth'])}</span>
                                                                         </p>
                                                                         <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
-                                                                        {/* Asset categories */}
-                                                                        {payload.filter(p => !p.dataKey.startsWith('Liability:') && p.dataKey !== 'net_worth').map((entry, idx) => (
+                                                                        {/* All categories */}
+                                                                        {payload.filter(p => p.dataKey !== 'Net Worth').map((entry, idx) => (
                                                                             <p key={idx} className="text-sm flex justify-between gap-4" style={{ color: entry.color }}>
-                                                                                <span>{entry.dataKey}</span>
-                                                                                <span className="font-medium">{formatCurrency(entry.value)}</span>
+                                                                                <span>{entry.name}</span>
+                                                                                <span className="font-medium">{formatCurrency(entry.dataKey === 'Liabilities' ? Math.abs(entry.value) : entry.value)}</span>
                                                                             </p>
                                                                         ))}
-                                                                        {/* Liability categories */}
-                                                                        {payload.filter(p => p.dataKey.startsWith('Liability:')).length > 0 && (
-                                                                            <>
-                                                                                <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
-                                                                                {payload.filter(p => p.dataKey.startsWith('Liability:')).map((entry, idx) => (
-                                                                                    <p key={idx} className="text-sm flex justify-between gap-4" style={{ color: LIABILITY_COLOR }}>
-                                                                                        <span>{entry.dataKey.replace('Liability: ', '')}</span>
-                                                                                        <span className="font-medium">{formatCurrency(Math.abs(entry.value))}</span>
-                                                                                    </p>
-                                                                                ))}
-                                                                            </>
-                                                                        )}
                                                                     </>
                                                                 ) : (
                                                                     <>
@@ -498,42 +490,25 @@ export default function NetWorth() {
                                             <>
                                                 {/* Zero reference line */}
                                                 <ReferenceLine y={0} stroke="#64748b" strokeWidth={2} />
-                                                {/* Asset areas (stacked above zero) - solid fills */}
-                                                {assetCategories.map((cat) => (
+                                                {/* All category areas */}
+                                                {displayCategories.map((cat) => (
                                                     <Area
                                                         key={cat}
                                                         name={cat}
                                                         type="monotone"
                                                         dataKey={cat}
-                                                        stackId="assets"
+                                                        stackId={cat === 'Liabilities' ? 'liabilities' : 'assets'}
                                                         stroke={categoryColorMap[cat] || CHART_COLORS[0]}
                                                         strokeWidth={1}
                                                         fill={categoryColorMap[cat] || CHART_COLORS[0]}
                                                         fillOpacity={0.85}
                                                     />
                                                 ))}
-                                                {/* Liability areas (stacked below zero) - unique colors */}
-                                                {liabilityCategories.map((cat) => {
-                                                    const cleanName = cat.replace('Liability: ', '');
-                                                    return (
-                                                        <Area
-                                                            key={cat}
-                                                            name={cleanName}
-                                                            type="monotone"
-                                                            dataKey={cat}
-                                                            stackId="liabilities"
-                                                            stroke={liabilityColorMap[cleanName] || CHART_COLORS[4]}
-                                                            strokeWidth={1}
-                                                            fill={liabilityColorMap[cleanName] || CHART_COLORS[4]}
-                                                            fillOpacity={0.85}
-                                                        />
-                                                    );
-                                                })}
                                                 {/* Net worth line overlay */}
                                                 <Line
                                                     name="Net Worth"
                                                     type="monotone"
-                                                    dataKey="net_worth"
+                                                    dataKey="Net Worth"
                                                     stroke="#1e293b"
                                                     strokeWidth={3}
                                                     dot={false}
@@ -541,13 +516,8 @@ export default function NetWorth() {
                                                 />
                                                 <Legend
                                                     verticalAlign="bottom"
-                                                    height={50}
-                                                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
-                                                    formatter={(value, entry) => {
-                                                        // Clean up legend labels
-                                                        if (value === 'net_worth') return 'Net Worth';
-                                                        return value;
-                                                    }}
+                                                    height={36}
+                                                    wrapperStyle={{ fontSize: '11px' }}
                                                 />
                                             </>
                                         ) : (
