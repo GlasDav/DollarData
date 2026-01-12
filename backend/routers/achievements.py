@@ -477,7 +477,7 @@ def get_achievements(
                 "tier_color": TIERS[tier_num]["color"],
                 "tier_icon": TIERS[tier_num]["icon"],
                 "is_earned": is_earned,
-                "unlocked_at": earned_map.get((cat_id, tier_num), {}).unlocked_at if is_earned else None
+                "unlocked_at": earned_map[(cat_id, tier_num)].unlocked_at if (cat_id, tier_num) in earned_map else None
             })
             
             total_possible += 1
