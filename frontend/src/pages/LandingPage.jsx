@@ -6,12 +6,12 @@ import { useEffect } from 'react';
 
 // Reusable Components
 const FeatureCard = ({ title, description, image, delay }) => (
-    <div className={`bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all duration-300 group overflow-hidden relative fade-in-up delay-${delay}`}>
+    <div className={`bg-card dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-all duration-300 group overflow-hidden relative fade-in-up delay-${delay}`}>
         <div className="relative z-10">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
-            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{description}</p>
+            <h3 className="text-xl font-bold text-text-primary dark:text-text-primary-dark mb-2">{title}</h3>
+            <p className="text-text-muted dark:text-text-muted-dark text-sm leading-relaxed">{description}</p>
         </div>
-        <div className="mt-6 rounded-xl overflow-hidden bg-slate-50 dark:bg-surface-dark border border-slate-100 dark:border-slate-800 h-48 group-hover:scale-[1.02] transition-transform duration-500">
+        <div className="mt-6 rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-border dark:border-border-dark h-48 group-hover:scale-[1.02] transition-transform duration-500">
             <img src={image} alt={title} className="w-full h-full object-cover" />
         </div>
     </div>
@@ -31,9 +31,9 @@ export default function LandingPage() {
     if (loading) return null; // Prevent flash while checking auth
 
     return (
-        <div className="min-h-screen bg-white dark:bg-surface-dark font-sans selection:bg-primary/20">
+        <div className="min-h-screen bg-surface dark:bg-surface-dark font-sans selection:bg-primary/20">
             {/* Navigation */}
-            <nav className="fixed top-0 w-full bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md z-50 border-b border-slate-100 dark:border-slate-800">
+            <nav className="fixed top-0 w-full bg-surface/80 dark:bg-surface-dark/80 backdrop-blur-md z-50 border-b border-border dark:border-border-dark">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center">
@@ -44,7 +44,7 @@ export default function LandingPage() {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => navigate('/login')}
-                            className="text-slate-600 dark:text-slate-300 hover:text-primary font-medium text-sm transition-colors"
+                            className="text-text-muted dark:text-text-muted-dark hover:text-primary font-medium text-sm transition-colors"
                         >
                             Sign In
                         </button>
@@ -70,34 +70,34 @@ export default function LandingPage() {
                             v2.0 is now live
                         </div>
 
-                        <h1 className="text-5xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.1]">
+                        <h1 className="text-5xl lg:text-7xl font-bold tracking-tight text-text-primary dark:text-text-primary-dark leading-[1.1]">
                             Master your money <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">
                                 with precision.
                             </span>
                         </h1>
 
-                        <p className="text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-lg mx-auto lg:mx-0">
+                        <p className="text-xl text-text-muted dark:text-text-muted-dark leading-relaxed max-w-lg mx-auto lg:mx-0">
                             DollarData consolidates your entire financial life into one beautiful, intelligent dashboard. Track net worth, analyze spending, and build wealth.
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                             <button
                                 onClick={() => navigate('/register')}
-                                className="w-full sm:w-auto px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold text-lg hover:translate-y-[-2px] transition-all shadow-xl dark:shadow-white/10"
+                                className="w-full sm:w-auto px-8 py-4 bg-text-primary dark:bg-white text-surface dark:text-text-primary rounded-full font-bold text-lg hover:translate-y-[-2px] transition-all shadow-xl dark:shadow-white/10"
                             >
                                 Start Free Trial
                             </button>
                             <button
                                 onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
-                                className="w-full sm:w-auto px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-full font-semibold text-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                                className="w-full sm:w-auto px-8 py-4 bg-card dark:bg-card-dark border border-border dark:border-border-dark text-text-primary dark:text-text-primary-dark rounded-full font-semibold text-lg hover:bg-surface dark:hover:border-primary/50 transition-all flex items-center justify-center gap-2"
                             >
                                 See Features <ArrowRight size={20} />
                             </button>
                         </div>
 
-                        <div className="pt-8 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center lg:justify-start gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                            <span className="text-sm font-semibold text-slate-400 uppercase tracking-widest">Trusted by efficient investors</span>
+                        <div className="pt-8 border-t border-border dark:border-border-dark flex items-center justify-center lg:justify-start gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                            <span className="text-sm font-semibold text-text-muted uppercase tracking-widest">Trusted by efficient investors</span>
                         </div>
                     </div>
 
@@ -107,7 +107,7 @@ export default function LandingPage() {
                             <img
                                 src="/landing/web_dashboard_hero.png"
                                 alt="DollarData Dashboard"
-                                className="rounded-xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 w-full max-w-[800px]"
+                                className="rounded-xl shadow-2xl border border-border dark:border-border-dark w-full max-w-[800px]"
                             />
                             {/* Glow effect */}
                             <div className="absolute -inset-10 bg-gradient-to-tr from-primary/20 to-purple-500/20 blur-3xl -z-10 rounded-full opacity-70"></div>
@@ -117,11 +117,11 @@ export default function LandingPage() {
             </section>
 
             {/* Features Grid (Bento) */}
-            <section id="features" className="py-24 bg-slate-50 dark:bg-surface-dark/50 border-t border-slate-100 dark:border-slate-800">
+            <section id="features" className="py-24 bg-surface dark:bg-surface-dark border-t border-border dark:border-border-dark">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center max-w-2xl mx-auto mb-16">
-                        <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-4">Complete Financial Clarity</h2>
-                        <p className="text-slate-600 dark:text-slate-400 text-lg">Everything you need to manage your wealth, built for the modern investor.</p>
+                        <h2 className="text-3xl lg:text-4xl font-bold text-text-primary dark:text-text-primary-dark mb-4">Complete Financial Clarity</h2>
+                        <p className="text-text-muted dark:text-text-muted-dark text-lg">Everything you need to manage your wealth, built for the modern investor.</p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
@@ -161,7 +161,7 @@ export default function LandingPage() {
                         </p>
                         <button
                             onClick={() => navigate('/register')}
-                            className="bg-white text-indigo-600 hover:bg-slate-50 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg hover:scale-105"
+                            className="bg-card text-primary hover:bg-surface px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg hover:scale-105"
                         >
                             Open Free Account
                         </button>
@@ -171,21 +171,21 @@ export default function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer className="py-12 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-card-dark">
+            <footer className="py-12 border-t border-border dark:border-border-dark bg-card dark:bg-card-dark">
                 <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-10">
                     <div className="col-span-1 md:col-span-2">
                         <div className="flex items-center gap-2 mb-4">
                             <img src="/brand-logo.svg" alt="DollarData" className="h-6 w-auto dark:hidden opacity-80" />
                             <img src="/brand-logo-dark.svg" alt="DollarData" className="h-6 w-auto hidden dark:block opacity-80" />
                         </div>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xs">
+                        <p className="text-text-muted dark:text-text-muted-dark text-sm leading-relaxed max-w-xs">
                             DollarData is an independent financial platform designed to help you organize, track, and grow your wealth.
                         </p>
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Product</h4>
-                        <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                        <h4 className="font-semibold text-text-primary dark:text-text-primary-dark mb-4">Product</h4>
+                        <ul className="space-y-3 text-sm text-text-muted dark:text-text-muted-dark">
                             <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Roadmap</a></li>
@@ -193,14 +193,14 @@ export default function LandingPage() {
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Legal</h4>
-                        <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                        <h4 className="font-semibold text-text-primary dark:text-text-primary-dark mb-4">Legal</h4>
+                        <ul className="space-y-3 text-sm text-text-muted dark:text-text-muted-dark">
                             <li><button onClick={() => navigate('/privacy')} className="hover:text-primary transition-colors">Privacy Policy</button></li>
                             <li><button onClick={() => navigate('/terms')} className="hover:text-primary transition-colors">Terms of Service</button></li>
                         </ul>
                     </div>
                 </div>
-                <div className="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 text-center md:text-left text-sm text-slate-400">
+                <div className="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-border dark:border-border-dark text-center md:text-left text-sm text-text-muted">
                     &copy; {new Date().getFullYear()} DollarData. All rights reserved.
                 </div>
             </footer>

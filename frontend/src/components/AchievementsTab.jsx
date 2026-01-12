@@ -53,7 +53,7 @@ export default function AchievementsTab() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
         );
     }
@@ -105,21 +105,22 @@ export default function AchievementsTab() {
                     const tierColors = TIER_COLORS[category.current_tier] || TIER_COLORS[1];
 
                     return (
+                    return (
                         <div
                             key={category.id}
-                            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+                            className="bg-card dark:bg-card-dark rounded-xl border border-border dark:border-border-dark overflow-hidden"
                         >
                             {/* Category Header */}
                             <button
                                 onClick={() => setExpandedCategory(isExpanded ? null : category.id)}
-                                className="w-full p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                                className="w-full p-4 flex items-center gap-4 hover:bg-surface dark:hover:bg-surface-dark transition-colors"
                             >
                                 <div className={`p-2.5 rounded-xl bg-${colorName}-100 dark:bg-${colorName}-900/30`}>
                                     <Icon size={24} className={`text-${colorName}-600 dark:text-${colorName}-400`} />
                                 </div>
                                 <div className="flex-1 text-left">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white">{category.name}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    <h3 className="font-semibold text-text-primary dark:text-text-primary-dark">{category.name}</h3>
+                                    <p className="text-sm text-text-muted dark:text-text-muted-dark">
                                         {category.current_tier > 0
                                             ? `${category.tiers[category.current_tier - 1]?.tier_name || 'Wood'} tier`
                                             : 'Not started'
@@ -136,23 +137,23 @@ export default function AchievementsTab() {
 
                                 {/* Progress to next */}
                                 <div className="w-20">
-                                    <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-surface dark:bg-surface-dark rounded-full overflow-hidden">
                                         <div
                                             className={`h-full bg-${colorName}-500 rounded-full transition-all`}
                                             style={{ width: `${category.progress_to_next || 0}%` }}
                                         />
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-1 text-center">
+                                    <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1 text-center">
                                         {Math.round(category.progress_to_next || 0)}%
                                     </p>
                                 </div>
 
-                                {isExpanded ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
+                                {isExpanded ? <ChevronUp size={20} className="text-text-muted" /> : <ChevronDown size={20} className="text-text-muted" />}
                             </button>
 
                             {/* Expanded Tier List */}
                             {isExpanded && (
-                                <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-2">
+                                <div className="border-t border-border dark:border-border-dark p-4 space-y-2">
                                     {category.tiers.map(tier => {
                                         const tierColor = TIER_COLORS[tier.tier];
                                         return (
@@ -160,23 +161,23 @@ export default function AchievementsTab() {
                                                 key={tier.tier}
                                                 className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${tier.is_earned
                                                     ? `${tierColor.bg} border ${tierColor.border}`
-                                                    : 'bg-slate-50 dark:bg-slate-700/50 opacity-60'
+                                                    : 'bg-surface dark:bg-surface-dark opacity-60'
                                                     }`}
                                             >
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${tier.is_earned ? tierColor.text : 'text-slate-400'
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${tier.is_earned ? tierColor.text : 'text-text-muted'
                                                     }`}>
                                                     {tier.is_earned ? tier.tier_icon : <Lock size={16} />}
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`font-medium ${tier.is_earned ? tierColor.text : 'text-slate-500 dark:text-slate-400'}`}>
+                                                        <span className={`font-medium ${tier.is_earned ? tierColor.text : 'text-text-muted dark:text-text-muted-dark'}`}>
                                                             {tier.name}
                                                         </span>
-                                                        <span className="text-xs text-slate-400">
+                                                        <span className="text-xs text-text-muted dark:text-text-muted-dark">
                                                             ({tier.tier_name})
                                                         </span>
                                                     </div>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{tier.description}</p>
+                                                    <p className="text-xs text-text-muted dark:text-text-muted-dark">{tier.description}</p>
                                                 </div>
                                                 {tier.is_earned && (
                                                     <Check size={20} className="text-emerald-500" />
