@@ -57,7 +57,7 @@ from .database import engine, Base
 from .routers import (
     settings, ingestion, transactions, analytics,
     net_worth, auth, market, rules, goals, taxes, 
-    connections, investments, notifications, export, api_keys, household
+    connections, investments, notifications, export, api_keys, household, achievements
 )
 
 # Create tables
@@ -228,6 +228,7 @@ app.include_router(notifications.router)
 app.include_router(export.router)
 app.include_router(api_keys.router)
 app.include_router(household.router)
+app.include_router(achievements.router)
 
 
 @app.get("/")

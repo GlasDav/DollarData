@@ -1,225 +1,120 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
-import {
-    Trophy, Star, Flame, Target, TrendingUp, PiggyBank,
-    Award, Crown, Zap, Shield, Heart, Sparkles
-} from 'lucide-react';
+import { Trophy, Star, TrendingUp, Award, Crown, Check, Lock, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-/**
- * AchievementsWidget - Celebrate financial milestones with badges
- */
-
-const ACHIEVEMENTS = [
-    // First Steps
-    {
-        id: 'first_budget',
-        name: 'Budget Beginner',
-        description: 'Created your first budget category',
-        icon: Target,
-        color: 'blue',
-        check: (data) => data.buckets?.length > 0
-    },
-    {
-        id: 'first_goal',
-        name: 'Goal Setter',
-        description: 'Created your first savings goal',
-        icon: Star,
-        color: 'yellow',
-        check: (data) => data.goals?.length > 0
-    },
-    // Consistency
-    {
-        id: 'under_budget',
-        name: 'Under Budget',
-        description: 'Stayed under budget this month',
-        icon: Shield,
-        color: 'emerald',
-        check: (data) => {
-            const totals = data.totals || {};
-            return totals.expenses <= totals.budget_total && totals.budget_total > 0;
-        }
-    },
-    {
-        id: 'saver_20',
-        name: 'Super Saver',
-        description: 'Saved 20%+ of your income',
-        icon: PiggyBank,
-        color: 'emerald',
-        check: (data) => {
-            const totals = data.totals || {};
-            if (!totals.income || totals.income <= 0) return false;
-            return ((totals.income - totals.expenses) / totals.income * 100) >= 20;
-        }
-    },
-    // Net Worth Milestones
-    {
-        id: 'networth_10k',
-        name: '$10K Club',
-        description: 'Reached $10,000 net worth',
-        icon: TrendingUp,
-        color: 'indigo',
-        check: (data) => data.netWorth >= 10000
-    },
-    {
-        id: 'networth_50k',
-        name: '$50K Club',
-        description: 'Reached $50,000 net worth',
-        icon: Award,
-        color: 'violet',
-        check: (data) => data.netWorth >= 50000
-    },
-    {
-        id: 'networth_100k',
-        name: 'Six Figures',
-        description: 'Reached $100,000 net worth',
-        icon: Crown,
-        color: 'amber',
-        check: (data) => data.netWorth >= 100000
-    },
-    // Engagement
-    {
-        id: 'power_user',
-        name: 'Power User',
-        description: 'Imported 100+ transactions',
-        icon: Zap,
-        color: 'orange',
-        check: (data) => data.transactionCount >= 100
-    },
-    {
-        id: 'category_master',
-        name: 'Organized',
-        description: 'Set up 10+ budget categories',
-        icon: Sparkles,
-        color: 'pink',
-        check: (data) => (data.buckets?.length || 0) >= 10
-    },
-];
-
-const colorClasses = {
-    blue: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-800' },
-    yellow: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-200 dark:border-yellow-800' },
-    emerald: { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800' },
-    indigo: { bg: 'bg-indigo-100 dark:bg-indigo-900/30', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200 dark:border-indigo-800' },
-    violet: { bg: 'bg-violet-100 dark:bg-violet-900/30', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-200 dark:border-violet-800' },
-    amber: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800' },
-    orange: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-800' },
-    pink: { bg: 'bg-pink-100 dark:bg-pink-900/30', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-200 dark:border-pink-800' },
+const TIER_COLORS = {
+    1: { bg: 'bg-amber-900/10 dark:bg-amber-900/40', text: 'text-amber-800 dark:text-amber-400', border: 'border-amber-700/30' },      // Wood
+    2: { bg: 'bg-slate-400/10 dark:bg-slate-400/20', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-500/30' },       // Stone
+    3: { bg: 'bg-amber-600/10 dark:bg-amber-600/20', text: 'text-amber-700 dark:text-amber-500', border: 'border-amber-600/30' },       // Bronze
+    4: { bg: 'bg-slate-300/20 dark:bg-slate-300/10', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-400/30' },       // Silver
+    5: { bg: 'bg-yellow-400/10 dark:bg-yellow-400/20', text: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-500/30' },   // Gold
+    6: { bg: 'bg-cyan-300/10 dark:bg-cyan-300/20', text: 'text-cyan-700 dark:text-cyan-400', border: 'border-cyan-400/30' },         // Platinum
+    7: { bg: 'bg-blue-300/10 dark:bg-blue-300/20', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-400/30' },         // Diamond
+    8: { bg: 'bg-orange-500/10 dark:bg-orange-500/20', text: 'text-orange-700 dark:text-orange-500', border: 'border-orange-500/30' },   // Champion
 };
 
-export default function AchievementsWidget({ dashboardData, netWorth, goals }) {
-    // Fetch additional data needed for achievements (use tree API to match other components)
-    const { data: bucketsTree = [] } = useQuery({
-        queryKey: ['buckets'],
-        queryFn: async () => (await api.get('/settings/buckets/tree')).data
+export default function AchievementsWidget() {
+    const navigate = useNavigate();
+
+    const { data: summary, isLoading } = useQuery({
+        queryKey: ['achievements_summary'],
+        queryFn: async () => (await api.get('/achievements/summary')).data
     });
 
-    // Flatten tree for counting
-    const buckets = useMemo(() => {
-        const flatten = (nodes) => {
-            let result = [];
-            nodes.forEach(node => {
-                result.push(node);
-                if (node.children && node.children.length > 0) {
-                    result = result.concat(flatten(node.children));
-                }
-            });
-            return result;
-        };
-        return flatten(bucketsTree);
-    }, [bucketsTree]);
-
-    const { data: txStats } = useQuery({
-        queryKey: ['transactionStats'],
-        queryFn: async () => (await api.get('/analytics/transactions/stats')).data,
-        retry: false
-    });
-
-    // Compute earned achievements
-    const { earned, locked } = useMemo(() => {
-        const data = {
-            totals: dashboardData?.totals || {},
-            buckets,
-            goals: goals || [],
-            netWorth: netWorth || 0,
-            transactionCount: txStats?.total_count || 0
-        };
-
-        const earnedList = [];
-        const lockedList = [];
-
-        ACHIEVEMENTS.forEach(achievement => {
-            try {
-                if (achievement.check(data)) {
-                    earnedList.push(achievement);
-                } else {
-                    lockedList.push(achievement);
-                }
-            } catch (e) {
-                lockedList.push(achievement);
-            }
-        });
-
-        return { earned: earnedList, locked: lockedList };
-    }, [dashboardData, buckets, goals, netWorth, txStats]);
-
-    if (earned.length === 0 && locked.length === 0) {
-        return null;
+    if (isLoading) {
+        return (
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 min-h-[200px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+        );
     }
 
+    if (!summary) return null;
+
+    const { total_earned, total_possible, latest_unlocks = [] } = summary;
+    const progress = Math.round((total_earned / total_possible) * 100) || 0;
+
     return (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-            <div className="flex items-center gap-2 mb-4">
-                <Trophy className="text-amber-500" size={20} />
-                <h2 className="text-lg font-bold text-slate-800 dark:text-white">Achievements</h2>
-                <span className="ml-auto text-sm text-slate-500 dark:text-slate-400">
-                    {earned.length} / {ACHIEVEMENTS.length} earned
-                </span>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+                        <Trophy size={20} />
+                    </div>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">Achievements</h2>
+                </div>
+                <button
+                    onClick={() => navigate('/goals?tab=achievements')}
+                    className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+                >
+                    View All <ChevronRight size={14} />
+                </button>
             </div>
 
-            {/* Earned Achievements */}
-            {earned.length > 0 && (
-                <div className="flex flex-wrap gap-3 mb-4">
-                    {earned.map(achievement => {
-                        const Icon = achievement.icon;
-                        const colors = colorClasses[achievement.color];
-                        return (
-                            <div
-                                key={achievement.id}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${colors.bg} ${colors.border} transition-transform hover:scale-105`}
-                                title={achievement.description}
-                            >
-                                <Icon size={18} className={colors.text} />
-                                <span className={`text-sm font-medium ${colors.text}`}>
-                                    {achievement.name}
-                                </span>
-                            </div>
-                        );
-                    })}
+            {/* Progress Section */}
+            <div className="mb-6">
+                <div className="flex justify-between items-end mb-2">
+                    <div>
+                        <span className="text-3xl font-bold text-slate-900 dark:text-white">{total_earned}</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400 ml-1">/ {total_possible} Unlocked</span>
+                    </div>
+                    <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{progress}%</span>
                 </div>
-            )}
+                <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-1000"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            </div>
 
-            {/* Locked Achievements (Next to Earn) */}
-            {locked.length > 0 && (
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
-                    <p className="text-xs text-slate-400 mb-2">Next achievements to unlock:</p>
-                    <div className="flex flex-wrap gap-2">
-                        {locked.slice(0, 3).map(achievement => {
-                            const Icon = achievement.icon;
+            {/* Latest Unlocks */}
+            <div className="flex-1">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Latest Unlocks</h3>
+                <div className="space-y-3">
+                    {latest_unlocks.length > 0 ? (
+                        latest_unlocks.map((achievement, idx) => {
+                            const colors = TIER_COLORS[achievement.tier] || TIER_COLORS[1];
                             return (
                                 <div
-                                    key={achievement.id}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 opacity-60"
-                                    title={achievement.description}
+                                    key={`${achievement.achievement_id}-${idx}`}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border ${colors.bg} ${colors.border}`}
                                 >
-                                    <Icon size={14} className="text-slate-400" />
-                                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                                        {achievement.name}
-                                    </span>
+                                    <div className="text-xl">
+                                        {achievement.tier_icon}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className={`text-sm font-semibold truncate ${colors.text}`}>
+                                                {achievement.name}
+                                            </h4>
+                                            <span className="text-[10px] text-slate-400 opacity-70">
+                                                {new Date(achievement.unlocked_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                            {achievement.category.charAt(0).toUpperCase() + achievement.category.slice(1)} • Tier {achievement.tier}
+                                        </p>
+                                    </div>
                                 </div>
                             );
-                        })}
-                    </div>
+                        })
+                    ) : (
+                        <div className="text-center py-6 text-slate-400 text-sm italic bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                            No achievements unlocked yet.<br />Start simpler!
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Call to Action */}
+            {latest_unlocks.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 text-center">
+                    <p className="text-xs text-slate-500">
+                        {total_possible - total_earned} more badges waiting for you!
+                    </p>
                 </div>
             )}
         </div>

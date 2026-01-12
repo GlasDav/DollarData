@@ -453,4 +453,37 @@ class IgnoredRulePattern(Base):
     user = relationship("User")
 
 
+class UserAchievement(Base):
+    """
+    Tracks user achievements with tiered progression.
+    Each category (budget, savings, etc.) can have multiple tiers (wood -> champion).
+    """
+    __tablename__ = "user_achievements"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("profiles.id"), index=True)
+    
+    category = Column(String, index=True)  # e.g., "budget", "savings", "net_worth"
+    tier = Column(Integer, default=1)  # 1-8 (wood to champion)
+    achievement_id = Column(String)  # e.g., "budget_wood", "savings_gold"
+    
+    unlocked_at = Column(DateTime, default=func.now())
+    
+    user = relationship("User", backref="achievements")
 
+
+class UserLoginStreak(Base):
+    """
+    Tracks user login activity for consistency achievements.
+    """
+    __tablename__ = "user_login_streaks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("profiles.id"), unique=True)
+    
+    current_streak_days = Column(Integer, default=0)
+    longest_streak_days = Column(Integer, default=0)
+    total_weeks_active = Column(Integer, default=0)
+    last_login_date = Column(Date, nullable=True)
+    
+    user = relationship("User", backref="login_streak")
