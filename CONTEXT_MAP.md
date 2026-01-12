@@ -12,6 +12,10 @@
 > This environment uses **PowerShell** on Windows. Chaining commands with `&&` fails.
 > Use `;` for sequential execution or separate `run_command` calls.
 
+> **🎨 DESIGN SYSTEM COMPLIANCE:**
+> **ALWAYS** use design tokens (e.g., `bg-card`, `text-text-primary`, `border-border`).
+> **NEVER** hard-code styles (e.g., `bg-white`, `text-slate-900`, hex codes).
+
 > **Before making any changes**, review these critical patterns and files.
 
 ### Critical Files to Check
@@ -449,7 +453,6 @@ docker compose exec backend python /app/seed_demo_user.py
 \u003e Last updated: 2026-01-10
 
 ### **Design Token System (Jan 2026)**
-- **⚠️ STRICT RULE:** Always use design tokens. **NEVER** hard-code logic or style elements (colors, shadows, radius) directly.
 - Migrated entire frontend to use semantic design tokens defined in `index.css` via Tailwind v4 `@theme`.
 - **Key Tokens:**
   - `bg-surface` / `bg-card` (Backgrounds)
