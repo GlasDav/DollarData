@@ -322,9 +322,6 @@ class CategoryGoal(Base):
     user = relationship("User")
     bucket = relationship("BudgetBucket")
 
-    user = relationship("User")
-    bucket = relationship("BudgetBucket")
-
 class NotificationSettings(Base):
     __tablename__ = "notification_settings"
     
