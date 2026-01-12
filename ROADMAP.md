@@ -32,7 +32,12 @@ This document outlines the planned features, improvements, and future direction 
     - Click on a column to show performance vs budget for that period
 - [x] **New Default Categories:** Add 'Reimbursable' and 'Mobile Phone' to default category list.
 
-- [x] **Budget Score Overhaul:** Redesigned widget with transparent breakdown (velocity/adherence/planning components visible).
+- [x] **Budget Score Overhaul:** Redesigned widget with transparent breakdown.
+  - [x] Replaced bright purple gradient with softer card styling
+  - [x] Added progress bars for each score component (Spending Pace, Budget Adherence, Categorization)
+  - [x] Added hover tooltips explaining each component
+  - [x] Fixed adherence formula to count child categories when `is_group_budget=False`
+  - [x] Color-coded overall score (green ≥70, amber 40-69, red <40)
 - [x] **Category Goals:** specific expenditure goals (e.g., "Under budget on clothing for 3 months").
 - [x] **Goal Tracking:** Visual progress for specific saving/spending goals.
 
