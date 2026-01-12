@@ -15,6 +15,7 @@ import Review from './pages/Review';
 import Reports from './pages/Reports';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
+import LandingPage from './pages/LandingPage';
 
 
 import TransactionsHub from './pages/TransactionsHub';
@@ -86,7 +87,7 @@ function NavItem({ to, icon: Icon, children, end = false }) {
 
 // Page title mapping
 const PAGE_TITLES = {
-  '/': 'Dashboard',
+  '/dashboard': 'Dashboard',
   '/transactions': 'Transactions',
   '/budget': 'Budget',
   '/net-worth': 'Net Worth',
@@ -137,7 +138,7 @@ function Layout() {
           {/* Overview */}
           <div className="mb-4">
             <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted dark:text-text-muted-dark opacity-70">Overview</div>
-            <NavItem to="/" icon={LayoutDashboard} end>Dashboard</NavItem>
+            <NavItem to="/dashboard" icon={LayoutDashboard}>Dashboard</NavItem>
           </div>
 
           {/* Money */}
@@ -231,10 +232,11 @@ function App() {
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/basiq-callback" element={<BasiqCallback />} />
+                <Route path="/" element={<LandingPage />} />
 
                 {/* Protected Routes */}
                 <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/transactions" element={<TransactionsHub />} />
                   <Route path="/budget" element={<Budget />} />
                   <Route path="/net-worth" element={<NetWorth />} />

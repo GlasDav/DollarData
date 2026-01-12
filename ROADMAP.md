@@ -34,7 +34,6 @@ This document outlines the planned features, improvements, and future direction 
 
 ## ⚙️ Account & Settings
 
-- [ ] Rename VPS folder: `mv /opt/principal /opt/dollardata`
 - [ ] **Configure dollardata.au Domain:**
   - [ ] Complete GoDaddy ID verification
   - [ ] Add A records pointing to VPS (43.224.182.196)
@@ -52,7 +51,7 @@ This document outlines the planned features, improvements, and future direction 
     - Pre-import guidance (Categories & Rules setup first).
     - Comprehensive guide covering all features.
     - Help/FAQ section.
-- [ ] **Public Landing Page:** Design landing page for unauthenticated users.
+- [x] **Public Landing Page:** Design landing page for unauthenticated users.
 
 ## 🚀 Commercialization
 
