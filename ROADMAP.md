@@ -32,7 +32,7 @@ This document outlines the planned features, improvements, and future direction 
     - Click on a column to show performance vs budget for that period
 - [x] **New Default Categories:** Add 'Reimbursable' and 'Mobile Phone' to default category list.
 
-- [ ] **Budget Score Overhaul:** Redesign widget (too bright) and intuitive methodology (currently confusing).
+- [x] **Budget Score Overhaul:** Redesigned widget with transparent breakdown (velocity/adherence/planning components visible).
 - [x] **Category Goals:** specific expenditure goals (e.g., "Under budget on clothing for 3 months").
 - [x] **Goal Tracking:** Visual progress for specific saving/spending goals.
 

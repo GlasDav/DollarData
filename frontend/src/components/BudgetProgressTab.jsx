@@ -175,8 +175,8 @@ export default function BudgetProgressTab({ userSettings }) {
                     </div>
                     <div className="text-right">
                         <div className={`text-4xl font-bold ${score >= 70 ? 'text-emerald-600 dark:text-emerald-400' :
-                                score >= 40 ? 'text-amber-600 dark:text-amber-400' :
-                                    'text-red-600 dark:text-red-400'
+                            score >= 40 ? 'text-amber-600 dark:text-amber-400' :
+                                'text-red-600 dark:text-red-400'
                             }`}>{score}</div>
                         <div className="text-slate-500 dark:text-slate-400 text-sm">out of 100</div>
                     </div>
@@ -190,11 +190,11 @@ export default function BudgetProgressTab({ userSettings }) {
                             const isGood = pct >= 70;
                             const isWarning = pct >= 40 && pct < 70;
                             return (
-                                <div key={key} className="flex items-center gap-3">
-                                    <div className="w-28 text-sm text-slate-600 dark:text-slate-400 truncate" title={comp.description}>
+                                <div key={key} className="flex items-center gap-3 group relative">
+                                    <div className="w-36 text-sm text-slate-600 dark:text-slate-400">
                                         {comp.label}
                                     </div>
-                                    <div className="flex-1 h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div className="flex-1 h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden cursor-help" title={comp.description}>
                                         <div
                                             className={`h-full rounded-full transition-all duration-500 ${isGood ? 'bg-emerald-500' :
                                                     isWarning ? 'bg-amber-500' :
@@ -203,8 +203,15 @@ export default function BudgetProgressTab({ userSettings }) {
                                             style={{ width: `${Math.min(100, pct)}%` }}
                                         />
                                     </div>
-                                    <div className="w-16 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    <div className="w-14 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
                                         {Math.round(comp.score)}/{comp.max}
+                                    </div>
+                                    {/* Tooltip */}
+                                    <div className="absolute left-36 bottom-full mb-2 hidden group-hover:block z-10">
+                                        <div className="bg-slate-900 dark:bg-slate-700 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                                            {comp.description}
+                                            <div className="absolute left-4 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900 dark:border-t-slate-700"></div>
+                                        </div>
                                     </div>
                                 </div>
                             );
