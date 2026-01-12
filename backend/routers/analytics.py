@@ -1893,20 +1893,42 @@ def get_budget_progress(
         else:
             percent = 0 if spent == 0 else 100
         
-        # Status
+        # Status (for display on card)
         if limit == 0:
             status = "no_limit"
         elif spent > limit:
             status = "over"
-            over_budget += 1
         elif spent > limit * 0.9:
             status = "warning"
-            on_track += 1
         else:
             status = "on_track"
-            on_track += 1
-            if limit > 0:
-                total_saved += (limit - spent)
+        
+        # Count for score calculation:
+        # If is_group_budget=False and has children, count each child separately
+        # If is_group_budget=True or no children, count parent as single unit
+        if not b.is_group_budget and children:
+            # Count each child's status for scoring
+            for child in children:
+                child_spent = bucket_spent.get(child.id, 0)
+                child_base_limit = sum_limits(child.limits)
+                child_limit = child_base_limit * delta_months
+                
+                if child_limit > 0:
+                    if child_spent > child_limit:
+                        over_budget += 1
+                    elif child_spent <= child_limit * 0.9:
+                        on_track += 1
+                        total_saved += (child_limit - child_spent)
+                    else:
+                        on_track += 1  # Warning counts as on_track
+        else:
+            # Count parent as single unit
+            if status == "over":
+                over_budget += 1
+            elif status in ("on_track", "warning"):
+                on_track += 1
+                if status == "on_track" and limit > 0:
+                    total_saved += (limit - spent)
         
         # Build history array for sparkline - aggregate parent + children
         # Now always shows 12 months with is_selected flag for highlighting
