@@ -1836,6 +1836,7 @@ def get_budget_progress(
     over_budget = 0
     under_budget = 0
     total_saved = 0.0
+    score_total_with_limits = 0  # Track total categories counted for scoring
     
     # Only iterate parent buckets - child spending/limits will be rolled up
     for b in parent_buckets:
@@ -1914,6 +1915,7 @@ def get_budget_progress(
                 child_limit = child_base_limit * delta_months
                 
                 if child_limit > 0:
+                    score_total_with_limits += 1
                     if child_spent > child_limit:
                         over_budget += 1
                     elif child_spent <= child_limit * 0.9:
@@ -1923,6 +1925,8 @@ def get_budget_progress(
                         on_track += 1  # Warning counts as on_track
         else:
             # Count parent as single unit
+            if limit > 0:
+                score_total_with_limits += 1
             if status == "over":
                 over_budget += 1
             elif status in ("on_track", "warning"):
@@ -2074,10 +2078,10 @@ def get_budget_progress(
     # 2. Adherence Score (Max 55)
     # Score based on ratio of categories on-track vs over-budget
     # Also factor in severity of overspend
-    total_with_limits = sum(1 for c in categories if c["limit"] > 0)
-    if total_with_limits > 0:
+    # Use score_total_with_limits which tracks child categories when is_group_budget=False
+    if score_total_with_limits > 0:
         # Base score: proportion of categories on-track (0-40 pts)
-        on_track_ratio = on_track / total_with_limits
+        on_track_ratio = min(1.0, on_track / score_total_with_limits)  # Cap at 1.0
         base_adherence = on_track_ratio * 40
         
         # Severity penalty: How much total overspend relative to total budget (0-15 pts penalty)
