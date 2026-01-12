@@ -105,7 +105,6 @@ export default function AchievementsTab() {
                     const tierColors = TIER_COLORS[category.current_tier] || TIER_COLORS[1];
 
                     return (
-                    return (
                         <div
                             key={category.id}
                             className="bg-card dark:bg-card-dark rounded-xl border border-border dark:border-border-dark overflow-hidden"
