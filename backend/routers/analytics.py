@@ -2050,22 +2050,26 @@ def get_budget_progress(
         velocity_score = max(0, 40 - velocity_penalty)
     
     # 2. Adherence Score (Max 55)
-    # Penalize for every category that is over budget, weighted by its size relative to total budget
-    adherence_penalty = 0
-    for c in categories:
-        if c["status"] == "over" and c["limit"] > 0:
-            # How much over?
-            over_amt = c["spent"] - c["limit"]
-            # Weight: (Over Amount / Overall Budget) * Multiplier
-            # Taking $100 over on a $5000 budget is small (2%). Taking $100 over on $200 budget is huge (50%).
-            # We care about impact on TOTAL financial health.
-            if total_budget_limit > 0:
-                impact_pct = over_amt / total_budget_limit
-                # Penalty: Lose 100 points for every 10% of total budget blown
-                penalty = impact_pct * 1000 
-                adherence_penalty += penalty
-    
-    adherence_score = max(0, 55 - adherence_penalty)
+    # Score based on ratio of categories on-track vs over-budget
+    # Also factor in severity of overspend
+    total_with_limits = sum(1 for c in categories if c["limit"] > 0)
+    if total_with_limits > 0:
+        # Base score: proportion of categories on-track (0-40 pts)
+        on_track_ratio = on_track / total_with_limits
+        base_adherence = on_track_ratio * 40
+        
+        # Severity penalty: How much total overspend relative to total budget (0-15 pts penalty)
+        total_overspend = sum(c["spent"] - c["limit"] for c in categories if c["status"] == "over" and c["limit"] > 0)
+        if total_budget_limit > 0 and total_overspend > 0:
+            overspend_pct = total_overspend / total_budget_limit
+            # Cap penalty at 15 points (100% overspend = full 15pt penalty)
+            severity_penalty = min(15, overspend_pct * 15)
+        else:
+            severity_penalty = 0
+        
+        adherence_score = max(0, base_adherence + (15 - severity_penalty))
+    else:
+        adherence_score = 55  # No limits set = full marks
     
     # 3. Planning Score (Max 5)
     # Penalize if "Uncategorized" exists and has spend > 0
