@@ -130,7 +130,7 @@ export default function AchievementsTab() {
                                 {/* Tier Badge */}
                                 {category.current_tier > 0 && (
                                     <div className={`px-3 py-1.5 rounded-full text-sm font-medium ${tierColors.bg} ${tierColors.text} border ${tierColors.border}`}>
-                                        {category.tiers[category.current_tier - 1]?.tier_icon} Tier {category.current_tier}
+                                        {category.tiers[category.current_tier - 1]?.tier_icon} {category.tiers[category.current_tier - 1]?.tier_name}
                                     </div>
                                 )}
 
@@ -159,8 +159,8 @@ export default function AchievementsTab() {
                                             <div
                                                 key={tier.tier}
                                                 className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${tier.is_earned
-                                                        ? `${tierColor.bg} border ${tierColor.border}`
-                                                        : 'bg-slate-50 dark:bg-slate-700/50 opacity-60'
+                                                    ? `${tierColor.bg} border ${tierColor.border}`
+                                                    : 'bg-slate-50 dark:bg-slate-700/50 opacity-60'
                                                     }`}
                                             >
                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${tier.is_earned ? tierColor.text : 'text-slate-400'
