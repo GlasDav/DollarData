@@ -161,54 +161,79 @@ export default function BudgetProgressTab({ userSettings }) {
                 </div>
             </div>
 
-            {/* Score Card */}
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
+            {/* Budget Health Card */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+                <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/20 rounded-lg">
-                            <Target size={24} />
+                        <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                            <Target size={22} className="text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold">Budget Score</h2>
-                            <p className="text-white/70 text-sm">{period.label}</p>
+                            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Budget Health</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm">{period.label}</p>
                         </div>
                     </div>
                     <div className="text-right">
-                        <div className="text-4xl font-bold">{score}</div>
-                        <div className="text-white/70 text-sm">out of 100</div>
+                        <div className={`text-4xl font-bold ${score >= 70 ? 'text-emerald-600 dark:text-emerald-400' :
+                                score >= 40 ? 'text-amber-600 dark:text-amber-400' :
+                                    'text-red-600 dark:text-red-400'
+                            }`}>{score}</div>
+                        <div className="text-slate-500 dark:text-slate-400 text-sm">out of 100</div>
                     </div>
                 </div>
 
-                {/* Score Progress Bar */}
-                <div className="h-3 bg-white/20 rounded-full overflow-hidden mb-4">
-                    <div
-                        className="h-full bg-white rounded-full transition-all duration-700"
-                        style={{ width: `${score}%` }}
-                    />
-                </div>
+                {/* Score Breakdown */}
+                {progress?.score_breakdown && (
+                    <div className="space-y-3 mb-5">
+                        {Object.entries(progress.score_breakdown).map(([key, comp]) => {
+                            const pct = (comp.score / comp.max) * 100;
+                            const isGood = pct >= 70;
+                            const isWarning = pct >= 40 && pct < 70;
+                            return (
+                                <div key={key} className="flex items-center gap-3">
+                                    <div className="w-28 text-sm text-slate-600 dark:text-slate-400 truncate" title={comp.description}>
+                                        {comp.label}
+                                    </div>
+                                    <div className="flex-1 h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-500 ${isGood ? 'bg-emerald-500' :
+                                                    isWarning ? 'bg-amber-500' :
+                                                        'bg-red-500'
+                                                }`}
+                                            style={{ width: `${Math.min(100, pct)}%` }}
+                                        />
+                                    </div>
+                                    <div className="w-16 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        {Math.round(comp.score)}/{comp.max}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {/* Summary Stats */}
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-white/10 rounded-lg p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 text-emerald-300 mb-1">
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400 mb-1">
                             <TrendingUp size={16} />
                         </div>
-                        <div className="text-2xl font-bold">{summary.on_track || 0}</div>
-                        <div className="text-xs text-white/70">On Track</div>
+                        <div className="text-2xl font-bold text-slate-800 dark:text-white">{summary.on_track || 0}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">On Track</div>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 text-red-300 mb-1">
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 text-red-500 dark:text-red-400 mb-1">
                             <AlertTriangle size={16} />
                         </div>
-                        <div className="text-2xl font-bold">{summary.over_budget || 0}</div>
-                        <div className="text-xs text-white/70">Over Budget</div>
+                        <div className="text-2xl font-bold text-slate-800 dark:text-white">{summary.over_budget || 0}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">Over Budget</div>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 text-amber-300 mb-1">
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 text-amber-500 dark:text-amber-400 mb-1">
                             <PiggyBank size={16} />
                         </div>
-                        <div className="text-2xl font-bold">{formatCurrency(summary.total_saved || 0)}</div>
-                        <div className="text-xs text-white/70">Potential Savings</div>
+                        <div className="text-2xl font-bold text-slate-800 dark:text-white">{formatCurrency(summary.total_saved || 0)}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">Potential Savings</div>
                     </div>
                 </div>
             </div>

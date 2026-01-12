@@ -300,7 +300,6 @@ erDiagram
   - **Pending:** Configure `dollardata.au` domain (awaiting GoDaddy ID verification).
 
 ## Known Issues
-- **Recent Transactions Widget:** Currently not displaying transactions on dashboard (Investigating).
 - **Asset Allocation:** Needs UI fixes and split between ETFs/Stocks.
 
 ---

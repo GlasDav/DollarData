@@ -2085,6 +2085,26 @@ def get_budget_progress(
             "label": period_label
         },
         "score": score,
+        "score_breakdown": {
+            "velocity": {
+                "score": round(velocity_score, 1),
+                "max": 40,
+                "label": "Spending Pace",
+                "description": "Based on spending rate vs. time in period"
+            },
+            "adherence": {
+                "score": round(adherence_score, 1),
+                "max": 55,
+                "label": "Budget Adherence",
+                "description": f"{over_budget} categories over budget"
+            },
+            "planning": {
+                "score": round(planning_score, 1),
+                "max": 5,
+                "label": "Categorization",
+                "description": "All transactions categorized" if planning_score == 5 else "Has uncategorized transactions"
+            }
+        },
         "summary": {
             "on_track": on_track,
             "over_budget": over_budget,
