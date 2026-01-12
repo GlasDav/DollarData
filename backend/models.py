@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Float, DateTime, Date, LargeBinary, Table
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
 
 class User(Base):
@@ -458,7 +459,7 @@ class UserAchievement(Base):
     __tablename__ = "user_achievements"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("profiles.id"), index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
     
     category = Column(String, index=True)  # e.g., "budget", "savings", "net_worth"
     tier = Column(Integer, default=1)  # 1-8 (wood to champion)
@@ -476,7 +477,7 @@ class UserLoginStreak(Base):
     __tablename__ = "user_login_streaks"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("profiles.id"), unique=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), unique=True)
     
     current_streak_days = Column(Integer, default=0)
     longest_streak_days = Column(Integer, default=0)
