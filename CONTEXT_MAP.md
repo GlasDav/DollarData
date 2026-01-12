@@ -8,6 +8,10 @@
 
 ## 🤖 Agent Onboarding (READ FIRST)
 
+> **⚠️ CRITICAL: DO NOT USE `&&` IN SHELL COMMANDS.**
+> This environment uses **PowerShell** on Windows. Chaining commands with `&&` fails.
+> Use `;` for sequential execution or separate `run_command` calls.
+
 > **Before making any changes**, review these critical patterns and files.
 
 ### Critical Files to Check
@@ -489,6 +493,12 @@ docker compose exec backend python /app/seed_demo_user.py
 ### **Visual Branding Upgrade (Jan 2026)**
 - **Logo Optimization:** Created optimized SVGs (cropped) for `brand-logo.svg` and `favicon.svg`.
 - **Dark Mode Support:** Implemented `brand-logo-dark.svg` (white text) and toggle logic in Login/App Header to ensure visibility in all themes.
+
+### **Achievements System (Jan 2026)**
+- **Backend:** `routers/achievements.py` handles auto-tracking logic. `models.py` stores `UserAchievement` (with UUID foreign key).
+- **Frontend:** New "Achievements" tab in Goals page. `AchievementsTab.jsx` component displays tiered progress (Wood -> Champion).
+- **Fixes:** resolved 502 startup crash (duplicate relationship) and 500 error (safe dict access).
+
 
 
 ---

@@ -12,7 +12,9 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Transaction Notes:** Add ability to annotate transactions with custom notes (pending Basiq integration).
 - [ ] **Basiq Integration:** Full bank feed integration for automatic transaction import.
 - [ ] **Amazon Extension:** Browser extension or integration to categorize Amazon purchases automatically.
-- [ ] **Achievements Overhaul:** Clear hurdles with multiple levels, visible achievements list. Needs brainstorming for more achievements.
+- [x] **Achievements Overhaul:** Clear hurdles with multiple levels, visible achievements list.
+  - [ ] Rename "Goals" page to "Goals & Achievements" in sidebar
+  - [ ] Fix Savings and Income achievements logic for correct calculation
 
 ## 📊 Reports & Analytics
 
