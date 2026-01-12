@@ -449,6 +449,7 @@ docker compose exec backend python /app/seed_demo_user.py
 \u003e Last updated: 2026-01-10
 
 ### **Design Token System (Jan 2026)**
+- **⚠️ STRICT RULE:** Always use design tokens. **NEVER** hard-code logic or style elements (colors, shadows, radius) directly.
 - Migrated entire frontend to use semantic design tokens defined in `index.css` via Tailwind v4 `@theme`.
 - **Key Tokens:**
   - `bg-surface` / `bg-card` (Backgrounds)
@@ -497,7 +498,19 @@ docker compose exec backend python /app/seed_demo_user.py
 ### **Achievements System (Jan 2026)**
 - **Backend:** `routers/achievements.py` handles auto-tracking logic. `models.py` stores `UserAchievement` (with UUID foreign key).
 - **Frontend:** New "Achievements" tab in Goals page. `AchievementsTab.jsx` component displays tiered progress (Wood -> Champion).
+- **Frontend:** New "Achievements" tab in Goals page. `AchievementsTab.jsx` component displays tiered progress (Wood -> Champion).
 - **Fixes:** resolved 502 startup crash (duplicate relationship) and 500 error (safe dict access).
+
+### **Public Landing Page (Jan 2026)**
+- **New Features:**
+  - Designed and implemented `LandingPage.jsx` for unauthenticated flow at `/`.
+  - Created "Bento Grid" feature showcase (Sankey, Budget, Net Worth).
+  - Generated premium 3D assets (`web_dashboard_hero.png`, etc.).
+- **Routing:** Unauthenticated users -> Landing Page; Authenticated -> `/dashboard`.
+
+### **Achievements Token Refactor (Jan 2026)**
+- **Refactor:** Updated `AchievementsTab.jsx` and `AchievementsWidget.jsx` to eliminate hardcoded styles.
+- **Compliance:** Enforced strict usage of `bg-card`, `text-primary`, `border-border` semantic tokens.
 
 
 

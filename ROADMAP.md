@@ -52,6 +52,8 @@ This document outlines the planned features, improvements, and future direction 
     - Comprehensive guide covering all features.
     - Help/FAQ section.
 - [x] **Public Landing Page:** Design landing page for unauthenticated users.
+  - [ ] Fix up landing page spacing
+  - [ ] Polish landing page content
 
 ## 🚀 Commercialization
 
