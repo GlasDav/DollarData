@@ -15,6 +15,7 @@
 > **🎨 DESIGN SYSTEM COMPLIANCE:**
 > **ALWAYS** use design tokens (e.g., `bg-card`, `text-text-primary`, `border-border`).
 > **NEVER** hard-code styles (e.g., `bg-white`, `text-slate-900`, hex codes).
+> **ACTION:** Run `/audit-brand` to verify compliance.
 
 > **Before making any changes**, review these critical patterns and files.
 
