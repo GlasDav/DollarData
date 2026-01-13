@@ -1,0 +1,123 @@
+# DollarData - Brand Guidelines
+
+Based on [Midfunnel by O/M Design](https://www.offmenu.design/projects/midfunnel).
+
+---
+
+## Color Palette
+
+| Token | Light Mode | Dark Mode | Usage |
+|-------|------------|-----------|-------|
+| `primary` | `#5D5DFF` | - | Primary actions, links, active states |
+| `primary-hover` | `#4B4BE6` | - | Hover state for primary elements |
+| `surface` | `#F5F5F7` | `#1A1A2E` | Page background |
+| `card` | `#FFFFFF` | `#252538` | Card backgrounds |
+| `text-primary` | `#191B18` | `#F5F5F7` | Headings, body text |
+| `text-muted` | `#666666` | `#9CA3AF` | Secondary text, labels |
+| `button-dark` | `#232522` | - | Dark CTA buttons |
+| `border` | `#E5E5E7` | `#374151` | Borders, dividers |
+| `accent-success` | `#34D399` | - | Success states |
+| `accent-warning` | `#FB923C` | - | Warning states |
+| `accent-error` | `#EF4444` | - | Error states |
+
+---
+
+## Typography
+
+**Font Family:** Inter (falls back to system-ui)
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+```
+
+---
+
+## Component Styles
+
+### Buttons
+
+```jsx
+// Primary (Indigo)
+<button className="bg-primary hover:bg-primary-hover text-white rounded-full px-6 py-2">
+
+// Dark CTA
+<button className="bg-button-dark hover:bg-button-dark-hover text-white rounded-full px-6 py-2">
+```
+
+### Cards
+
+```jsx
+<div className="bg-card dark:bg-card-dark rounded-card shadow-card hover:shadow-card-hover">
+```
+
+### Text
+
+```jsx
+<h1 className="text-text-primary dark:text-text-primary-dark">
+<p className="text-text-muted dark:text-text-muted-dark">
+```
+
+---
+
+## Migration Guide
+
+| Old Class | New Class |
+|-----------|-----------|
+| `bg-indigo-600` | `bg-primary` |
+| `hover:bg-indigo-700` | `hover:bg-primary-hover` |
+| `bg-slate-50` | `bg-surface` |
+| `bg-white` | `bg-card` |
+| `dark:bg-slate-800` | `dark:bg-card-dark` |
+| `text-slate-900` | `text-text-primary` |
+| `text-slate-500` | `text-text-muted` |
+| `border-slate-200` | `border-border` |
+| `rounded-2xl` | `rounded-card` |
+
+---
+
+## Data Visualization
+
+All charts must use the unified color palette defined in `frontend/src/constants/chartColors.js`.
+
+| Concept | Color | Usage |
+|---------|-------|-------|
+| Assets | `#6366f1` (Indigo) | Asset lines, positive growth |
+| Liabilities | `#ef4444` (Red) | Debt lines, negative trends |
+| Net Worth | `#6366f1` (Indigo/Brand) | Net Worth area/line |
+| Categories | Rainbow Palette | Pie charts, bar charts (Expenses/Income) |
+
+**Usage:**
+```javascript
+import { CHART_COLORS, ASSET_COLOR, LIABILITY_COLOR } from '../constants/chartColors';
+
+// Pie/Bar Charts (Categories)
+<PieChart>
+  {data.map((_, i) => (
+    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+  ))}
+</PieChart>
+
+// Area/Line Charts
+<Area stroke={ASSET_COLOR} fill={ASSET_COLOR} ... />
+```
+
+---
+
+## Logo Assets
+
+The application uses specific SVG assets for branding. Do not use text-only replacements.
+
+| Asset | File | Description |
+|-------|------|-------------|
+| **Full Logo (Light)** | `/brand-logo.svg` | Icon + Black Text. Used in Light Mode. |
+| **Full Logo (Dark)** | `/brand-logo-dark.svg` | Icon + White Text. Used in Dark Mode. |
+| **Favicon** | `/favicon.svg` | Cropped Icon-only. Used for browser tab. |
+
+**Dark Mode Implementation:**
+
+Use Tailwind's `dark:` modifier to swap images.
+
+```jsx
+<img src="/brand-logo.svg" className="dark:hidden" />
+<img src="/brand-logo-dark.svg" className="hidden dark:block" />
+```

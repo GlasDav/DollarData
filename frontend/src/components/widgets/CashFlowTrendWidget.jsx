@@ -24,27 +24,25 @@ export default function CashFlowTrendWidget({
         const hasData = trendHistory && trendHistory.length > 0 && trendHistory.some(d => d.spent > 0 || d.income > 0);
 
         if (hasData) {
-            // If backend provides daily data (many points) or monthly (few), we just use it.
-            // But we might want to map labels if they are dates.
-            // For now, trust the backend/mock pipeline.
             return trendHistory;
         }
 
-        // Otherwise generate realistic mock data for "Zen" aesthetic
-        // Decision: Daily or Monthly based on 'interval' prop or duration
+        // Mock Data Generation
         if (interval === 'day') {
-            // Generate ~7-30 daily points
             const days = [];
+            // Create new Date objects to avoid mutation issues
             let current = new Date(start);
             const endObj = new Date(end);
 
-            while (current <= endObj) {
-                const label = current.getDate(); // e.g. 1, 2, 3
+            // Safety brake: limit to 60 iterations to preventing infinite loops if dates are wrong
+            let safety = 0;
+            while (current <= endObj && safety < 60) {
+                const label = current.getDate();
                 const isWeekend = current.getDay() === 0 || current.getDay() === 6;
 
-                // Randomize daily spend
-                const baseIncome = isWeekend ? 0 : (Math.random() > 0.8 ? 200 : 0); // Occasional income
-                const baseExpense = isWeekend ? 150 : 50; // Spend more on weekends
+                // Randomize daily spend to make lines distinct
+                const baseIncome = isWeekend ? 0 : (Math.random() > 0.8 ? 500 : 0);
+                const baseExpense = isWeekend ? 150 : 50;
 
                 days.push({
                     label: label,
@@ -53,15 +51,16 @@ export default function CashFlowTrendWidget({
                     spent: baseExpense + Math.random() * 100
                 });
                 current.setDate(current.getDate() + 1);
+                safety++;
             }
             return days;
         } else {
-            // Monthly Mock (existing logic)
+            // Monthly Mock
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
             return months.map((month, i) => {
-                // Slight upward trend with some randomness
-                const baseIncome = 5000 + (i * 100);
-                const baseExpense = 3500 + (i * 50) + (Math.random() * 500 - 250);
+                // Ensure distinct lines for visualisation
+                const baseIncome = 4000 + (i * 200) + Math.random() * 500;
+                const baseExpense = 2500 + (i * 100) + Math.random() * 800; // Significantly lower to avoid overlap hiding
                 return {
                     label: month,
                     income: baseIncome,
@@ -98,10 +97,10 @@ export default function CashFlowTrendWidget({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
-                        Monthly Cash Flow
+                        Cash Flow Trends
                     </h2>
                     <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1">
-                        Income vs Expenses (6 Month Trend)
+                        Income vs Expenses
                     </p>
                 </div>
 
@@ -152,7 +151,7 @@ export default function CashFlowTrendWidget({
                             dataKey="income"
                             name="Income"
                             stroke="#10B981"
-                            fillOpacity={1}
+                            fillOpacity={0.4}
                             fill="url(#colorIncome)"
                             strokeWidth={3}
                         />
@@ -161,7 +160,7 @@ export default function CashFlowTrendWidget({
                             dataKey="spent"
                             name="Expenses"
                             stroke="#6366F1"
-                            fillOpacity={1}
+                            fillOpacity={0.4}
                             fill="url(#colorExpense)"
                             strokeWidth={3}
                         />
