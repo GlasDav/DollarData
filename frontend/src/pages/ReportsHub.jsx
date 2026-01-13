@@ -9,6 +9,7 @@ import Reports from './Reports';
 import FinancialCalendar from './FinancialCalendar';
 import Insights from './Insights';
 import CashFlowWidget from '../components/widgets/CashFlowWidget';
+import DateRangePicker from '../components/ui/DateRangePicker';
 
 /**
  * ReportsHub - Tabbed container for Reports, Calendar, Insights, and Cash Flow
@@ -84,37 +85,45 @@ function InsightsContent() {
 
 function CashFlowContent() {
     // State for Cash Flow filters
-    const [range, setRange] = useState('This Month');
     const [excludeOneOffs, setExcludeOneOffs] = useState(false);
 
-    // Calculate dates
-    const getDateRange = () => {
+    // Date Range State
+    const [dateRange, setDateRange] = useState(() => {
         const now = new Date();
         const start = new Date(now.getFullYear(), now.getMonth(), 1);
         const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         return { start: toLocalISOString(start), end: toLocalISOString(end) };
-    };
-    const { start, end } = getDateRange();
+    });
 
     const { data: sankeyData, isLoading } = useQuery({
-        queryKey: ['sankey', start, end, 'Combined', excludeOneOffs],
+        queryKey: ['sankey', dateRange.start, dateRange.end, 'Combined', excludeOneOffs],
         queryFn: async () => {
             const res = await api.get(`/analytics/sankey`, {
-                params: { start_date: start, end_date: end, spender: 'Combined', exclude_one_offs: excludeOneOffs }
+                params: { start_date: dateRange.start, end_date: dateRange.end, spender: 'Combined', exclude_one_offs: excludeOneOffs }
             });
             return res.data;
         }
     });
 
+    const handleDateChange = (start, end) => {
+        setDateRange({ start, end });
+    };
+
     if (isLoading) return <div className="p-8 text-center text-slate-500">Loading Cash Flow Diagram...</div>;
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm gap-4">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Monthly Cash Flow</h3>
 
-                {/* Simple Controls */}
-                <div className="flex items-center gap-4">
+                {/* Controls */}
+                <div className="flex flex-wrap items-center gap-4">
+                    <DateRangePicker
+                        startDate={dateRange.start}
+                        endDate={dateRange.end}
+                        onDateChange={handleDateChange}
+                    />
+
                     <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
                         <input
                             type="checkbox"

@@ -10,6 +10,9 @@ import { CHART_COLORS } from '../../constants/chartColors';
  * Falls back to Mock Data if API returns empty/zero data.
  */
 export default function CashFlowTrendWidget({
+    start,
+    end,
+    interval = 'month',
     trendHistory = [],
     isLoading,
     formatCurrency
@@ -17,24 +20,56 @@ export default function CashFlowTrendWidget({
 
     // --- Mock Data Generation ---
     const data = useMemo(() => {
-        // If we have real data with values, use it
+        // If we have real data with values, use it (and ensure it matches granularity if needed)
         const hasData = trendHistory && trendHistory.length > 0 && trendHistory.some(d => d.spent > 0 || d.income > 0);
 
-        if (hasData) return trendHistory;
+        if (hasData) {
+            // If backend provides daily data (many points) or monthly (few), we just use it.
+            // But we might want to map labels if they are dates.
+            // For now, trust the backend/mock pipeline.
+            return trendHistory;
+        }
 
         // Otherwise generate realistic mock data for "Zen" aesthetic
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        return months.map((month, i) => {
-            // Slight upward trend with some randomness
-            const baseIncome = 5000 + (i * 100);
-            const baseExpense = 3500 + (i * 50) + (Math.random() * 500 - 250);
-            return {
-                label: month,
-                income: baseIncome,
-                spent: baseExpense,
-            };
-        });
-    }, [trendHistory]);
+        // Decision: Daily or Monthly based on 'interval' prop or duration
+        if (interval === 'day') {
+            // Generate ~7-30 daily points
+            const days = [];
+            let current = new Date(start);
+            const endObj = new Date(end);
+
+            while (current <= endObj) {
+                const label = current.getDate(); // e.g. 1, 2, 3
+                const isWeekend = current.getDay() === 0 || current.getDay() === 6;
+
+                // Randomize daily spend
+                const baseIncome = isWeekend ? 0 : (Math.random() > 0.8 ? 200 : 0); // Occasional income
+                const baseExpense = isWeekend ? 150 : 50; // Spend more on weekends
+
+                days.push({
+                    label: label,
+                    fullDate: current.toISOString(),
+                    income: baseIncome + Math.random() * 50,
+                    spent: baseExpense + Math.random() * 100
+                });
+                current.setDate(current.getDate() + 1);
+            }
+            return days;
+        } else {
+            // Monthly Mock (existing logic)
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            return months.map((month, i) => {
+                // Slight upward trend with some randomness
+                const baseIncome = 5000 + (i * 100);
+                const baseExpense = 3500 + (i * 50) + (Math.random() * 500 - 250);
+                return {
+                    label: month,
+                    income: baseIncome,
+                    spent: baseExpense,
+                };
+            });
+        }
+    }, [trendHistory, interval, start, end]);
 
     if (isLoading) return <div className="h-80 bg-slate-50 dark:bg-slate-800/50 rounded-3xl animate-pulse"></div>;
 

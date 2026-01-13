@@ -60,6 +60,9 @@ export default function Dashboard() {
     const { start, end } = getDateRange(rangeType);
 
     // --- Data Queries ---
+    const dayDiff = (new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24);
+    const interval = dayDiff <= 35 ? 'day' : 'month';
+
     const { data: dashboardData, isLoading } = useQuery({
         queryKey: ['dashboard', start, end, spenderMode],
         queryFn: async () => {
@@ -83,9 +86,9 @@ export default function Dashboard() {
     const netWorthHistory = Array.isArray(netWorthHistoryRaw) ? netWorthHistoryRaw : [];
 
     const { data: trendHistoryRaw = [] } = useQuery({
-        queryKey: ['trendHistory', start, end, trendOption, selectedBuckets],
+        queryKey: ['trendHistory', start, end, trendOption, selectedBuckets, interval],
         queryFn: async () => {
-            const params = { start_date: start, end_date: end };
+            const params = { start_date: start, end_date: end, interval };
             if (trendOption === "Non-Discretionary") params.group = "Non-Discretionary";
             else if (trendOption === "Discretionary") params.group = "Discretionary";
             else if (trendOption === "bucket" && selectedBuckets.length > 0) {
@@ -185,6 +188,9 @@ export default function Dashboard() {
                         trendHistory={trendHistory}
                         isLoading={isLoading}
                         formatCurrency={formatCurrency}
+                        start={start}
+                        end={end}
+                        interval={interval}
                     />
 
                     {/* Secondary Metrics Grid */}

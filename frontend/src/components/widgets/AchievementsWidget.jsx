@@ -15,6 +15,17 @@ const TIER_COLORS = {
     8: { bg: 'bg-orange-500/10 dark:bg-orange-500/20', text: 'text-orange-700 dark:text-orange-500', border: 'border-orange-500/30' },   // Champion
 };
 
+const TIER_NAMES = {
+    1: "Wood",
+    2: "Stone",
+    3: "Bronze",
+    4: "Silver",
+    5: "Gold",
+    6: "Platinum",
+    7: "Diamond",
+    8: "Champion"
+};
+
 export default function AchievementsWidget() {
     const navigate = useNavigate();
 
@@ -95,7 +106,7 @@ export default function AchievementsWidget() {
                                             </span>
                                         </div>
                                         <p className="text-xs text-text-muted dark:text-text-muted-dark truncate">
-                                            {achievement.category.charAt(0).toUpperCase() + achievement.category.slice(1)} • Tier {achievement.tier}
+                                            {achievement.category.charAt(0).toUpperCase() + achievement.category.slice(1)} • {TIER_NAMES[achievement.tier] || `Tier ${achievement.tier}`}
                                         </p>
                                     </div>
                                 </div>
