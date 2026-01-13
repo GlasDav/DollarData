@@ -137,6 +137,8 @@ class Account(Base):
     
     user = relationship("User") # Relationship
     holdings = relationship("InvestmentHolding", back_populates="account")
+    trades = relationship("Trade", back_populates="account")
+
 
 class InvestmentHolding(Base):
     __tablename__ = "investment_holdings"
@@ -157,6 +159,33 @@ class InvestmentHolding(Base):
     sector = Column(String, nullable=True) # Tech, Finance, etc.
     
     account = relationship("Account", back_populates="holdings")
+
+
+class Trade(Base):
+    """
+    Represents a buy or sell trade transaction for an investment holding.
+    Holdings are derived from aggregated trades.
+    """
+    __tablename__ = "trades"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, ForeignKey("accounts.id"))
+    ticker = Column(String, index=True)          # e.g. "AAPL"
+    name = Column(String)                        # Asset name
+    trade_type = Column(String)                  # "BUY" or "SELL"
+    trade_date = Column(Date)                    # When the trade occurred
+    quantity = Column(Float)                     # Number of units
+    price = Column(Float)                        # Price per unit at trade time
+    total_value = Column(Float)                  # quantity * price (local currency)
+    currency = Column(String, default="USD")
+    exchange_rate = Column(Float, default=1.0)
+    fees = Column(Float, default=0.0)            # Optional: brokerage fees
+    notes = Column(String, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    
+    account = relationship("Account", back_populates="trades")
+
+
 
 class NetWorthSnapshot(Base):
     __tablename__ = "net_worth_snapshots"

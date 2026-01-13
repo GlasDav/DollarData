@@ -325,6 +325,43 @@ class InvestmentHolding(InvestmentHoldingBase):
     class Config:
         from_attributes = True
 
+
+# Trades
+class TradeBase(BaseModel):
+    ticker: str
+    name: str
+    trade_type: str  # "BUY" or "SELL"
+    trade_date: date
+    quantity: float
+    price: float
+    currency: str = "USD"
+    exchange_rate: float = 1.0
+    fees: float = 0.0
+    notes: Optional[str] = None
+    
+    @field_validator('trade_type')
+    @classmethod
+    def validate_trade_type(cls, v: str) -> str:
+        v = v.upper()
+        if v not in ["BUY", "SELL", "DIVIDEND", "DRIP"]:
+            raise ValueError("trade_type must be 'BUY', 'SELL', 'DIVIDEND', or 'DRIP'")
+        return v
+
+
+class TradeCreate(TradeBase):
+    pass
+
+class Trade(TradeBase):
+    id: int
+    account_id: int
+    total_value: float
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+
 class AccountBalanceBase(BaseModel):
     account_id: int
     balance: float

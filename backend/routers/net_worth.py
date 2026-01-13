@@ -59,6 +59,48 @@ def download_template(current_user: models.User = Depends(auth.get_current_user)
     )
 
 
+@router.get("/trades/template")
+def download_trades_template(current_user: models.User = Depends(auth.get_current_user)):
+    """
+    Download a CSV template for importing trades.
+    Supports BUY, SELL, DIVIDEND, and DRIP trade types.
+    """
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header row
+    writer.writerow(["trade_date", "trade_type", "ticker", "name", "quantity", "price", "currency", "fees", "notes"])
+    
+    # Example rows for each trade type
+    writer.writerow(["15/01/2024", "BUY", "VAS.AX", "Vanguard Australian Shares ETF", "100", "95.50", "AUD", "9.95", "Initial purchase"])
+    writer.writerow(["20/02/2024", "BUY", "AAPL", "Apple Inc.", "10", "180.00", "USD", "0", "DCA buy"])
+    writer.writerow(["01/03/2024", "DIVIDEND", "VAS.AX", "Vanguard Australian Shares ETF", "1", "125.00", "AUD", "0", "Q1 dividend"])
+    writer.writerow(["01/03/2024", "DRIP", "VAS.AX", "Vanguard Australian Shares ETF", "1.31", "95.42", "AUD", "0", "DRP shares from Q1 dividend"])
+    writer.writerow(["15/06/2024", "SELL", "AAPL", "Apple Inc.", "5", "195.00", "USD", "0", "Partial profit taking"])
+    
+    # Blank row before key
+    writer.writerow([])
+    
+    # Reference key section
+    writer.writerow(["# REFERENCE KEY - Delete these rows before importing"])
+    writer.writerow(["# trade_type options:", "BUY", "SELL", "DIVIDEND", "DRIP", "", "", "", ""])
+    writer.writerow(["# BUY:", "Purchase shares - increases quantity and cost basis", "", "", "", "", "", "", ""])
+    writer.writerow(["# SELL:", "Sell shares - decreases quantity and cost basis", "", "", "", "", "", "", ""])
+    writer.writerow(["# DIVIDEND:", "Cash dividend received - quantity=1, price=dividend amount", "", "", "", "", "", "", ""])
+    writer.writerow(["# DRIP:", "Dividend reinvestment - shares received, adds to holdings", "", "", "", "", "", "", ""])
+    writer.writerow(["# date format:", "DD/MM/YYYY", "", "", "", "", "", "", ""])
+    writer.writerow(["# currency:", "USD, AUD, GBP, EUR, etc.", "", "", "", "", "", "", ""])
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=trades_template.csv"}
+    )
+
+
+
 
 # --- Helpers ---
 
@@ -818,7 +860,399 @@ def delete_holding(holding_id: int, db: Session = Depends(get_db), current_user:
     
     return {"ok": True}
 
+
+# --- Trades ---
+
+@router.post("/accounts/{account_id}/trades", response_model=schemas.Trade)
+def create_trade(
+    account_id: int, 
+    trade: schemas.TradeCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Record a new trade (BUY or SELL) for an investment account.
+    Automatically updates/creates the corresponding holding.
+    """
+    # 1. Verify Account Ownership
+    account = db.query(models.Account).filter(
+        models.Account.id == account_id, 
+        models.Account.user_id == current_user.id
+    ).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    # 2. Calculate total value
+    total_value = trade.quantity * trade.price
+    
+    # 3. Handle exchange rate if needed
+    user_currency = (current_user.currency_symbol or "AUD").upper().replace("$", "").strip()
+    if user_currency in ["A", "AU"]: user_currency = "AUD"
+    if user_currency in ["US", "U"]: user_currency = "USD"
+    
+    exchange_rate = trade.exchange_rate
+    if trade.exchange_rate == 1.0 and trade.currency != user_currency:
+        exchange_rate = get_exchange_rate(trade.currency, user_currency)
+    
+    # 4. Create Trade Record
+    db_trade = models.Trade(
+        account_id=account_id,
+        ticker=trade.ticker.upper(),
+        name=trade.name,
+        trade_type=trade.trade_type.upper(),
+        trade_date=trade.trade_date,
+        quantity=trade.quantity,
+        price=trade.price,
+        total_value=total_value,
+        currency=trade.currency,
+        exchange_rate=exchange_rate,
+        fees=trade.fees,
+        notes=trade.notes
+    )
+    db.add(db_trade)
+    
+    # 5. Update or Create Holding
+    existing_holding = db.query(models.InvestmentHolding).filter(
+        models.InvestmentHolding.account_id == account_id,
+        models.InvestmentHolding.ticker == trade.ticker.upper()
+    ).first()
+    
+    if trade.trade_type.upper() == "BUY":
+        if existing_holding:
+            # Update existing holding: add quantity, recalculate average cost basis
+            old_total_cost = (existing_holding.cost_basis or 0.0)
+            new_total_cost = old_total_cost + (trade.quantity * trade.price) + trade.fees
+            existing_holding.quantity += trade.quantity
+            existing_holding.cost_basis = new_total_cost
+            # Keep current market price (will be updated by refresh)
+            existing_holding.value = existing_holding.quantity * existing_holding.price * existing_holding.exchange_rate
+        else:
+            # Create new holding
+            new_holding = models.InvestmentHolding(
+                account_id=account_id,
+                ticker=trade.ticker.upper(),
+                name=trade.name,
+                quantity=trade.quantity,
+                price=trade.price,
+                cost_basis=(trade.quantity * trade.price) + trade.fees,
+                currency=trade.currency,
+                exchange_rate=exchange_rate,
+                value=trade.quantity * trade.price * exchange_rate
+            )
+            db.add(new_holding)
+    
+    elif trade.trade_type.upper() == "SELL":
+        if not existing_holding:
+            raise HTTPException(status_code=400, detail=f"Cannot sell {trade.ticker} - no existing holding found")
+        
+        if existing_holding.quantity < trade.quantity:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot sell {trade.quantity} units of {trade.ticker} - only {existing_holding.quantity} available"
+            )
+        
+        # Update holding: reduce quantity, adjust cost basis proportionally
+        sell_ratio = trade.quantity / existing_holding.quantity
+        existing_holding.cost_basis = (existing_holding.cost_basis or 0.0) * (1 - sell_ratio)
+        existing_holding.quantity -= trade.quantity
+        existing_holding.value = existing_holding.quantity * existing_holding.price * existing_holding.exchange_rate
+        
+        # If fully liquidated, optionally remove holding (keep for history = comment out)
+        # if existing_holding.quantity <= 0:
+        #     db.delete(existing_holding)
+    
+    elif trade.trade_type.upper() == "DIVIDEND":
+        # Cash dividend received - doesn't affect holding quantity
+        # Just record the trade for income tracking purposes
+        # The total_value represents the dividend amount received
+        pass  # No holding changes needed
+    
+    elif trade.trade_type.upper() == "DRIP":
+        # Dividend Reinvestment Plan - shares received from dividend
+        # These shares have $0 cost basis (or the dividend value as cost basis)
+        if existing_holding:
+            # Add shares from DRIP - cost basis is the dividend value (quantity * price)
+            drip_cost = trade.quantity * trade.price
+            existing_holding.quantity += trade.quantity
+            existing_holding.cost_basis = (existing_holding.cost_basis or 0.0) + drip_cost
+            existing_holding.value = existing_holding.quantity * existing_holding.price * existing_holding.exchange_rate
+        else:
+            # Create new holding from DRIP
+            new_holding = models.InvestmentHolding(
+                account_id=account_id,
+                ticker=trade.ticker.upper(),
+                name=trade.name,
+                quantity=trade.quantity,
+                price=trade.price,
+                cost_basis=trade.quantity * trade.price,  # DRIP cost basis = dividend value
+                currency=trade.currency,
+                exchange_rate=exchange_rate,
+                value=trade.quantity * trade.price * exchange_rate
+            )
+            db.add(new_holding)
+
+    
+    db.commit()
+    db.refresh(db_trade)
+    
+    # 6. Update Net Worth Snapshot
+    update_account_balance_from_holdings(db, current_user.id, account_id)
+    
+    return db_trade
+
+
+@router.get("/accounts/{account_id}/trades", response_model=List[schemas.Trade])
+def get_trades(
+    account_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Get all trades for an investment account.
+    """
+    # Verify Account Ownership
+    account = db.query(models.Account).filter(
+        models.Account.id == account_id, 
+        models.Account.user_id == current_user.id
+    ).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    return db.query(models.Trade).filter(
+        models.Trade.account_id == account_id
+    ).order_by(models.Trade.trade_date.desc()).all()
+
+
+@router.get("/accounts/{account_id}/trades/{ticker}", response_model=List[schemas.Trade])
+def get_trades_by_ticker(
+    account_id: int, 
+    ticker: str,
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Get all trades for a specific ticker in an investment account.
+    """
+    # Verify Account Ownership
+    account = db.query(models.Account).filter(
+        models.Account.id == account_id, 
+        models.Account.user_id == current_user.id
+    ).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    return db.query(models.Trade).filter(
+        models.Trade.account_id == account_id,
+        models.Trade.ticker == ticker.upper()
+    ).order_by(models.Trade.trade_date.desc()).all()
+
+
+@router.delete("/trades/{trade_id}")
+def delete_trade(
+    trade_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Delete a trade. Note: This does NOT automatically reverse the holding changes.
+    Use with caution - typically for correcting data entry errors.
+    """
+    # 1. Get Trade
+    db_trade = db.query(models.Trade).get(trade_id)
+    if not db_trade:
+        raise HTTPException(status_code=404, detail="Trade not found")
+    
+    # 2. Verify Account Ownership
+    account = db.query(models.Account).get(db_trade.account_id)
+    if not account or account.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Trade not found")
+    
+    account_id = db_trade.account_id
+    
+    db.delete(db_trade)
+    db.commit()
+    
+    return {"ok": True, "message": "Trade deleted. Note: Holding was not automatically adjusted."}
+
+
+@router.post("/accounts/{account_id}/trades/import")
+def import_trades_csv(
+    account_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Import trades from a CSV file.
+    Expected columns: trade_date, trade_type, ticker, name, quantity, price, currency, fees, notes
+    """
+    # 1. Verify Account Ownership
+    account = db.query(models.Account).filter(
+        models.Account.id == account_id,
+        models.Account.user_id == current_user.id
+    ).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    # 2. Parse CSV
+    content = file.file.read().decode("utf-8")
+    reader = csv.DictReader(io.StringIO(content))
+    
+    imported = 0
+    errors = []
+    
+    # Get user currency for exchange rate calculations
+    user_currency = (current_user.currency_symbol or "AUD").upper().replace("$", "").strip()
+    if user_currency in ["A", "AU"]: user_currency = "AUD"
+    if user_currency in ["US", "U"]: user_currency = "USD"
+    
+    for row_num, row in enumerate(reader, start=2):  # Start at 2 (header is row 1)
+        try:
+            # Skip comment/reference rows
+            if row.get('trade_date', '').startswith('#'):
+                continue
+            if not row.get('trade_date') or not row.get('ticker'):
+                continue
+            
+            # Parse date (DD/MM/YYYY format)
+            date_str = row['trade_date'].strip()
+            try:
+                from datetime import datetime
+                trade_date = datetime.strptime(date_str, "%d/%m/%Y").date()
+            except ValueError:
+                try:
+                    trade_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    errors.append(f"Row {row_num}: Invalid date format '{date_str}'")
+                    continue
+            
+            # Parse trade type
+            trade_type = row.get('trade_type', 'BUY').upper().strip()
+            if trade_type not in ['BUY', 'SELL', 'DIVIDEND', 'DRIP']:
+                errors.append(f"Row {row_num}: Invalid trade_type '{trade_type}'")
+                continue
+            
+            # Parse numeric fields
+            try:
+                quantity = float(row.get('quantity', 0))
+                price = float(row.get('price', 0))
+                fees = float(row.get('fees', 0) or 0)
+            except ValueError as e:
+                errors.append(f"Row {row_num}: Invalid number format - {e}")
+                continue
+            
+            ticker = row.get('ticker', '').upper().strip()
+            name = row.get('name', ticker).strip()
+            currency = row.get('currency', 'USD').upper().strip()
+            notes = row.get('notes', '').strip() or None
+            
+            # Calculate exchange rate if needed
+            exchange_rate = 1.0
+            if currency != user_currency:
+                exchange_rate = get_exchange_rate(currency, user_currency)
+            
+            total_value = quantity * price
+            
+            # Create trade record
+            db_trade = models.Trade(
+                account_id=account_id,
+                ticker=ticker,
+                name=name,
+                trade_type=trade_type,
+                trade_date=trade_date,
+                quantity=quantity,
+                price=price,
+                total_value=total_value,
+                currency=currency,
+                exchange_rate=exchange_rate,
+                fees=fees,
+                notes=notes
+            )
+            db.add(db_trade)
+            
+            # Update holdings (same logic as create_trade)
+            existing_holding = db.query(models.InvestmentHolding).filter(
+                models.InvestmentHolding.account_id == account_id,
+                models.InvestmentHolding.ticker == ticker
+            ).first()
+            
+            if trade_type == "BUY":
+                if existing_holding:
+                    old_total_cost = (existing_holding.cost_basis or 0.0)
+                    new_total_cost = old_total_cost + (quantity * price) + fees
+                    existing_holding.quantity += quantity
+                    existing_holding.cost_basis = new_total_cost
+                    existing_holding.value = existing_holding.quantity * existing_holding.price * existing_holding.exchange_rate
+                else:
+                    new_holding = models.InvestmentHolding(
+                        account_id=account_id,
+                        ticker=ticker,
+                        name=name,
+                        quantity=quantity,
+                        price=price,
+                        cost_basis=(quantity * price) + fees,
+                        currency=currency,
+                        exchange_rate=exchange_rate,
+                        value=quantity * price * exchange_rate
+                    )
+                    db.add(new_holding)
+            
+            elif trade_type == "SELL":
+                if existing_holding and existing_holding.quantity >= quantity:
+                    sell_ratio = quantity / existing_holding.quantity
+                    existing_holding.cost_basis = (existing_holding.cost_basis or 0.0) * (1 - sell_ratio)
+                    existing_holding.quantity -= quantity
+                    existing_holding.value = existing_holding.quantity * existing_holding.price * existing_holding.exchange_rate
+                elif not existing_holding:
+                    errors.append(f"Row {row_num}: Cannot sell {ticker} - no existing holding")
+                    continue
+                else:
+                    errors.append(f"Row {row_num}: Cannot sell {quantity} of {ticker} - only {existing_holding.quantity} available")
+                    continue
+            
+            elif trade_type == "DIVIDEND":
+                pass  # Just record the trade, no holding changes
+            
+            elif trade_type == "DRIP":
+                if existing_holding:
+                    drip_cost = quantity * price
+                    existing_holding.quantity += quantity
+                    existing_holding.cost_basis = (existing_holding.cost_basis or 0.0) + drip_cost
+                    existing_holding.value = existing_holding.quantity * existing_holding.price * existing_holding.exchange_rate
+                else:
+                    new_holding = models.InvestmentHolding(
+                        account_id=account_id,
+                        ticker=ticker,
+                        name=name,
+                        quantity=quantity,
+                        price=price,
+                        cost_basis=quantity * price,
+                        currency=currency,
+                        exchange_rate=exchange_rate,
+                        value=quantity * price * exchange_rate
+                    )
+                    db.add(new_holding)
+            
+            imported += 1
+            
+        except Exception as e:
+            errors.append(f"Row {row_num}: {str(e)}")
+    
+    db.commit()
+    
+    # Update snapshot
+    update_account_balance_from_holdings(db, current_user.id, account_id)
+    
+    return {
+        "imported": imported,
+        "errors": errors[:20] if errors else [],  # Limit errors returned
+        "total_errors": len(errors)
+    }
+
+
 @router.post("/holdings/refresh-prices")
+
+
 def refresh_holding_prices(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     """
     Updates the price and value of ALL investment holdings for the current user

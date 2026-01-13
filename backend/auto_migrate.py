@@ -89,5 +89,36 @@ def run_migrations(engine: Engine):
                         except Exception as e:
                             logger.error(f"Failed to add column {col_name}: {e}")
 
+        # --- trades table creation ---
+        if "trades" not in table_names:
+            logger.info("Auto-Migration: Creating 'trades' table...")
+            with engine.connect() as conn:
+                try:
+                    conn.execute(text("""
+                        CREATE TABLE IF NOT EXISTS trades (
+                            id SERIAL PRIMARY KEY,
+                            account_id INTEGER REFERENCES accounts(id),
+                            ticker VARCHAR(50),
+                            name VARCHAR(200),
+                            trade_type VARCHAR(10),
+                            trade_date DATE,
+                            quantity REAL,
+                            price REAL,
+                            total_value REAL,
+                            currency VARCHAR(10) DEFAULT 'USD',
+                            exchange_rate REAL DEFAULT 1.0,
+                            fees REAL DEFAULT 0.0,
+                            notes TEXT,
+                            created_at TIMESTAMP DEFAULT NOW()
+                        )
+                    """))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_trades_account_id ON trades(account_id)"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_trades_ticker ON trades(ticker)"))
+                    conn.commit()
+                    logger.info("Auto-Migration: 'trades' table created successfully.")
+                except Exception as e:
+                    logger.error(f"Failed to create trades table: {e}")
+
     except Exception as e:
         logger.error(f"Migration check failed: {e}")
+

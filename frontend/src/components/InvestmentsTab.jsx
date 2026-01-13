@@ -12,8 +12,8 @@ import {
     PieChart as RePieChart, Pie, Cell, Legend
 } from 'recharts';
 import { SkeletonBox as Skeleton } from './Skeleton';
-import AddInvestmentModal from './AddInvestmentModal';
-import ImportInvestmentsModal from './ImportInvestmentsModal';
+import AddTradeModal from './AddTradeModal';
+import ImportTradesModal from './ImportTradesModal';
 
 export default function InvestmentsTab() {
     const { user } = useAuth();
@@ -89,11 +89,11 @@ export default function InvestmentsTab() {
 
     return (
         <div className="space-y-6">
-            <AddInvestmentModal
+            <AddTradeModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
             />
-            <ImportInvestmentsModal
+            <ImportTradesModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
             />
@@ -122,15 +122,15 @@ export default function InvestmentsTab() {
                         onClick={() => setIsImportModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-card dark:bg-card-dark border border-border dark:border-border-dark rounded-lg text-sm font-medium text-text-primary dark:text-text-primary-dark hover:bg-surface dark:hover:bg-card-dark-hover transition-colors"
                     >
-                        <ArrowDownRight size={16} /> {/* Using ArrowDownRight as 'Import' conceptual icon or UploadCloud if imported? Let's use UploadCloud in modal. Here, maybe generic? Or just text. */}
-                        <span className="hidden sm:inline">Import CSV</span>
+                        <ArrowDownRight size={16} />
+                        <span className="hidden sm:inline">Import Trades</span>
                     </button>
                     <button
                         onClick={() => setIsAddModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors shadow-sm"
                     >
                         <Plus size={16} />
-                        Add Investment
+                        Add Trade
                     </button>
                 </div>
             </div>

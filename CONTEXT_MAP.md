@@ -525,6 +525,14 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Brand Compliance:** Enforced strict usage of design tokens in all widgets.
 - **Files:** `Dashboard.jsx`, `SafeToSpendWidget.jsx`, `CashFlowTrendWidget.jsx`, `ReportsHub.jsx`.
 
+### **Dashboard Refinements (Round 2 & 3 - Jan 2026)**
+- **Cash Flow Trend Widget:**
+  - Logic: Implemented dynamic granularity (Daily vs Monthly) based on selected date range.
+  - UI: Renamed "Monthly Cash Flow" to "Cash Flow Trends"; improved chart opacity.
+- **Reports Hub:** Restored Date Range Picker for Cash Flow Sankey view.
+- **Achievements:** Replaced numeric tiers with descriptive names (Wood, Stone, etc.).
+- **Cleanup:** Renamed "Zen Insights" to "Smart Insights"; Removed unused button from SafeToSpend.
+
 
 
 ---
