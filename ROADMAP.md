@@ -51,6 +51,7 @@ This document outlines the planned features, improvements, and future direction 
     - Pre-import guidance (Categories & Rules setup first).
     - Comprehensive guide covering all features.
     - Help/FAQ section.
+- [x] **Dashboard Redesign:** Implement "ZenFinance" 2-column layout and new widgets.
 - [x] **Public Landing Page:** Design landing page for unauthenticated users.
   - [ ] Fix up landing page spacing
   - [ ] Polish landing page content

@@ -516,6 +516,15 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Refactor:** Updated `AchievementsTab.jsx` and `AchievementsWidget.jsx` to eliminate hardcoded styles.
 - **Compliance:** Enforced strict usage of `bg-card`, `text-primary`, `border-border` semantic tokens.
 
+### **Dashboard Redesign (Jan 2026)**
+- **ZenFinance Layout:** Refactored `Dashboard.jsx` from drag-drop grid to fixed 2-column layout (Main + Sidebar).
+- **New Widgets:**
+  - `SafeToSpendWidget`: "North Star" metric with mock data fallback.
+  - `CashFlowTrendWidget`: Primary visual anchor with 6-month history area chart.
+- **Sankey Relocation:** Moved complex Sankey diagram to `ReportsHub.jsx` (Cash Flow tab).
+- **Brand Compliance:** Enforced strict usage of design tokens in all widgets.
+- **Files:** `Dashboard.jsx`, `SafeToSpendWidget.jsx`, `CashFlowTrendWidget.jsx`, `ReportsHub.jsx`.
+
 
 
 ---
