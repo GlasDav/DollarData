@@ -103,10 +103,7 @@ export default function SafeToSpendWidget({ start, end, spenderMode = 'Combined'
                         }
                     </p>
 
-                    <button className="flex items-center justify-center gap-2 w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white font-medium py-2.5 rounded-xl transition-all active:scale-95">
-                        <TrendingUp size={16} />
-                        Optimize Cash Flow
-                    </button>
+
 
                 </div>
             </div>
