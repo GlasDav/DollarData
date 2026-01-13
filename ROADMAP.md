@@ -30,7 +30,9 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Asset Split (Overview):** Distinguish between ETFs and stocks in Asset Allocation chart.
 - [ ] **Asset Split (Investments):** Distinguish between stocks and ETFs in Investments tab.
 - [ ] **HECS Debt:** Add HECS debt account type/calculator.
-- [ ] **Trade Logic:** Rename 'Add Investment' to 'Add Trade', add trade date, and implement Buy/Sell logic.
+- [x] **Trade Logic:** Rename 'Add Investment' to 'Add Trade', add trade date, and implement Buy/Sell/Dividend/DRIP logic with CSV import.
+- [ ] **Test Investments Logic:** Thoroughly test new trade functionality.
+- [ ] **Accounts Tab Bug:** Fix "Add Account" button not working on Accounts tab in Net Worth page.
 
 ## ⚙️ Account & Settings
 
@@ -56,6 +58,7 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **Public Landing Page:** Design landing page for unauthenticated users.
   - [ ] Fix up landing page spacing
   - [ ] Polish landing page content
+- [ ] **Revamp Quick Add Button:** Redesign the quick add button for better UX.
 
 ## 🚀 Commercialization
 

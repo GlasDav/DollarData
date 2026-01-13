@@ -233,6 +233,11 @@ erDiagram
 ---
 
 ## Recent Changes & Fixes
+- **Trade Logic (Jan 2026):**
+  - Renamed "Add Investment" to "Add Trade" with Buy/Sell/Dividend/DRIP support.
+  - New `Trade` model for tracking individual transactions.
+  - CSV import/export for bulk trade entry.
+  - New components: `AddTradeModal.jsx`, `ImportTradesModal.jsx`.
 - **Demo Account:**
   - Added `seed_demo_user.py` script for seeding demo data.
   - "Try Demo" button on login page (`demo@dollardata.app` / `demo123`).
