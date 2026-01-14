@@ -115,14 +115,14 @@ ACHIEVEMENTS = {
         "icon": "Flame",
         "color": "orange",
         "tiers": {
-            1: {"name": "First Login", "description": "Log in for the first time"},
-            2: {"name": "Weekly User", "description": "Log in 7 consecutive days"},
+            1: {"name": "First Steps", "description": "Log in for the first time"},
+            2: {"name": "Building Habits", "description": "Active for 2 weeks"},
             3: {"name": "Monthly Regular", "description": "Active for 4 weeks"},
-            4: {"name": "Quarterly User", "description": "Active for 12 weeks"},
-            5: {"name": "Half Year Streak", "description": "Active for 26 weeks"},
-            6: {"name": "Annual User", "description": "Active for 52 weeks"},
-            7: {"name": "Two Year Veteran", "description": "Active for 104 weeks"},
-            8: {"name": "Lifetime Member", "description": "Active for 156+ weeks"},
+            4: {"name": "Quarter Champion", "description": "Active for 12 weeks"},
+            5: {"name": "Half Year User", "description": "Active for 26 weeks"},
+            6: {"name": "Annual Veteran", "description": "Active for 52 weeks"},
+            7: {"name": "Two Year Legend", "description": "Active for 104 weeks"},
+            8: {"name": "Lifetime Member", "description": "Active for 156 weeks (3 years)"},
         }
     },
     "goals": {
@@ -145,14 +145,14 @@ ACHIEVEMENTS = {
         "icon": "DollarSign",
         "color": "green",
         "tiers": {
-            1: {"name": "Income Tracked", "description": "Track income for 1 month"},
-            2: {"name": "Steady Income", "description": "3 months of income data"},
-            3: {"name": "Income Growth", "description": "Income increased 10% YoY"},
-            4: {"name": "Strong Growth", "description": "Income increased 25% YoY"},
-            5: {"name": "Multi-Stream", "description": "2+ income sources tracked"},
-            6: {"name": "Diversified Income", "description": "3+ income sources"},
-            7: {"name": "$100K Earner", "description": "Annual income ≥ $100K"},
-            8: {"name": "$200K Earner", "description": "Annual income ≥ $200K"},
+            1: {"name": "Income Tracked", "description": "Record your first income"},
+            2: {"name": "$10K Earned", "description": "$10,000 cumulative income tracked"},
+            3: {"name": "$25K Earned", "description": "$25,000 cumulative income"},
+            4: {"name": "$50K Earned", "description": "$50,000 cumulative income"},
+            5: {"name": "$100K Earned", "description": "$100,000 cumulative income"},
+            6: {"name": "Quarter Million", "description": "$250,000 cumulative income"},
+            7: {"name": "Half Million", "description": "$500,000 cumulative income"},
+            8: {"name": "Millionaire Earner", "description": "$1,000,000 cumulative income"},
         }
     },
 }
@@ -244,9 +244,10 @@ def get_user_stats(db: Session, user: models.User):
     streak_days = login_streak.current_streak_days if login_streak else 0
     
     # Emergency Fund: Liquid Savings & Average Monthly Expenses
+    # Use 'category' field which stores Cash, Savings, etc.
     liquid_savings = db.query(func.sum(models.Account.balance)).filter(
         models.Account.user_id == user.id,
-        models.Account.account_type.in_(["Cash", "Savings", "Checking", "Bank Account"])
+        models.Account.category.in_(["Cash", "Savings", "Bank Account"])
     ).scalar() or 0
     
     # Calculate average monthly expenses (last 6 months)
@@ -260,6 +261,13 @@ def get_user_stats(db: Session, user: models.User):
     
     avg_monthly_expenses = abs(total_expenses_6m) / 6 if total_expenses_6m else 0
     months_covered = liquid_savings / avg_monthly_expenses if avg_monthly_expenses > 0 else 0
+    
+    # Total income tracked (cumulative all-time)
+    total_income = db.query(func.sum(models.Transaction.amount)).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.amount > 0,
+        models.Transaction.bucket.has(models.BudgetBucket.group == "Income")
+    ).scalar() or 0
     
     return {
         "bucket_count": bucket_count,
@@ -279,6 +287,7 @@ def get_user_stats(db: Session, user: models.User):
         "liquid_savings": liquid_savings,
         "avg_monthly_expenses": avg_monthly_expenses,
         "months_covered": months_covered,
+        "total_income": total_income,
     }
 
 
@@ -337,7 +346,8 @@ def check_achievement_tier(category: str, tier: int, stats: dict) -> bool:
             return stats["categorization_rate"] >= 100
     
     elif category == "consistency":
-        weeks_thresholds = [0, 1, 4, 12, 26, 52, 104, 156]
+        # Weeks active thresholds: 1, 2, 4, 12, 26, 52, 104, 156
+        weeks_thresholds = [1, 2, 4, 12, 26, 52, 104, 156]
         return stats["weeks_active"] >= weeks_thresholds[tier - 1]
     
     elif category == "goals":
@@ -359,16 +369,9 @@ def check_achievement_tier(category: str, tier: int, stats: dict) -> bool:
             return stats["total_goal_savings"] >= 100000
     
     elif category == "income":
-        if tier == 1:
-            return stats["income_months"] >= 1
-        elif tier == 2:
-            return stats["income_months"] >= 3
-        elif tier == 5:
-            return stats["income_sources"] >= 2
-        elif tier == 6:
-            return stats["income_sources"] >= 3
-        # Tiers 3, 4, 7, 8 need YoY calculation (future enhancement)
-        return False
+        # Cumulative income thresholds
+        thresholds = [1, 10000, 25000, 50000, 100000, 250000, 500000, 1000000]
+        return stats["total_income"] >= thresholds[tier - 1]
     
     return False
 
@@ -440,6 +443,34 @@ def calculate_progress(category: str, tier: int, stats: dict) -> float:
         else:
             targets = [0, 0, 0, 0, 0, 0, 10000, 50000, 100000]
             progress = stats["total_goal_savings"] / targets[tier] * 100
+        return max(0, min(100, progress))
+    
+    elif category == "consistency":
+        # Weeks active thresholds
+        thresholds = [0, 1, 2, 4, 12, 26, 52, 104, 156]
+        if tier >= 8:
+            return 100.0
+        current_threshold = thresholds[tier - 1] if tier > 1 else 0
+        next_threshold = thresholds[tier]
+        if stats["weeks_active"] >= next_threshold:
+            return 100.0
+        if next_threshold == current_threshold:
+            return 100.0
+        progress = (stats["weeks_active"] - current_threshold) / (next_threshold - current_threshold) * 100
+        return max(0, min(100, progress))
+    
+    elif category == "income":
+        # Cumulative income thresholds
+        thresholds = [0, 1, 10000, 25000, 50000, 100000, 250000, 500000, 1000000]
+        if tier >= 8:
+            return 100.0
+        current_threshold = thresholds[tier - 1] if tier > 1 else 0
+        next_threshold = thresholds[tier]
+        if stats["total_income"] >= next_threshold:
+            return 100.0
+        if next_threshold == current_threshold:
+            return 100.0
+        progress = (stats["total_income"] - current_threshold) / (next_threshold - current_threshold) * 100
         return max(0, min(100, progress))
     
     return 0.0
