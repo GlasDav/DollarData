@@ -160,7 +160,14 @@ export default function CashFlowTrendWidget({
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
-                            tickFormatter={(val) => `$${val / 1000}k`}
+                            tickFormatter={(val) => {
+                                // Calculate max value in data to determine formatting
+                                const maxVal = Math.max(...data.map(d => Math.max(d.income || 0, d.spent || 0)), 0);
+                                if (maxVal < 5000) {
+                                    return `$${val}`;
+                                }
+                                return `$${val / 1000}k`;
+                            }}
                         />
 
                         <Tooltip content={<CustomTooltip />} />
