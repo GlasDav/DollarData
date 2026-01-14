@@ -652,11 +652,6 @@ export default function NetWorth() {
                         isOpen={isImportModalOpen}
                         onClose={() => setIsImportModalOpen(false)}
                     />
-
-                    <AddAccountModal
-                        isOpen={isAddAccountOpen}
-                        onClose={() => setIsAddAccountOpen(false)}
-                    />
                 </>
             ) : activeTab === 'accounts' ? (
                 <AccountsHistoryTab onAddAccount={() => setIsAddAccountOpen(true)} />
@@ -664,6 +659,12 @@ export default function NetWorth() {
                 <InvestmentsTab />
             )
             }
+
+            {/* Modal rendered outside tab conditional so it works on all tabs */}
+            <AddAccountModal
+                isOpen={isAddAccountOpen}
+                onClose={() => setIsAddAccountOpen(false)}
+            />
         </div >
     );
 }
