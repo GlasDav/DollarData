@@ -31,8 +31,9 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Asset Split (Investments):** Distinguish between stocks and ETFs in Investments tab.
 - [ ] **HECS Debt:** Add HECS debt account type/calculator.
 - [x] **Trade Logic:** Rename 'Add Investment' to 'Add Trade', add trade date, and implement Buy/Sell/Dividend/DRIP logic with CSV import.
-- [ ] **Test Investments Logic:** Thoroughly test new trade functionality.
-- [ ] **Accounts Tab Bug:** Fix "Add Account" button not working on Accounts tab in Net Worth page.
+- [x] **Test Investments Logic:** Thoroughly test new trade functionality (Fixed Cost Basis bug).
+- [x] **Accounts Tab Bug:** Fix "Add Account" button not working on Accounts tab in Net Worth page.
+- [x] **Trade Management:** Added ability to View, Edit, and Delete trades with automatic holding recalculation.
 
 ## ⚙️ Account & Settings
 
