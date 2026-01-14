@@ -538,6 +538,29 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Achievements:** Replaced numeric tiers with descriptive names (Wood, Stone, etc.).
 - **Cleanup:** Renamed "Zen Insights" to "Smart Insights"; Removed unused button from SafeToSpend.
 
+### **Cash Flow Chart Enhancements (Jan 2026)**
+- **Daily Aggregation Fix:** Backend now properly aggregates by day when `interval=day` parameter is passed.
+- **Ignore One Off Toggle:** Added toggle to exclude "One Off" bucket from Cash Flow chart via new `exclude_bucket_ids` backend parameter.
+- **Spender Filter:** Cash Flow chart now respects the global spender filter (Combined/Member).
+- **Y-Axis Formatting:** Dynamic formatting - full dollar amounts for values < $5,000, abbreviated "k" format for larger values.
+- **UI Polish:** Renamed widget to "Cash Flow Trend"; Subtitle simplified to "Income vs Expenses".
+- **Files:** `backend/routers/analytics.py`, `frontend/src/pages/Dashboard.jsx`, `frontend/src/components/widgets/CashFlowTrendWidget.jsx`.
+
+### **Achievements System Overhaul (Jan 2026)**
+- **Emergency Fund Achievement:** Replaced abstract "Savings Rate" with tangible "months of expenses covered" metric.
+  - Calculates: Liquid Savings (Cash/Savings accounts) ÷ Avg Monthly Expenses (6 months).
+  - 8 tiers from 1 month to 24+ months coverage.
+- **Income Achievement:** Replaced broken YoY growth logic with cumulative income tracked ($1 → $1M).
+- **Consistency Achievement:** Cleaned up week thresholds (1, 2, 4, 12, 26, 52, 104, 156 weeks).
+- **UI Polish:** Tier badge pills now have consistent min-width (`min-w-32`) with flex centering.
+- **Bug Fix:** Fixed 500 error caused by using `account_type` instead of `category` column in Account model query.
+- **Files:** `backend/routers/achievements.py`, `frontend/src/components/AchievementsTab.jsx`.
+
+### **Sidebar Rename (Jan 2026)**
+- **Goals → Goals & Achievements:** Updated sidebar navigation and page title mapping.
+- **Files:** `frontend/src/App.jsx`.
+
+
 
 
 ---

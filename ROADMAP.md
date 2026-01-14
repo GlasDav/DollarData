@@ -24,7 +24,7 @@ This document outlines the planned features, improvements, and future direction 
 
 - [x] Rename "Goals" page to "Goals & Achievements" in sidebar
 - [x] Fix Savings achievement logic (now "Emergency Fund" - months of expenses covered)
-
+- [ ] **Household vs Individual:** Explore options to have some goals and achievements at household level, and some for individual members.
 
 ## 🏦 Net Worth & Assets
 
