@@ -15,7 +15,9 @@ export default function CashFlowTrendWidget({
     interval = 'month',
     trendHistory = [],
     isLoading,
-    formatCurrency
+    formatCurrency,
+    ignoreOneOff,
+    onToggleOneOff
 }) {
 
     // --- Mock Data Generation ---
@@ -105,14 +107,30 @@ export default function CashFlowTrendWidget({
                     </p>
                 </div>
 
-                <Link
-                    to="/reports?tab=cash-flow"
-                    className="group flex items-center gap-2 text-primary dark:text-primary-light font-medium text-sm hover:bg-surface dark:hover:bg-surface-dark px-4 py-2 rounded-full transition-all"
-                >
-                    <ArrowRightLeft size={16} />
-                    View Detailed Flow
-                    <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-                </Link>
+                <div className="flex items-center gap-3">
+                    {onToggleOneOff && (
+                        <div className="flex items-center gap-2 mr-2">
+                            <button
+                                onClick={onToggleOneOff}
+                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${ignoreOneOff ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'}`}
+                            >
+                                <span
+                                    className={`${ignoreOneOff ? 'translate-x-4.5' : 'translate-x-0.5'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                />
+                            </button>
+                            <span className="text-xs font-medium text-text-muted dark:text-text-muted-dark">Ignore One Off</span>
+                        </div>
+                    )}
+
+                    <Link
+                        to="/reports?tab=cash-flow"
+                        className="group flex items-center gap-2 text-primary dark:text-primary-light font-medium text-sm hover:bg-surface dark:hover:bg-surface-dark px-4 py-2 rounded-full transition-all"
+                    >
+                        <ArrowRightLeft size={16} />
+                        View Detailed Flow
+                        <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+                    </Link>
+                </div>
             </div>
 
             <div className="h-[300px] w-full">

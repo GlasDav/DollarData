@@ -28,6 +28,7 @@ export default function Dashboard() {
     const [customEnd, setCustomEnd] = useState(toLocalISOString(new Date()));
     const [trendOption, setTrendOption] = useState("Total");
     const [selectedBuckets, setSelectedBuckets] = useState([]);
+    const [ignoreOneOff, setIgnoreOneOff] = useState(false);
 
     // Helper to calculate dates
     const getDateRange = (type) => {
@@ -79,6 +80,10 @@ export default function Dashboard() {
     });
     const members = Array.isArray(membersRaw) ? membersRaw : [];
 
+    // Helper to find "One Off" bucket
+    const oneOffBucket = dashboardData?.buckets?.find(b => b.name === "One Off" || b.name === "One-Off");
+    const excludeBucketIds = ignoreOneOff && oneOffBucket ? oneOffBucket.id : undefined;
+
     const { data: netWorthHistoryRaw = [] } = useQuery({
         queryKey: ['netWorthHistory'],
         queryFn: async () => (await api.get('/net-worth/history')).data
@@ -86,9 +91,14 @@ export default function Dashboard() {
     const netWorthHistory = Array.isArray(netWorthHistoryRaw) ? netWorthHistoryRaw : [];
 
     const { data: trendHistoryRaw = [] } = useQuery({
-        queryKey: ['trendHistory', start, end, trendOption, selectedBuckets, interval],
+        queryKey: ['trendHistory', start, end, trendOption, selectedBuckets, interval, spenderMode, excludeBucketIds],
         queryFn: async () => {
-            const params = { start_date: start, end_date: end, interval };
+            const params = { start_date: start, end_date: end, interval, spender: spenderMode };
+
+            if (excludeBucketIds) {
+                params.exclude_bucket_ids = excludeBucketIds;
+            }
+
             if (trendOption === "Non-Discretionary") params.group = "Non-Discretionary";
             else if (trendOption === "Discretionary") params.group = "Discretionary";
             else if (trendOption === "bucket" && selectedBuckets.length > 0) {
@@ -191,6 +201,8 @@ export default function Dashboard() {
                         start={start}
                         end={end}
                         interval={interval}
+                        ignoreOneOff={ignoreOneOff}
+                        onToggleOneOff={() => setIgnoreOneOff(!ignoreOneOff)}
                     />
 
                     {/* Secondary Metrics Grid */}

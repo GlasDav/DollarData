@@ -518,6 +518,14 @@ def get_analytics_history(
     
     history_data = []
     
+    # Pre-process exclusion IDs
+    excluded_ids_set = set()
+    if exclude_bucket_ids:
+         try:
+            excluded_ids_set = {int(bid.strip()) for bid in exclude_bucket_ids.split(',') if bid.strip()}
+         except ValueError:
+            pass # Ignore malformed
+
     # Branch Logic based on Interval
     if interval == 'day':
         # --- DAILY AGGREGATION ---
@@ -542,9 +550,15 @@ def get_analytics_history(
                 if tag_list:
                     tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
                     query = query.filter(or_(*tag_filters))
+            
+            # Apply Inclusions
             if bucket_id or bucket_ids or group:
                  query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
             
+            # Apply Exclusions
+            if excluded_ids_set:
+                 query = query.filter(models.Transaction.bucket_id.notin_(excluded_ids_set))
+
             # Exclude Transfers
             query = query.filter(
                 ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
@@ -559,10 +573,7 @@ def get_analytics_history(
                 "fullDate": day_start.isoformat(),
                 "limit": effective_limit_total,
                 "spent": spent,
-                "income": 0 # TODO: Populate income if needed for chart, currently chart uses separate logic or mock? 
-                           # Frontend Chart expects 'income' and 'spent'. 
-                           # We need to fetch income too if we want it on the chart. 
-                           # Let's add income query.
+                "income": 0 
             })
             
             # Fetch Income for Day
@@ -572,9 +583,6 @@ def get_analytics_history(
                 models.Transaction.date <= day_end,
                 models.Transaction.amount > 0 # Income
             )
-            # Apply same filters except bucket group might differ (usually income is separate group)
-            # If user filtered by 'Discretionary', income is likely 0. 
-            # If no filter, we want TOTAL income.
             
             if not bucket_id and not bucket_ids and not group:
                  # Global view: Include all income (except transfers)
@@ -582,15 +590,13 @@ def get_analytics_history(
                     ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
                  )
             elif group == "Income":
-                 # Filtering specifically for income
                  pass 
             else:
-                 # Filtering for Expense group -> Income is 0 unless refunds (which are + but offset expense)
-                 # Simpler to just query relevant buckets
                  inc_query = inc_query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
 
             if spender != "Combined": inc_query = inc_query.filter(models.Transaction.spender == spender)
             if account_id: inc_query = inc_query.filter(models.Transaction.account_id == account_id)
+            if excluded_ids_set: inc_query = inc_query.filter(models.Transaction.bucket_id.notin_(excluded_ids_set))
             
             income = inc_query.scalar() or 0.0
             history_data[-1]["income"] = income
@@ -626,6 +632,10 @@ def get_analytics_history(
             if bucket_id or bucket_ids or group:
                  query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
             
+            # Apply Exclusions
+            if excluded_ids_set:
+                 query = query.filter(models.Transaction.bucket_id.notin_(excluded_ids_set))
+
             query = query.filter(
                 ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
             )
@@ -648,6 +658,7 @@ def get_analytics_history(
                  inc_query = inc_query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
             if spender != "Combined": inc_query = inc_query.filter(models.Transaction.spender == spender)
             if account_id: inc_query = inc_query.filter(models.Transaction.account_id == account_id)
+            if excluded_ids_set: inc_query = inc_query.filter(models.Transaction.bucket_id.notin_(excluded_ids_set))
             
             income = inc_query.scalar() or 0.0
             
@@ -658,6 +669,7 @@ def get_analytics_history(
                 "spent": spent,
                 "income": income
             })
+
         
     logger.info(f"History calculation complete. Returning {len(history_data)} points.")
     return history_data
