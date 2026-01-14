@@ -360,6 +360,7 @@ def get_analytics_history(
     bucket_id: Optional[int] = Query(None),
     bucket_ids: Optional[str] = Query(None), # Comma-separated bucket IDs (expands to include children)
     exact_bucket_ids: Optional[bool] = Query(False), # If True, do NOT expand to children
+    exclude_bucket_ids: Optional[str] = Query(None), # Comma-separated bucket IDs to exclude
     group: Optional[str] = Query(None), # Non-Discretionary, Discretionary
     tags: Optional[str] = Query(None), # Comma-separated tags (OR logic)
     db: Session = Depends(get_db),
