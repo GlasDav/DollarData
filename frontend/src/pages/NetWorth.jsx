@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, Line, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import AccountDetailsModal from '../components/AccountDetailsModal';
+import AddAccountModal from '../components/AddAccountModal';
 import AddTradeModal from '../components/AddTradeModal';
 import InvestmentsTab from '../components/InvestmentsTab';
 import ImportNetWorthModal from '../components/ImportNetWorthModal';
@@ -650,6 +651,11 @@ export default function NetWorth() {
                     <ImportNetWorthModal
                         isOpen={isImportModalOpen}
                         onClose={() => setIsImportModalOpen(false)}
+                    />
+
+                    <AddAccountModal
+                        isOpen={isAddAccountOpen}
+                        onClose={() => setIsAddAccountOpen(false)}
                     />
                 </>
             ) : activeTab === 'accounts' ? (
