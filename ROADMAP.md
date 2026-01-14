@@ -75,3 +75,9 @@ This document outlines the planned features, improvements, and future direction 
 
 - [ ] **Link Transactions to Accounts:** Capture `account_id` during CSV/bank imports to enable account-based filtering in Reports.
 - [ ] **Tag Management:** Build UI for creating and managing transaction tags.
+
+## 🐛 Known Bugs
+
+- [ ] **Notifications 500 Error:** Fix `/api/notifications/` endpoint returning 500 Internal Server Error.
+- [ ] **Transactions 405 Error:** Fix `/api/transactions/?limit=1` returning 405 Method Not Allowed (trailing slash routing issue).
+

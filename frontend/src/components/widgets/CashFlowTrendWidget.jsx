@@ -103,7 +103,7 @@ export default function CashFlowTrendWidget({
                         Cash Flow Trend
                     </h2>
                     <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1">
-                        Income vs Expenses (6 Month Trend)
+                        Income vs Expenses
                     </p>
                 </div>
 
