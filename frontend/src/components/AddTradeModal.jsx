@@ -13,7 +13,7 @@ import { useAuth } from '../context/AuthContext';
  * A modal to record a new investment trade (Buy or Sell).
  * Allows selecting trade type, date, and entering trade details.
  */
-export default function AddTradeModal({ isOpen, onClose }) {
+export default function AddTradeModal({ isOpen, onClose, tradeToEdit = null }) {
     const { user } = useAuth();
     const queryClient = useQueryClient();
 
@@ -35,12 +35,34 @@ export default function AddTradeModal({ isOpen, onClose }) {
         notes: ''
     });
 
+    // Populate form if tradeToEdit is provided
+    useEffect(() => {
+        if (tradeToEdit) {
+            setSelectedAccountId(tradeToEdit.account_id);
+            setForm({
+                ticker: tradeToEdit.ticker,
+                name: tradeToEdit.name,
+                trade_type: tradeToEdit.trade_type,
+                trade_date: tradeToEdit.trade_date, // Assumes YYYY-MM-DD
+                quantity: tradeToEdit.quantity,
+                price: tradeToEdit.price,
+                fees: tradeToEdit.fees,
+                currency: tradeToEdit.currency,
+                exchange_rate: tradeToEdit.exchange_rate,
+                notes: tradeToEdit.notes || ''
+            });
+        } else {
+            // Reset if opening new
+            // Note: This might conflict if modal stays mounted, parent should handle key/state
+        }
+    }, [tradeToEdit, isOpen]);
+
     // Update form default currency when user loads
     useEffect(() => {
-        if (userCurrency && form.currency === 'USD' && !form.ticker) {
+        if (!tradeToEdit && userCurrency && form.currency === 'USD' && !form.ticker) {
             setForm(prev => ({ ...prev, currency: userCurrency }));
         }
-    }, [userCurrency]);
+    }, [userCurrency, tradeToEdit]);
 
     // --- Queries ---
 
@@ -55,12 +77,12 @@ export default function AddTradeModal({ isOpen, onClose }) {
         enabled: isOpen
     });
 
-    // Auto-select first account if only one exists
+    // Auto-select first account if only one exists (only for CREATE mode)
     useEffect(() => {
-        if (accounts.length > 0 && !selectedAccountId) {
+        if (!tradeToEdit && accounts.length > 0 && !selectedAccountId) {
             setSelectedAccountId(accounts[0].id);
         }
-    }, [accounts, selectedAccountId]);
+    }, [accounts, selectedAccountId, tradeToEdit]);
 
     // --- Mutations ---
 
@@ -69,12 +91,7 @@ export default function AddTradeModal({ isOpen, onClose }) {
             await api.post(`/net-worth/accounts/${selectedAccountId}/trades`, data);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['investments-portfolio']);
-            queryClient.invalidateQueries(['investments-allocation']);
-            queryClient.invalidateQueries(['investments-holdings']);
-            queryClient.invalidateQueries(['investments-history']);
-            queryClient.invalidateQueries(['holdings', selectedAccountId]);
-            queryClient.invalidateQueries(['trades', selectedAccountId]);
+            invalidateQueries();
             resetForm();
             onClose();
         },
@@ -83,6 +100,31 @@ export default function AddTradeModal({ isOpen, onClose }) {
             alert(err.response?.data?.detail || "Failed to record trade");
         }
     });
+
+    const updateTradeMutation = useMutation({
+        mutationFn: async (data) => {
+            await api.put(`/net-worth/trades/${tradeToEdit.id}`, data);
+        },
+        onSuccess: () => {
+            invalidateQueries();
+            resetForm();
+            onClose();
+        },
+        onError: (err) => {
+            console.error("Failed to update trade:", err);
+            alert(err.response?.data?.detail || "Failed to update trade");
+        }
+    });
+
+    const invalidateQueries = () => {
+        queryClient.invalidateQueries(['investments-portfolio']);
+        queryClient.invalidateQueries(['investments-allocation']);
+        queryClient.invalidateQueries(['investments-holdings']);
+        queryClient.invalidateQueries(['investments-history']);
+        queryClient.invalidateQueries(['holdings', selectedAccountId]);
+        queryClient.invalidateQueries(['trades', selectedAccountId]);
+        if (form.ticker) queryClient.invalidateQueries(['trades', form.ticker]); // Specific ticker trades
+    };
 
     // --- Helpers ---
 
@@ -99,6 +141,7 @@ export default function AddTradeModal({ isOpen, onClose }) {
             exchange_rate: 1.0,
             notes: ''
         });
+        if (!tradeToEdit) setSelectedAccountId(null);
     };
 
     const handleTickerSelect = (data) => {
@@ -116,7 +159,7 @@ export default function AddTradeModal({ isOpen, onClose }) {
         e.preventDefault();
         if (!selectedAccountId) return;
 
-        createTradeMutation.mutate({
+        const payload = {
             ticker: form.ticker,
             name: form.name,
             trade_type: form.trade_type,
@@ -127,7 +170,13 @@ export default function AddTradeModal({ isOpen, onClose }) {
             currency: form.currency,
             exchange_rate: parseFloat(form.exchange_rate),
             notes: form.notes || null
-        });
+        };
+
+        if (tradeToEdit) {
+            updateTradeMutation.mutate(payload);
+        } else {
+            createTradeMutation.mutate(payload);
+        }
     };
 
     const tradeType = form.trade_type;
@@ -135,6 +184,7 @@ export default function AddTradeModal({ isOpen, onClose }) {
     const isSell = tradeType === 'SELL';
     const isDividend = tradeType === 'DIVIDEND';
     const isDrip = tradeType === 'DRIP';
+    const isEditing = !!tradeToEdit;
 
     // --- Render ---
 
@@ -167,7 +217,7 @@ export default function AddTradeModal({ isOpen, onClose }) {
                             <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-card dark:bg-card-dark p-6 text-left align-middle shadow-xl transition-all border border-border dark:border-border-dark">
                                 <div className="flex justify-between items-start mb-6">
                                     <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-text-primary dark:text-text-primary-dark">
-                                        Add Trade
+                                        {isEditing ? 'Edit Trade' : 'Add Trade'}
                                     </Dialog.Title>
                                     <button
                                         onClick={onClose}
@@ -178,7 +228,7 @@ export default function AddTradeModal({ isOpen, onClose }) {
                                 </div>
 
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                    {/* Account Selection */}
+                                    {/* Account Selection (Read Only if Editing) */}
                                     <div>
                                         <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                             Investment Account
@@ -188,6 +238,10 @@ export default function AddTradeModal({ isOpen, onClose }) {
                                         ) : accounts.length === 0 ? (
                                             <div className="p-3 text-sm text-accent-error bg-accent-error/10 dark:bg-accent-error/20 rounded-lg border border-accent-error/20 dark:border-accent-error/30">
                                                 No investment accounts found. Please create one in Net Worth page first.
+                                            </div>
+                                        ) : isEditing ? (
+                                            <div className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-muted cursor-not-allowed">
+                                                {accounts.find(a => a.id === selectedAccountId)?.name || 'Unknown Account'}
                                             </div>
                                         ) : (
                                             <select
@@ -263,11 +317,20 @@ export default function AddTradeModal({ isOpen, onClose }) {
                                             <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                                 Ticker Symbol
                                             </label>
-                                            <TickerSearch
-                                                value={form.ticker}
-                                                onChange={(val) => setForm(prev => ({ ...prev, ticker: val }))}
-                                                onSelect={handleTickerSelect}
-                                            />
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    value={form.ticker}
+                                                    readOnly
+                                                    className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-muted cursor-not-allowed"
+                                                />
+                                            ) : (
+                                                <TickerSearch
+                                                    value={form.ticker}
+                                                    onChange={(val) => setForm(prev => ({ ...prev, ticker: val }))}
+                                                    onSelect={handleTickerSelect}
+                                                />
+                                            )}
                                         </div>
 
                                         <div className="md:col-span-2">
@@ -277,8 +340,9 @@ export default function AddTradeModal({ isOpen, onClose }) {
                                             <input
                                                 type="text"
                                                 value={form.name}
-                                                readOnly
-                                                className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-muted cursor-not-allowed"
+                                                readOnly={isEditing}
+                                                onChange={isEditing ? (e) => setForm(prev => ({ ...prev, name: e.target.value })) : undefined}
+                                                className={`w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg ${!isEditing ? 'text-text-muted cursor-not-allowed' : 'text-text-primary'}`}
                                                 placeholder="Auto-filled from ticker..."
                                             />
                                         </div>
@@ -393,21 +457,21 @@ export default function AddTradeModal({ isOpen, onClose }) {
                                         </button>
                                         <button
                                             type="submit"
-                                            disabled={createTradeMutation.isPending || !selectedAccountId}
+                                            disabled={createTradeMutation.isPending || updateTradeMutation.isPending || !selectedAccountId}
                                             className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${isBuy || isDrip ? 'bg-accent-success hover:bg-accent-success/90 focus:ring-accent-success'
                                                 : isSell ? 'bg-accent-error hover:bg-accent-error/90 focus:ring-accent-error'
                                                     : 'bg-primary hover:bg-primary/90 focus:ring-primary'
                                                 }`}
                                         >
-                                            {createTradeMutation.isPending ? (
-                                                <>Recording...</>
+                                            {(createTradeMutation.isPending || updateTradeMutation.isPending) ? (
+                                                <>{isEditing ? 'Updating...' : 'Recording...'}</>
                                             ) : (
                                                 <>
                                                     {isBuy && <TrendingUp size={16} />}
                                                     {isSell && <TrendingDown size={16} />}
                                                     {isDividend && <DollarSign size={16} />}
                                                     {isDrip && <RefreshCw size={16} />}
-                                                    Record {isBuy ? 'Buy' : isSell ? 'Sell' : isDividend ? 'Dividend' : 'DRIP'}
+                                                    {isEditing ? 'Update Trade' : `Record ${isBuy ? 'Buy' : isSell ? 'Sell' : isDividend ? 'Dividend' : 'DRIP'}`}
                                                 </>
                                             )}
                                         </button>

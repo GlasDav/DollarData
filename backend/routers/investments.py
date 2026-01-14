@@ -200,7 +200,7 @@ def get_holdings_enhanced(db: Session = Depends(database.get_db), current_user: 
     
     result = []
     for h in holdings:
-        cost = (h.cost_basis * h.quantity * h.exchange_rate) if h.cost_basis else 0
+        cost = (h.cost_basis * h.exchange_rate) if h.cost_basis else 0
         gain = h.value - cost
         gain_percent = (gain / cost * 100) if cost > 0 else 0
         

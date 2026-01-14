@@ -14,6 +14,7 @@ import {
 import { SkeletonBox as Skeleton } from './Skeleton';
 import AddTradeModal from './AddTradeModal';
 import ImportTradesModal from './ImportTradesModal';
+import HoldingDetailsModal from './HoldingDetailsModal';
 
 export default function InvestmentsTab() {
     const { user } = useAuth();
@@ -21,6 +22,8 @@ export default function InvestmentsTab() {
     const [refreshing, setRefreshing] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [selectedHolding, setSelectedHolding] = useState(null);
+    const [tradeToEdit, setTradeToEdit] = useState(null);
 
     // --- Queries ---
 
@@ -85,17 +88,37 @@ export default function InvestmentsTab() {
         'var(--color-text-muted)'
     ];
 
+    const handleEditTrade = (trade) => {
+        setTradeToEdit(trade);
+        setIsAddModalOpen(true);
+        // Note: HoldingDetailsModal stays open behind, which is fine for context 
+        // or we could close it: setSelectedHolding(null);
+    };
+
+    const handleCloseAddModal = () => {
+        setIsAddModalOpen(false);
+        // Delay clearing edit data to allow animation to finish
+        setTimeout(() => setTradeToEdit(null), 300);
+    };
+
     // --- Render ---
 
     return (
         <div className="space-y-6">
             <AddTradeModal
                 isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
+                onClose={handleCloseAddModal}
+                tradeToEdit={tradeToEdit}
             />
             <ImportTradesModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
+            />
+            <HoldingDetailsModal
+                isOpen={!!selectedHolding}
+                onClose={() => setSelectedHolding(null)}
+                holding={selectedHolding}
+                onEditTrade={handleEditTrade}
             />
 
             {/* Header */}
@@ -320,7 +343,11 @@ export default function InvestmentsTab() {
                             {holdings.map((h) => {
                                 const isPositive = h.total_return >= 0;
                                 return (
-                                    <tr key={h.id} className="hover:bg-surface dark:hover:bg-surface-dark/50 transition-colors">
+                                    <tr
+                                        key={h.id}
+                                        onClick={() => setSelectedHolding(h)}
+                                        className="hover:bg-surface dark:hover:bg-surface-dark/50 transition-colors cursor-pointer group"
+                                    >
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-accent-success/10 dark:bg-accent-success/20 flex items-center justify-center text-accent-success font-bold text-xs ring-2 ring-card dark:ring-card-dark">
