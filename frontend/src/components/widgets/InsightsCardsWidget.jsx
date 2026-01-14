@@ -75,7 +75,7 @@ export default function InsightsCardsWidget({ currentStart, currentEnd, spenderM
         <div className="bg-card dark:bg-card-dark p-6 rounded-card shadow-sm border border-border dark:border-border-dark">
             <div className="flex items-center gap-2 mb-6">
                 <Sparkles className="text-primary" size={20} />
-                <h2 className="text-lg font-bold text-text-primary dark:text-text-primary-dark">Zen Insights</h2>
+                <h2 className="text-lg font-bold text-text-primary dark:text-text-primary-dark">Smart Insights</h2>
             </div>
 
             <div className="space-y-4">

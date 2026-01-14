@@ -100,7 +100,7 @@ export default function CashFlowTrendWidget({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
-                        Monthly Cash Flow
+                        Cash Flow Trend
                     </h2>
                     <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1">
                         Income vs Expenses (6 Month Trend)
