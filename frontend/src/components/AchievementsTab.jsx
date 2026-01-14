@@ -129,7 +129,7 @@ export default function AchievementsTab() {
 
                                 {/* Tier Badge */}
                                 {category.current_tier > 0 && (
-                                    <div className={`min-w-24 px-3 py-1.5 rounded-full text-sm font-medium text-center ${tierColors.bg} ${tierColors.text} border ${tierColors.border}`}>
+                                    <div className={`min-w-28 px-3 py-1.5 rounded-full text-sm font-medium text-center ${tierColors.bg} ${tierColors.text} border ${tierColors.border}`}>
                                         {category.tiers[category.current_tier - 1]?.tier_icon} {category.tiers[category.current_tier - 1]?.tier_name}
                                     </div>
                                 )}
