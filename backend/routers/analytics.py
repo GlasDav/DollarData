@@ -355,6 +355,7 @@ def get_analytics_history(
     start_date: str = Query(..., description="ISO Date string"), 
     end_date: str = Query(..., description="ISO Date string"),
     spender: str = Query(default="Combined"), # Combined, User A, User B
+    interval: str = Query(default="month"), # 'day' or 'month'
     account_id: Optional[int] = Query(None), # Filter by Account
     bucket_id: Optional[int] = Query(None),
     bucket_ids: Optional[str] = Query(None), # Comma-separated bucket IDs (expands to include children)
@@ -366,19 +367,22 @@ def get_analytics_history(
 ):
     import logging
     logger = logging.getLogger("backend.analytics")
-    decimal_limit_log_count = []
-    logger.info(f"History Request: {start_date} to {end_date} for {current_user.email}")
+    logger.info(f"History Request: {start_date} to {end_date} for {current_user.email} (Interval: {interval})")
 
     try:
         s_date = datetime.fromisoformat(start_date)
         e_date = datetime.fromisoformat(end_date)
+        # Ensure s_date and e_date are start/end of day if needed, but ISO usually handles it.
+        # For 'day' interval, we want full days.
+        s_date = s_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        e_date = e_date.replace(hour=23, minute=59, second=59, microsecond=999999)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use ISO format.")
         
     user = current_user
     if not user: raise HTTPException(status_code=404, detail="User not found")
     
-    # helper to iterate months
+    # --- Helper Iterators ---
     def month_year_iter(start, end):
         ym_start = 12 * start.year + start.month - 1
         ym_end = 12 * end.year + end.month - 1
@@ -386,7 +390,13 @@ def get_analytics_history(
             y, m = divmod(ym, 12)
             yield y, m + 1
             
-    # Calculate Limit per month based on filters
+    def day_iter(start, end):
+        current = start
+        while current <= end:
+            yield current
+            current += timedelta(days=1)
+            
+    # Calculate Limit based on filters
     # Note: Using CURRENT limits for history (limitation of current data model)
     buckets_query = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id)
     
@@ -485,72 +495,171 @@ def get_analytics_history(
                 should_skip = True
         
         if not should_skip and b.limits:
+            base_bucket_limit = 0.0
             # Sum limits matching the spender filter
             for l in b.limits:
                 if spender == "Combined":
-                     monthly_limit_total += l.amount
+                     base_bucket_limit += l.amount
                 elif spender == "Joint":
                     if l.member_id is None: # Shared limit
-                        monthly_limit_total += l.amount
+                        base_bucket_limit += l.amount
                 else: # Specific member
                     if l.member_id == target_member_id:
-                        monthly_limit_total += l.amount
+                        base_bucket_limit += l.amount
+            
+            monthly_limit_total += base_bucket_limit
     
-    logger.info(f"Optimized Limit Calc: {monthly_limit_total} across {len(relevant_buckets)} buckets")
+    # Convert Limit to Daily if interval is day
+    effective_limit_total = monthly_limit_total
+    if interval == 'day':
+        effective_limit_total = monthly_limit_total / 30.44 # Approx daily limit
+    
+    logger.info(f"Optimized Limit Calc: {effective_limit_total} (Interval: {interval}) across {len(relevant_buckets)} buckets")
     
     history_data = []
     
-    for year, month in month_year_iter(s_date, e_date):
-        # Transaction Range for this month
-        m_start = datetime(year, month, 1)
-        if month == 12:
-            m_end = datetime(year + 1, 1, 1)
-        else:
-            m_end = datetime(year, month + 1, 1)
+    # Branch Logic based on Interval
+    if interval == 'day':
+        # --- DAILY AGGREGATION ---
+        for current_day in day_iter(s_date, e_date):
+            day_start = current_day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = current_day.replace(hour=23, minute=59, second=59, microsecond=999999)
             
-        # Query Txns
-        query = db.query(func.sum(models.Transaction.amount)).filter(
-            models.Transaction.user_id == user.id,
-            models.Transaction.date >= m_start,
-            models.Transaction.date < m_end,
-            models.Transaction.amount < 0 # Only expenses
-        )
-        
-        if spender != "Combined":
-            query = query.filter(models.Transaction.spender == spender)
-        
-        # Apply Account filter if present
-        if account_id:
-            query = query.filter(models.Transaction.account_id == account_id)
+            # Query Txns
+            query = db.query(func.sum(models.Transaction.amount)).filter(
+                models.Transaction.user_id == user.id,
+                models.Transaction.date >= day_start,
+                models.Transaction.date <= day_end,
+                models.Transaction.amount < 0 # Only expenses
+            )
+            
+            if spender != "Combined":
+                query = query.filter(models.Transaction.spender == spender)
+            if account_id:
+                query = query.filter(models.Transaction.account_id == account_id)
+            if tags:
+                tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+                if tag_list:
+                    tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
+                    query = query.filter(or_(*tag_filters))
+            if bucket_id or bucket_ids or group:
+                 query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
+            
+            # Exclude Transfers
+            query = query.filter(
+                ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+            )
+                 
+            spent = query.scalar() or 0.0
+            spent = abs(spent)
+            
+            history_data.append({
+                "date": day_start.strftime("%Y-%m-%d"),
+                "label": day_start.strftime("%d"), # Just day number for chart
+                "fullDate": day_start.isoformat(),
+                "limit": effective_limit_total,
+                "spent": spent,
+                "income": 0 # TODO: Populate income if needed for chart, currently chart uses separate logic or mock? 
+                           # Frontend Chart expects 'income' and 'spent'. 
+                           # We need to fetch income too if we want it on the chart. 
+                           # Let's add income query.
+            })
+            
+            # Fetch Income for Day
+            inc_query = db.query(func.sum(models.Transaction.amount)).filter(
+                models.Transaction.user_id == user.id,
+                models.Transaction.date >= day_start,
+                models.Transaction.date <= day_end,
+                models.Transaction.amount > 0 # Income
+            )
+            # Apply same filters except bucket group might differ (usually income is separate group)
+            # If user filtered by 'Discretionary', income is likely 0. 
+            # If no filter, we want TOTAL income.
+            
+            if not bucket_id and not bucket_ids and not group:
+                 # Global view: Include all income (except transfers)
+                 inc_query = inc_query.filter(
+                    ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+                 )
+            elif group == "Income":
+                 # Filtering specifically for income
+                 pass 
+            else:
+                 # Filtering for Expense group -> Income is 0 unless refunds (which are + but offset expense)
+                 # Simpler to just query relevant buckets
+                 inc_query = inc_query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
 
-        # Apply Tags filter if present
-        if tags:
-            tag_list = [t.strip() for t in tags.split(',') if t.strip()]
-            if tag_list:
-                tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
-                query = query.filter(or_(*tag_filters))
+            if spender != "Combined": inc_query = inc_query.filter(models.Transaction.spender == spender)
+            if account_id: inc_query = inc_query.filter(models.Transaction.account_id == account_id)
+            
+            income = inc_query.scalar() or 0.0
+            history_data[-1]["income"] = income
+
+
+    else:
+        # --- MONTHLY AGGREGATION ---
+        for year, month in month_year_iter(s_date, e_date):
+            # Transaction Range for this month
+            m_start = datetime(year, month, 1)
+            if month == 12:
+                m_end = datetime(year + 1, 1, 1)
+            else:
+                m_end = datetime(year, month + 1, 1)
+                
+            # Query Txns
+            query = db.query(func.sum(models.Transaction.amount)).filter(
+                models.Transaction.user_id == user.id,
+                models.Transaction.date >= m_start,
+                models.Transaction.date < m_end,
+                models.Transaction.amount < 0 # Only expenses
+            )
+            
+            if spender != "Combined":
+                query = query.filter(models.Transaction.spender == spender)
+            if account_id:
+                query = query.filter(models.Transaction.account_id == account_id)
+            if tags:
+                tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+                if tag_list:
+                    tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
+                    query = query.filter(or_(*tag_filters))
+            if bucket_id or bucket_ids or group:
+                 query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
+            
+            query = query.filter(
+                ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+            )
+                 
+            spent = query.scalar() or 0.0
+            spent = abs(spent)
+            
+            # Fetch Income for Month (Consistency update)
+            inc_query = db.query(func.sum(models.Transaction.amount)).filter(
+                models.Transaction.user_id == user.id,
+                models.Transaction.date >= m_start,
+                models.Transaction.date < m_end,
+                models.Transaction.amount > 0
+            )
+            if not bucket_id and not bucket_ids and not group:
+                 inc_query = inc_query.filter(
+                    ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+                 )
+            else:
+                 inc_query = inc_query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
+            if spender != "Combined": inc_query = inc_query.filter(models.Transaction.spender == spender)
+            if account_id: inc_query = inc_query.filter(models.Transaction.account_id == account_id)
+            
+            income = inc_query.scalar() or 0.0
+            
+            history_data.append({
+                "date": m_start.strftime("%Y-%m-%d"),
+                "label": m_start.strftime("%b %Y"),
+                "limit": monthly_limit_total,
+                "spent": spent,
+                "income": income
+            })
         
-        if bucket_id or bucket_ids or group:
-             query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
-        
-        # Note: If no filters, we include ALL expenses to match "Total Spending" paradigm
-        
-        # Exclude Transfers from History too
-        query = query.filter(
-            ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
-        )
-             
-        spent = query.scalar() or 0.0
-        spent = abs(spent)
-        
-        history_data.append({
-            "date": m_start.strftime("%Y-%m-%d"),
-            "label": m_start.strftime("%b %Y"),
-            "limit": monthly_limit_total,
-            "spent": spent
-        })
-        
-    logger.info(f"History calculation complete. Returning {len(history_data)} months.")
+    logger.info(f"History calculation complete. Returning {len(history_data)} points.")
     return history_data
         
 
