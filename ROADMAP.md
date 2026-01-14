@@ -22,8 +22,9 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 💰 Budget & Goals
 
-- [ ] Rename "Goals" page to "Goals & Achievements" in sidebar
-- [ ] Fix Savings and Income achievements logic for correct calculation
+- [x] Rename "Goals" page to "Goals & Achievements" in sidebar
+- [x] Fix Savings achievement logic (now "Emergency Fund" - months of expenses covered)
+
 
 ## 🏦 Net Worth & Assets
 

@@ -91,7 +91,7 @@ const PAGE_TITLES = {
   '/transactions': 'Transactions',
   '/budget': 'Budget',
   '/net-worth': 'Net Worth',
-  '/goals': 'Goals',
+  '/goals': 'Goals & Achievements',
   '/reports': 'Reports',
   '/settings': 'Settings',
   '/data-management': 'Data Management',
@@ -154,7 +154,7 @@ function Layout() {
           {/* Planning */}
           <div className="mb-4">
             <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Planning</div>
-            <NavItem to="/goals" icon={Target}>Goals</NavItem>
+            <NavItem to="/goals" icon={Target}>Goals & Achievements</NavItem>
             <NavItem to="/reports" icon={BarChart3}>Reports</NavItem>
           </div>
 

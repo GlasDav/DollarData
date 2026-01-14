@@ -51,18 +51,18 @@ ACHIEVEMENTS = {
         }
     },
     "savings": {
-        "name": "Savings",
-        "icon": "PiggyBank",
+        "name": "Emergency Fund",
+        "icon": "Shield",
         "color": "emerald",
         "tiers": {
-            1: {"name": "First Saver", "description": "Save any money in a month"},
-            2: {"name": "10% Saver", "description": "Save 10% of your income"},
-            3: {"name": "20% Saver", "description": "Save 20% of your income"},
-            4: {"name": "30% Saver", "description": "Save 30% of your income"},
-            5: {"name": "Super Saver", "description": "Save 40% of your income"},
-            6: {"name": "Elite Saver", "description": "Save 50% of your income"},
-            7: {"name": "Master Saver", "description": "Save 50% for 6 months"},
-            8: {"name": "Legendary Saver", "description": "Save 50% for 12 months"},
+            1: {"name": "Safety Net Started", "description": "1 month of expenses saved"},
+            2: {"name": "One Month Buffer", "description": "2 months of expenses saved"},
+            3: {"name": "Safety Cushion", "description": "3 months of expenses saved"},
+            4: {"name": "Solid Foundation", "description": "6 months of expenses saved"},
+            5: {"name": "Well Prepared", "description": "9 months of expenses saved"},
+            6: {"name": "Full Year Covered", "description": "12 months of expenses saved"},
+            7: {"name": "Ultra Secure", "description": "18 months of expenses saved"},
+            8: {"name": "Financially Invincible", "description": "24+ months of expenses saved"},
         }
     },
     "investments": {
@@ -243,6 +243,24 @@ def get_user_stats(db: Session, user: models.User):
     weeks_active = login_streak.total_weeks_active if login_streak else 0
     streak_days = login_streak.current_streak_days if login_streak else 0
     
+    # Emergency Fund: Liquid Savings & Average Monthly Expenses
+    liquid_savings = db.query(func.sum(models.Account.balance)).filter(
+        models.Account.user_id == user.id,
+        models.Account.account_type.in_(["Cash", "Savings", "Checking", "Bank Account"])
+    ).scalar() or 0
+    
+    # Calculate average monthly expenses (last 6 months)
+    six_months_ago = datetime.now() - timedelta(days=180)
+    total_expenses_6m = db.query(func.sum(models.Transaction.amount)).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.amount < 0,
+        models.Transaction.date >= six_months_ago,
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+    ).scalar() or 0
+    
+    avg_monthly_expenses = abs(total_expenses_6m) / 6 if total_expenses_6m else 0
+    months_covered = liquid_savings / avg_monthly_expenses if avg_monthly_expenses > 0 else 0
+    
     return {
         "bucket_count": bucket_count,
         "rule_count": rule_count,
@@ -258,6 +276,9 @@ def get_user_stats(db: Session, user: models.User):
         "income_sources": income_sources,
         "weeks_active": weeks_active,
         "streak_days": streak_days,
+        "liquid_savings": liquid_savings,
+        "avg_monthly_expenses": avg_monthly_expenses,
+        "months_covered": months_covered,
     }
 
 
@@ -271,10 +292,9 @@ def check_achievement_tier(category: str, tier: int, stats: dict) -> bool:
         return False
     
     elif category == "savings":
-        # Placeholder - needs savings rate calculation
-        if tier == 1:
-            return stats["net_worth"] > 0 or stats["total_goal_savings"] > 0
-        return False
+        # Emergency Fund: Months of expenses covered
+        thresholds = [1, 2, 3, 6, 9, 12, 18, 24]
+        return stats["months_covered"] >= thresholds[tier - 1]
     
     elif category == "investments":
         if tier == 1:
@@ -365,6 +385,20 @@ def calculate_progress(category: str, tier: int, stats: dict) -> float:
         if stats["net_worth"] >= next_threshold:
             return 100.0
         progress = (stats["net_worth"] - current_threshold) / (next_threshold - current_threshold) * 100
+        return max(0, min(100, progress))
+    
+    elif category == "savings":
+        # Emergency Fund: Months of expenses covered
+        thresholds = [0, 1, 2, 3, 6, 9, 12, 18, 24]
+        if tier >= 8:
+            return 100.0
+        current_threshold = thresholds[tier - 1] if tier > 1 else 0
+        next_threshold = thresholds[tier]
+        if stats["months_covered"] >= next_threshold:
+            return 100.0
+        if next_threshold == current_threshold:
+            return 100.0
+        progress = (stats["months_covered"] - current_threshold) / (next_threshold - current_threshold) * 100
         return max(0, min(100, progress))
     
     elif category == "investments":
