@@ -215,6 +215,7 @@ def get_holdings_enhanced(db: Session = Depends(database.get_db), current_user: 
             "asset_type": h.asset_type,
             "sector": h.sector,
             "account_name": h.account.name,
+            "account_id": h.account_id,
             "total_return": gain,
             "total_return_percent": gain_percent,
             "cost_basis": cost
