@@ -212,23 +212,32 @@ else:
 
 
 # Include routers
-app.include_router(auth.router)
-app.include_router(settings.router)
-app.include_router(ingestion.router)
-app.include_router(transactions.router)
-app.include_router(analytics.router)
-app.include_router(net_worth.router)
-app.include_router(market.router)
-app.include_router(rules.router)
-app.include_router(goals.router)
-app.include_router(taxes.router)
-app.include_router(connections.router)
-app.include_router(investments.router)
-app.include_router(notifications.router)
-app.include_router(export.router)
-app.include_router(api_keys.router)
-app.include_router(household.router)
-app.include_router(achievements.router)
+from fastapi import APIRouter
+
+# Create API router
+api_router = APIRouter(prefix="/api")
+
+# Include routers into the API router
+api_router.include_router(auth.router)
+api_router.include_router(settings.router)
+api_router.include_router(ingestion.router)
+api_router.include_router(transactions.router)
+api_router.include_router(analytics.router)
+api_router.include_router(net_worth.router)
+api_router.include_router(market.router)
+api_router.include_router(rules.router)
+api_router.include_router(goals.router)
+api_router.include_router(taxes.router)
+api_router.include_router(connections.router)
+api_router.include_router(investments.router)
+api_router.include_router(notifications.router)
+api_router.include_router(export.router)
+api_router.include_router(api_keys.router)
+api_router.include_router(household.router)
+api_router.include_router(achievements.router)
+
+# Include the API router in the main app
+app.include_router(api_router)
 
 
 @app.get("/")
