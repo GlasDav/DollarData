@@ -55,9 +55,9 @@ const BentoCard = ({ title, description, icon: Icon, image, className = "" }) =>
             <p className="text-text-muted dark:text-text-muted-dark leading-relaxed">{description}</p>
         </div>
         {image && (
-            <div className="mt-8 rounded-xl overflow-hidden border border-border dark:border-border-dark relative h-48 lg:h-64 translate-y-4 group-hover:translate-y-2 transition-transform duration-500">
+            <div className="mt-8 rounded-xl overflow-hidden border border-border dark:border-border-dark relative h-56 lg:h-80 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                 <img src={image} alt={title} className="w-full h-full object-cover object-top" />
-                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card dark:from-card-dark to-transparent"></div>
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card dark:from-card-dark to-transparent"></div>
             </div>
         )}
     </div>
@@ -188,6 +188,7 @@ export default function LandingPage() {
                             title="Safe-to-Spend"
                             description="Know exactly how much you can spend today without impacting your savings goals."
                             icon={DollarSign}
+                            image="/landing/landing_safetospend.png"
                         />
 
                         {/* Privacy */}
