@@ -38,11 +38,11 @@ This document outlines the planned features, improvements, and future direction 
 
 ## ⚙️ Account & Settings
 
-- [ ] **Configure dollardata.au Domain:**
-  - [ ] Complete GoDaddy ID verification
-  - [ ] Add A records pointing to VPS (43.224.182.196)
-  - [ ] Install Caddy on VPS for auto-SSL
-  - [ ] Update CORS_ORIGINS in .env
+- [x] **Configure dollardata.au Domain:**
+  - [x] Complete GoDaddy ID verification
+  - [x] Add A records pointing to VPS (43.224.182.196)
+  - [x] Install Caddy on VPS for auto-SSL
+  - [x] Update CORS_ORIGINS in .env
 - [ ] **Family Invites:** Email invitation flow for new household members (create own login for same account).
 - [ ] **Security (MFA):** Multi-Factor Authentication setup.
 - [ ] **Email Verification:** Verify user email addresses for security.

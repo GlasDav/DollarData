@@ -556,6 +556,13 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Bug Fix:** Fixed 500 error caused by using `account_type` instead of `category` column in Account model query.
 - **Files:** `backend/routers/achievements.py`, `frontend/src/components/AchievementsTab.jsx`.
 
+### **Domain Setup (Jan 2026):**
+  - Configured `dollardata.au` domain with GoDaddy and Binary Lane VPS.
+  - Implemented Caddy for automatic SSL termination.
+  - Resolved port conflicts by moving frontend container to port 8080.
+  - Updated local `.env` and `docker-compose.yml` with production settings.
+  - Created [walkthrough.md](file:///C:/Users/David%20Glasser/.gemini/antigravity/brain/18b1bcf5-e88c-4eca-a80e-bcd73a0a79d2/walkthrough.md) for domain setup guidance.
+
 ### **Sidebar Rename (Jan 2026)**
 - **Goals → Goals & Achievements:** Updated sidebar navigation and page title mapping.
 - **Files:** `frontend/src/App.jsx`.
