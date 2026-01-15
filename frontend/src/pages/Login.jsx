@@ -6,7 +6,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 
 // Demo account credentials
 const DEMO_EMAIL = "demo@dollardata.app";
-const DEMO_PASSWORD = "demo123";
+const DEMO_PASSWORD = "demo1234";
 
 export default function Login() {
     const [email, setEmail] = useState("");

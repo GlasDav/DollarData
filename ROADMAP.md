@@ -80,6 +80,7 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 🐛 Known Bugs
 
-- [ ] **Notifications 500 Error:** Fix `/api/notifications/` endpoint returning 500 Internal Server Error.
-- [ ] **Transactions 405 Error:** Fix `/api/transactions/?limit=1` returning 405 Method Not Allowed (trailing slash routing issue).
+- [x] **Notifications 500 Error:** Fixed UUID serialization in Notification schema.
+- [x] **Transactions 405 Error:** Fixed trailing slash routing issue in GET endpoint.
+
 
