@@ -265,7 +265,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+    SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET") or os.getenv("SECRET_KEY")
     SUPABASE_URL = os.getenv("SUPABASE_URL")
     SUPABASE_JWT_KEY = os.getenv("SUPABASE_JWT_KEY")
     

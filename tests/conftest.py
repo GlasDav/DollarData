@@ -95,10 +95,11 @@ def test_user_data():
 @pytest.fixture
 def test_user(test_db, test_user_data):
     """Create a test user in the database (without triggering default setup)."""
-    hashed_password = auth.pwd_context.hash(test_user_data["password"])
+    # hashed_password removed - Supabase handles auth
     user = models.User(
+        id="test-user-id-123", # Explicit ID for testing
         email=test_user_data["email"],
-        hashed_password=hashed_password,
+        name="Test User",
         is_email_verified=True
     )
     test_db.add(user)
@@ -110,14 +111,23 @@ def test_user(test_db, test_user_data):
 @pytest.fixture  
 def auth_token(test_user, test_user_data):
     """Generate a valid JWT token for the test user."""
-    from backend import auth as auth_module
-    from datetime import timedelta
+    from jose import jwt
+    import os
+    from datetime import datetime, timedelta
     
-    access_token = auth_module.create_access_token(
-        data={"sub": test_user_data["email"]},
-        expires_delta=timedelta(minutes=30)
-    )
-    return access_token
+    # Use the same secret as the test environment
+    secret_key = os.getenv("SECRET_KEY", "test-secret-key")
+    algorithm = "HS256"
+    
+    payload = {
+        "sub": test_user.id, 
+        "email": test_user_data["email"],
+        "exp": datetime.utcnow() + timedelta(minutes=30),
+        "aud": "authenticated", # Supabase audience
+        "role": "authenticated"
+    }
+    
+    return jwt.encode(payload, secret_key, algorithm=algorithm)
 
 
 @pytest.fixture
@@ -129,10 +139,10 @@ def auth_headers(auth_token):
 @pytest.fixture
 def unverified_user(test_db):
     """Create a user without email verification."""
-    hashed_password = auth.pwd_context.hash("TestPassword123!")
     user = models.User(
+        id="unverified-user-id-456",
         email="unverified@example.com",
-        hashed_password=hashed_password,
+        name="Unverified User",
         is_email_verified=False
     )
     test_db.add(user)
@@ -151,9 +161,7 @@ def sample_bucket(test_db, test_user):
     bucket = models.BudgetBucket(
         name="Groceries",
         user_id=test_user.id,
-        group="Discretionary",
-        monthly_limit_a=500.0,
-        monthly_limit_b=0.0
+        group="Discretionary"
     )
     test_db.add(bucket)
     test_db.commit()
