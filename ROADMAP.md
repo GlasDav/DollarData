@@ -58,8 +58,9 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **Dashboard Redesign:** Implement "ZenFinance" 2-column layout and new widgets.
 - [x] **Dashboard Refinements:** Polish Cash Flow, Achievements, and Reporting widgets.
 - [x] **Public Landing Page:** Design landing page for unauthenticated users.
-  - [ ] Fix up landing page spacing
-  - [ ] Polish landing page content
+  - [x] Fix up landing page spacing
+  - [x] Polish landing page content
+  - [x] **Demo Data:** Create "Adam & Eve" seed script for comprehensive demo data.
 - [ ] **Revamp Quick Add Button:** Redesign the quick add button for better UX.
 
 ## 🚀 Commercialization

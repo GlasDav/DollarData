@@ -568,6 +568,16 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Goals → Goals & Achievements:** Updated sidebar navigation and page title mapping.
 - **Files:** `frontend/src/App.jsx`.
 
+### **Adam & Eve Demo Seed (Jan 2026)**
+- **Script:** `scripts/seed_adam_eve.py` generates 14 months of realistic data for two users (Adam & Eve).
+- **Features:** Split budgets, property/mortgage, superannuation, and narrative arcs (Vacation, Emergency, Bonus).
+- **Assets:** Created `landing_investments.png` and `landing_sankey.png` for public landing page.
+- **Usage:** Run `python -m scripts.seed_adam_eve` to populate local DB. Login: `adam.eve@dollardata.au` / `demo123`.
+
+### **Landing Page Tweaks (Jan 2026)**
+- **Fixes:** Resolved layout/spacing issues, updated footer copyright, and added new feature screenshots.
+- **Git Flow:** Synced `trade-logic` and `main` branches with latest visual updates.
+
 
 
 
