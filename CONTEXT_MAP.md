@@ -34,7 +34,8 @@
 
 - **VPS**: Binary Lane (not Render)
 - **Database**: PostgreSQL on production, SQLite locally
-- **Deploy workflow**: `git pull` → restart backend → auto-migrations run automatically
+- **Branches**: `main` is the production/stable branch used for deployment. Feature development occurs on `trade-logic`.
+- **Deploy workflow**: `git pull origin main` on VPS → restart backend → auto-migrations run automatically
 - **No manual Python commands needed** on VPS for standard migrations
 
 ### Schema Change Checklist
