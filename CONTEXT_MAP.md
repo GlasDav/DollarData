@@ -33,10 +33,17 @@
 ### Deployment Pattern
 
 - **VPS**: Binary Lane (not Render)
+- **Containerization**: Docker Compose (backend + frontend + postgres containers)
 - **Database**: PostgreSQL on production, SQLite locally
 - **Branches**: `main` is the production/stable branch used for deployment. Feature development occurs on `trade-logic`.
-- **Deploy workflow**: `git pull origin main` on VPS → restart backend → auto-migrations run automatically
-- **No manual Python commands needed** on VPS for standard migrations
+- **Deploy workflow**:
+  ```bash
+  cd /opt/dollardata
+  git pull origin main
+  docker compose build backend   # Rebuild to install new dependencies
+  docker compose up -d           # Restart all containers
+  ```
+- **Auto-migrations** run on container startup via `auto_migrate.py`
 
 ### Schema Change Checklist
 

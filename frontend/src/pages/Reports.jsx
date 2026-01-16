@@ -310,10 +310,25 @@ export default function Reports() {
                         {showExportMenu && (
                             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
                                 <button
-                                    onClick={() => {
-                                        // PDF Export
-                                        const url = `/api/export/report/pdf?start_date=${start}&end_date=${end}&spender=${spenderFilter}`;
-                                        window.open(url, '_blank');
+                                    onClick={async () => {
+                                        try {
+                                            // PDF Export with auth
+                                            const response = await api.get('/export/report/pdf', {
+                                                params: { start_date: start, end_date: end, spender: spenderFilter },
+                                                responseType: 'blob'
+                                            });
+                                            const url = window.URL.createObjectURL(new Blob([response.data]));
+                                            const link = document.createElement('a');
+                                            link.href = url;
+                                            link.download = `DollarData_Report_${start}_to_${end}.pdf`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            link.remove();
+                                            window.URL.revokeObjectURL(url);
+                                        } catch (err) {
+                                            console.error('PDF export failed:', err);
+                                            alert('Failed to export PDF');
+                                        }
                                         setShowExportMenu(false);
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
@@ -322,10 +337,25 @@ export default function Reports() {
                                     <span>Download PDF</span>
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        // Excel Export
-                                        const url = `/api/export/report/excel?start_date=${start}&end_date=${end}&spender=${spenderFilter}`;
-                                        window.open(url, '_blank');
+                                    onClick={async () => {
+                                        try {
+                                            // Excel Export with auth
+                                            const response = await api.get('/export/report/excel', {
+                                                params: { start_date: start, end_date: end, spender: spenderFilter },
+                                                responseType: 'blob'
+                                            });
+                                            const url = window.URL.createObjectURL(new Blob([response.data]));
+                                            const link = document.createElement('a');
+                                            link.href = url;
+                                            link.download = `DollarData_Report_${start}_to_${end}.xlsx`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            link.remove();
+                                            window.URL.revokeObjectURL(url);
+                                        } catch (err) {
+                                            console.error('Excel export failed:', err);
+                                            alert('Failed to export Excel');
+                                        }
                                         setShowExportMenu(false);
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
