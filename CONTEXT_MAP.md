@@ -586,9 +586,18 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Result:** CI Pipeline is now green and stable for merging.
 - **Resolves:** Notifications 500 Error (fixed schema validator) and Transactions 405 Error (fixed router path).
 
+### **Console Error Fixes (Jan 2026)**
+- **Transactions 405 Error (Frontend):** Fixed trailing slash in API calls for `OnboardingWizard.jsx` and `CreateTransactionModal.jsx`.
+  - Changed `/transactions/` → `/transactions` to match backend router pattern.
+- **Chart Sizing Warnings:** Added `minHeight` prop to `ResponsiveContainer` in multiple widgets.
+  - Files: `SparklineChart.jsx`, `NetWorthWidget.jsx`, `CashFlowTrendWidget.jsx`.
+- **Favicon Fix:** Created `frontend/public/favicon.svg` (copy of `logo.svg`) to resolve 404 error.
+- **Brand Logo Restoration:** Restored accidentally deleted `brand-logo.svg` and `brand-logo-dark.svg` from git history.
+- **Branding Fix:** Updated missed "Welcome to Principal" → "Welcome to DollarData" in `OnboardingWizard.jsx`.
 
 
 
 ---
 
 *Generated for AI context. Do not commit to version control.*
+
