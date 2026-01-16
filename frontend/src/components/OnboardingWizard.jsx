@@ -14,7 +14,7 @@ export default function OnboardingWizard() {
     // Check if we should show the wizard
     const { data: transactions } = useQuery({
         queryKey: ['transactions', 'check-new'],
-        queryFn: async () => (await api.get('/transactions/', { params: { limit: 1 } })).data,
+        queryFn: async () => (await api.get('/transactions', { params: { limit: 1 } })).data,
         staleTime: 60000
     });
 
@@ -79,7 +79,7 @@ function WelcomeStep({ onNext }) {
                 <Sparkles className="text-white" size={40} />
             </div>
             <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome to Principal</h2>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome to DollarData</h2>
                 <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
                     Your personal finance command center. Let's get you set up in just a few clicks.
                 </p>

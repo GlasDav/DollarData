@@ -33,7 +33,7 @@ export default function SparklineChart({ data = [], height = 40, className = '' 
 
     return (
         <div className={className} style={{ height }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={height}>
                 <BarChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                     <XAxis
                         dataKey="month"
