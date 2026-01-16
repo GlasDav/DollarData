@@ -49,6 +49,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -208,6 +209,11 @@ else:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+# === PROXY HEADERS MIDDLEWARE ===
+# Trust X-Forwarded-Proto and X-Forwarded-For headers from reverse proxy (Caddy/nginx)
+# This ensures correct protocol detection for URL generation behind proxies
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 
 

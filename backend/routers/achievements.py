@@ -9,6 +9,7 @@ from ..database import get_db
 from ..auth import get_current_user
 
 router = APIRouter(
+    prefix="/achievements",
     tags=["achievements"],
     responses={404: {"description": "Not found"}},
 )
@@ -41,7 +42,7 @@ class AchievementsResponse(BaseModel):
 
 # --- Endpoints ---
 
-@router.get("/", response_model=AchievementsResponse)
+@router.get("/summary", response_model=AchievementsResponse)
 def get_achievements(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
