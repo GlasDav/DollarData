@@ -49,7 +49,7 @@ export default function NetWorthWidget({ history: historyProp = [], formatCurren
                 {/* Mini Sparkline Chart */}
                 {chartData.length >= 1 ? (
                     <div className="h-16 -mx-2">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={64}>
                             <AreaChart data={chartData.length === 1 ? [chartData[0], chartData[0]] : chartData}>
                                 <defs>
                                     <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">

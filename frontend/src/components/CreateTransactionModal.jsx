@@ -47,7 +47,7 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
                 bucket_id: data.bucket_id ? parseInt(data.bucket_id) : null,
                 raw_description: data.description
             };
-            await api.post('/transactions/', payload);
+            await api.post('/transactions', payload);
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['transactions']);
