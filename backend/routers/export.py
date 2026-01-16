@@ -131,16 +131,46 @@ def export_report_pdf(
 ):
     """
     Generate a professional PDF financial report.
-    Includes: Summary statistics, category breakdown chart, and transaction list.
+    Includes: Logo, summary statistics, expense donut chart, income donut chart.
+    Excludes transfers. Fits on single page.
     """
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch, cm
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
-    from reportlab.graphics.shapes import Drawing
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+    from reportlab.graphics.shapes import Drawing, String
     from reportlab.graphics.charts.piecharts import Pie
+    from reportlab.graphics.charts.legends import Legend
+    from reportlab.graphics.widgets.markers import makeMarker
     import io
+    import os
+    
+    # Brand colors
+    BRAND_PRIMARY = colors.HexColor('#5D5DFF')
+    BRAND_SUCCESS = colors.HexColor('#10b981')
+    BRAND_ERROR = colors.HexColor('#ef4444')
+    TEXT_PRIMARY = colors.HexColor('#191B18')
+    TEXT_MUTED = colors.HexColor('#666666')
+    
+    # Chart colors (matching frontend chartColors.js)
+    CHART_COLORS = [
+        colors.HexColor('#f59e0b'),  # Amber
+        colors.HexColor('#06b6d4'),  # Cyan
+        colors.HexColor('#6366f1'),  # Indigo
+        colors.HexColor('#10b981'),  # Emerald
+        colors.HexColor('#ec4899'),  # Pink
+        colors.HexColor('#84cc16'),  # Lime
+        colors.HexColor('#8b5cf6'),  # Violet
+        colors.HexColor('#ef4444'),  # Red
+    ]
+    
+    INCOME_COLORS = [
+        colors.HexColor('#10b981'),  # Emerald-500
+        colors.HexColor('#34d399'),  # Emerald-400
+        colors.HexColor('#6ee7b7'),  # Emerald-300
+        colors.HexColor('#a7f3d0'),  # Emerald-200
+    ]
     
     try:
         s_date = datetime.fromisoformat(start_date)
@@ -148,154 +178,255 @@ def export_report_pdf(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
     
-    # Fetch data
-    transactions = db.query(models.Transaction).filter(
+    # Fetch transactions - EXCLUDE TRANSFERS
+    transactions = db.query(models.Transaction).join(
+        models.BudgetBucket, models.Transaction.bucket_id == models.BudgetBucket.id, isouter=True
+    ).filter(
         models.Transaction.user_id == current_user.id,
         models.Transaction.date >= s_date,
         models.Transaction.date <= e_date
     )
     
+    # Exclude transfers (bucket name contains "transfer" case-insensitive)
+    transactions = transactions.filter(
+        ~models.BudgetBucket.name.ilike('%transfer%')
+    )
+    
     if spender != "Combined":
         transactions = transactions.filter(models.Transaction.spender == spender)
     
-    transactions = transactions.order_by(models.Transaction.date.desc()).all()
+    transactions = transactions.all()
     
     # Calculate summary stats
     total_income = sum(t.amount for t in transactions if t.amount > 0)
     total_expenses = sum(abs(t.amount) for t in transactions if t.amount < 0)
     net_savings = total_income - total_expenses
     
-    # Category breakdown
-    category_totals = {}
+    # Expense category breakdown
+    expense_categories = {}
     for t in transactions:
-        if t.amount < 0:  # Only expenses
+        if t.amount < 0:
             cat_name = t.bucket.name if t.bucket else "Uncategorized"
-            category_totals[cat_name] = category_totals.get(cat_name, 0) + abs(t.amount)
+            expense_categories[cat_name] = expense_categories.get(cat_name, 0) + abs(t.amount)
     
-    # Sort by amount descending
-    sorted_categories = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
+    # Income category breakdown
+    income_categories = {}
+    for t in transactions:
+        if t.amount > 0:
+            cat_name = t.bucket.name if t.bucket else "Uncategorized"
+            income_categories[cat_name] = income_categories.get(cat_name, 0) + t.amount
     
     # Create PDF
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*cm, bottomMargin=1*cm)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1.5*cm, bottomMargin=1*cm, leftMargin=2*cm, rightMargin=2*cm)
     styles = getSampleStyleSheet()
     
-    # Custom styles
+    # Custom styles with brand colors
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=24,
-        spaceAfter=20,
-        textColor=colors.HexColor('#1e293b')
+        fontSize=22,
+        spaceAfter=5,
+        textColor=TEXT_PRIMARY
     )
     subtitle_style = ParagraphStyle(
         'Subtitle',
         parent=styles['Normal'],
-        fontSize=12,
-        textColor=colors.HexColor('#64748b')
+        fontSize=11,
+        textColor=TEXT_MUTED
     )
     section_style = ParagraphStyle(
         'Section',
         parent=styles['Heading2'],
-        fontSize=16,
-        spaceBefore=20,
-        spaceAfter=10,
-        textColor=colors.HexColor('#334155')
+        fontSize=14,
+        spaceBefore=15,
+        spaceAfter=8,
+        textColor=BRAND_PRIMARY
     )
     
     elements = []
     
-    # Title
-    elements.append(Paragraph("DollarData Financial Report", title_style))
+    # === Header with Logo ===
+    # Try to load logo, fall back to text if not found
+    logo_path = os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'favicon.svg')
+    try:
+        if os.path.exists(logo_path):
+            logo = Image(logo_path, width=0.5*inch, height=0.5*inch)
+            header_data = [[logo, Paragraph("DollarData Financial Report", title_style)]]
+            header_table = Table(header_data, colWidths=[0.7*inch, 5*inch])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(header_table)
+        else:
+            elements.append(Paragraph("DollarData Financial Report", title_style))
+    except:
+        elements.append(Paragraph("DollarData Financial Report", title_style))
+    
+    # Period and spender info
     elements.append(Paragraph(
         f"Period: {s_date.strftime('%B %d, %Y')} to {e_date.strftime('%B %d, %Y')}",
         subtitle_style
     ))
     if spender != "Combined":
         elements.append(Paragraph(f"Spender: {spender}", subtitle_style))
-    elements.append(Spacer(1, 0.5*inch))
+    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", subtitle_style))
+    elements.append(Spacer(1, 0.3*inch))
     
-    # Summary Section
-    elements.append(Paragraph("Summary", section_style))
+    # === Summary Section ===
+    elements.append(Paragraph("Financial Summary", section_style))
+    
     summary_data = [
-        ["Total Income", f"${total_income:,.2f}"],
-        ["Total Expenses", f"${total_expenses:,.2f}"],
-        ["Net Savings", f"${net_savings:,.2f}"],
-        ["Savings Rate", f"{(net_savings/total_income*100):.1f}%" if total_income > 0 else "N/A"],
-        ["Transaction Count", str(len(transactions))]
+        ["Total Income", f"${total_income:,.2f}", "Net Savings", f"${net_savings:,.2f}"],
+        ["Total Expenses", f"${total_expenses:,.2f}", "Savings Rate", f"{(net_savings/total_income*100):.1f}%" if total_income > 0 else "N/A"],
     ]
-    summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+    summary_table = Table(summary_data, colWidths=[1.8*inch, 1.5*inch, 1.5*inch, 1.5*inch])
     summary_table.setStyle(TableStyle([
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 11),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#64748b')),
-        ('TEXTCOLOR', (1, 0), (1, 0), colors.HexColor('#10b981')),  # Income green
-        ('TEXTCOLOR', (1, 1), (1, 1), colors.HexColor('#ef4444')),  # Expenses red
-        ('TEXTCOLOR', (1, 2), (1, 2), colors.HexColor('#10b981') if net_savings >= 0 else colors.HexColor('#ef4444')),
+        ('TEXTCOLOR', (0, 0), (0, -1), TEXT_MUTED),
+        ('TEXTCOLOR', (2, 0), (2, -1), TEXT_MUTED),
+        ('TEXTCOLOR', (1, 0), (1, 0), BRAND_SUCCESS),  # Income green
+        ('TEXTCOLOR', (1, 1), (1, 1), BRAND_ERROR),    # Expenses red
+        ('TEXTCOLOR', (3, 0), (3, 0), BRAND_SUCCESS if net_savings >= 0 else BRAND_ERROR),
         ('FONTNAME', (1, 0), (1, -1), 'Helvetica-Bold'),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('FONTNAME', (3, 0), (3, -1), 'Helvetica-Bold'),
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+        ('ALIGN', (3, 0), (3, -1), 'LEFT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
     ]))
     elements.append(summary_table)
     elements.append(Spacer(1, 0.3*inch))
     
-    # Category Breakdown Section
-    if sorted_categories:
-        elements.append(Paragraph("Spending by Category", section_style))
+    # === Helper function to create pie chart ===
+    def create_pie_chart(data_dict, color_palette, title, width=180, height=180):
+        """Create a pie chart drawing with legend."""
+        if not data_dict:
+            return None
         
-        # Category table
-        cat_data = [["Category", "Amount", "% of Total"]]
-        for cat_name, amount in sorted_categories[:15]:  # Top 15
-            pct = (amount / total_expenses * 100) if total_expenses > 0 else 0
-            cat_data.append([cat_name, f"${amount:,.2f}", f"{pct:.1f}%"])
+        # Sort and limit to top 6
+        sorted_data = sorted(data_dict.items(), key=lambda x: x[1], reverse=True)[:6]
+        labels = [item[0] for item in sorted_data]
+        values = [item[1] for item in sorted_data]
         
-        cat_table = Table(cat_data, colWidths=[3*inch, 1.5*inch, 1*inch])
-        cat_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#334155')),
-            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
+        drawing = Drawing(width, height + 60)
+        
+        # Add title
+        drawing.add(String(width/2, height + 45, title, 
+                          textAnchor='middle', fontSize=12, fillColor=TEXT_PRIMARY))
+        
+        # Pie chart
+        pie = Pie()
+        pie.x = 20
+        pie.y = 40
+        pie.width = width - 40
+        pie.height = height - 40
+        pie.data = values
+        pie.labels = None  # We'll use legend instead
+        pie.slices.strokeWidth = 1
+        pie.slices.strokeColor = colors.white
+        
+        for i in range(len(values)):
+            pie.slices[i].fillColor = color_palette[i % len(color_palette)]
+        
+        drawing.add(pie)
+        
+        # Add simple legend below
+        legend_y = 25
+        total = sum(values)
+        for i, (label, value) in enumerate(sorted_data[:3]):  # Show top 3 in legend
+            pct = (value / total * 100) if total > 0 else 0
+            short_label = label[:15] + "..." if len(label) > 15 else label
+            legend_text = f"{short_label}: {pct:.0f}%"
+            drawing.add(String(10 + (i * 60), legend_y, legend_text[:10], 
+                              fontSize=7, fillColor=TEXT_MUTED))
+        
+        return drawing
+    
+    # === Charts Section - Side by Side ===
+    elements.append(Paragraph("Spending & Income Breakdown", section_style))
+    
+    # Create expense pie chart
+    expense_chart = create_pie_chart(expense_categories, CHART_COLORS, "Expenses by Category")
+    income_chart = create_pie_chart(income_categories, INCOME_COLORS, "Income by Source")
+    
+    # Create side-by-side layout for charts
+    if expense_chart or income_chart:
+        chart_data = [[
+            expense_chart if expense_chart else "",
+            income_chart if income_chart else ""
+        ]]
+        chart_table = Table(chart_data, colWidths=[3.2*inch, 3.2*inch])
+        chart_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ]))
-        elements.append(cat_table)
+        elements.append(chart_table)
     
-    elements.append(PageBreak())
+    elements.append(Spacer(1, 0.3*inch))
     
-    # Transaction Details Section
-    elements.append(Paragraph("Transaction Details", section_style))
-    elements.append(Paragraph(
-        f"Showing {min(100, len(transactions))} of {len(transactions)} transactions",
-        subtitle_style
-    ))
-    elements.append(Spacer(1, 0.2*inch))
+    # === Category Tables - Side by Side ===
+    # Expense categories table
+    exp_sorted = sorted(expense_categories.items(), key=lambda x: x[1], reverse=True)[:8]
+    inc_sorted = sorted(income_categories.items(), key=lambda x: x[1], reverse=True)[:8]
     
-    # Transaction table
-    txn_data = [["Date", "Description", "Category", "Amount"]]
-    for t in transactions[:100]:  # Limit to 100 for PDF readability
-        txn_data.append([
-            t.date.strftime("%Y-%m-%d") if t.date else "",
-            (t.description[:40] + "...") if len(t.description) > 40 else t.description,
-            (t.bucket.name if t.bucket else "Uncategorized")[:20],
-            f"${t.amount:,.2f}"
-        ])
+    # Build expense column
+    exp_data = [["Category", "Amount", "%"]]
+    for cat_name, amount in exp_sorted:
+        pct = (amount / total_expenses * 100) if total_expenses > 0 else 0
+        exp_data.append([cat_name[:20], f"${amount:,.0f}", f"{pct:.0f}%"])
     
-    txn_table = Table(txn_data, colWidths=[1*inch, 3*inch, 1.3*inch, 1*inch])
-    txn_table.setStyle(TableStyle([
+    # Build income column  
+    inc_data = [["Category", "Amount", "%"]]
+    for cat_name, amount in inc_sorted:
+        pct = (amount / total_income * 100) if total_income > 0 else 0
+        inc_data.append([cat_name[:20], f"${amount:,.0f}", f"{pct:.0f}%"])
+    
+    # Pad to same length
+    while len(exp_data) < len(inc_data):
+        exp_data.append(["", "", ""])
+    while len(inc_data) < len(exp_data):
+        inc_data.append(["", "", ""])
+    
+    exp_table = Table(exp_data, colWidths=[1.6*inch, 0.8*inch, 0.5*inch])
+    exp_table.setStyle(TableStyle([
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#334155')),
-        ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
+        ('BACKGROUND', (0, 0), (-1, 0), BRAND_ERROR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fafafa')]),
     ]))
-    elements.append(txn_table)
+    
+    inc_table = Table(inc_data, colWidths=[1.6*inch, 0.8*inch, 0.5*inch])
+    inc_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, 0), BRAND_SUCCESS),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    
+    # Side by side tables
+    tables_data = [[exp_table, Spacer(0.2*inch, 0), inc_table]]
+    tables_layout = Table(tables_data, colWidths=[3*inch, 0.3*inch, 3*inch])
+    tables_layout.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
+    elements.append(tables_layout)
+    
+    # === Footer ===
+    elements.append(Spacer(1, 0.4*inch))
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=TEXT_MUTED, alignment=1)
+    elements.append(Paragraph("Generated by DollarData • dollardata.au", footer_style))
     
     # Build PDF
     doc.build(elements)
