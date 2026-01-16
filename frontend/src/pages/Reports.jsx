@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api, { getMembers, getBucketsTree } from '../services/api';
 import { toLocalISOString } from '../utils/dateUtils';
-import { Download, RefreshCw, Filter, Calendar as CalendarIcon, PieChart, BarChart2, X } from 'lucide-react';
+import { Download, RefreshCw, Filter, Calendar as CalendarIcon, PieChart, BarChart2, X, ChevronDown, FileText, FileSpreadsheet } from 'lucide-react';
 import { ComposedChart, Bar, Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import MultiSelectCategoryFilter from '../components/MultiSelectCategoryFilter';
 import TransactionTable from '../components/TransactionTable';
@@ -18,6 +18,19 @@ export default function Reports() {
     const [accountFilter, setAccountFilter] = useState("All Accounts"); // New: Account Filter
     const [tagFilters, setTagFilters] = useState([]); // New: Tag Filters
     const [drilldownMonth, setDrilldownMonth] = useState(null); // New: Monthly Drill-down
+    const [showExportMenu, setShowExportMenu] = useState(false); // Export dropdown
+    const exportMenuRef = useRef(null);
+
+    // Close export menu on outside click
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+                setShowExportMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Helper to calculate dates
     const getDateRange = (type) => {
@@ -283,13 +296,57 @@ export default function Reports() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                    >
-                        <Download size={18} />
-                        <span>Export CSV</span>
-                    </button>
+                    {/* Export Dropdown */}
+                    <div className="relative" ref={exportMenuRef}>
+                        <button
+                            onClick={() => setShowExportMenu(!showExportMenu)}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition shadow-sm"
+                        >
+                            <Download size={18} />
+                            <span>Export</span>
+                            <ChevronDown size={16} className={`transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {showExportMenu && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
+                                <button
+                                    onClick={() => {
+                                        // PDF Export
+                                        const url = `/api/export/report/pdf?start_date=${start}&end_date=${end}&spender=${spenderFilter}`;
+                                        window.open(url, '_blank');
+                                        setShowExportMenu(false);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                                >
+                                    <FileText size={16} className="text-red-500" />
+                                    <span>Download PDF</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        // Excel Export
+                                        const url = `/api/export/report/excel?start_date=${start}&end_date=${end}&spender=${spenderFilter}`;
+                                        window.open(url, '_blank');
+                                        setShowExportMenu(false);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                                >
+                                    <FileSpreadsheet size={16} className="text-emerald-500" />
+                                    <span>Download Excel</span>
+                                </button>
+                                <div className="border-t border-slate-200 dark:border-slate-700 my-1" />
+                                <button
+                                    onClick={() => {
+                                        handleExport();
+                                        setShowExportMenu(false);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                                >
+                                    <Download size={16} className="text-slate-500" />
+                                    <span>Download CSV</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -393,6 +450,22 @@ export default function Reports() {
                             </button>
                         )}
                     </div>
+                )}
+
+                {/* Account Filter */}
+                {accounts.length > 0 && (
+                    <select
+                        value={accountFilter}
+                        onChange={(e) => setAccountFilter(e.target.value)}
+                        className="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="All Accounts">All Accounts</option>
+                        {accounts.map(account => (
+                            <option key={account.id} value={account.id}>
+                                {account.name}
+                            </option>
+                        ))}
+                    </select>
                 )}
 
                 {/* Clear Filters */}
