@@ -596,7 +596,14 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Branding Fix:** Updated missed "Welcome to Principal" → "Welcome to DollarData" in `OnboardingWizard.jsx`.
 
 
+### **API Configuration Fixes (Jan 2026)**
+- **Mixed Content Loop:** Added `ProxyHeadersMiddleware` to `backend/main.py` ensuring FastAPI trusts upstream HTTPS headers, preventing HTTP redirects.
+- **Frontend API Paths:** Updated all `/transactions` calls to `/transactions/` (trailing slash) to bypass backend redirects.
+- **Achievements 404:** Updated `AchievementsTab.jsx` to call `/achievements` endpoint correctly (no slash).
 
+### **Achievements Logic Restoration (Jan 2026)**
+- **Restored Logic:** Reverted accidental regression where `backend/routers/achievements.py` was replaced with a mock.
+- **Verification:** Audited critical routers (`transactions.py`, `goals.py`) to confirm they remained intact.
 ---
 
 *Generated for AI context. Do not commit to version control.*

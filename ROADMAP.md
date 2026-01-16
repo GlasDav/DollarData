@@ -82,5 +82,8 @@ This document outlines the planned features, improvements, and future direction 
 
 - [x] **Notifications 500 Error:** Fixed UUID serialization in Notification schema.
 - [x] **Transactions 405 Error:** Fixed trailing slash routing issue in GET endpoint.
+- [x] **Mixed Content Error:** Fixed HTTP redirection loop via `ProxyHeadersMiddleware` and frontend path updates.
+- [x] **achievements 404:** Corrected API path mismatch between frontend and backend.
+- [x] **Achievements Logic:** Restored full 8-category implementation after accidental regression.
 
 
