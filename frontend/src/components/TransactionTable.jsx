@@ -10,7 +10,7 @@ export default function TransactionTable({ params = {} }) {
     const { data, isLoading } = useQuery({
         queryKey: ['transactions', params, page],
         queryFn: async () => {
-            const res = await api.get('/transactions', {
+            const res = await api.get('/transactions/', {
                 params: {
                     ...params,
                     skip: page * limit,

@@ -14,7 +14,7 @@ export default function OnboardingWizard() {
     // Check if we should show the wizard
     const { data: transactions } = useQuery({
         queryKey: ['transactions', 'check-new'],
-        queryFn: async () => (await api.get('/transactions', { params: { limit: 1 } })).data,
+        queryFn: async () => (await api.get('/transactions/', { params: { limit: 1 } })).data,
         staleTime: 60000
     });
 

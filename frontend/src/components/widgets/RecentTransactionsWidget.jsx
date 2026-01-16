@@ -18,7 +18,7 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
         queryKey: ['recentTransactions', startDate, endDate],
         queryFn: async () => {
             console.log("RecentTransactions Request:", { startDate, sort_by: 'date', sort_order: 'desc' });
-            const res = await api.get('/transactions', {
+            const res = await api.get('/transactions/', {
                 params: {
                     start_date: startDate,
                     sort_by: 'date',

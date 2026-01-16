@@ -45,7 +45,7 @@ export default function AchievementsTab() {
     const { data, isLoading, error } = useQuery({
         queryKey: ['achievements'],
         queryFn: async () => {
-            const res = await api.get('/achievements');
+            const res = await api.get('/achievements/summary');
             return res.data;
         }
     });
