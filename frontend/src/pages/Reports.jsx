@@ -775,11 +775,8 @@ export default function Reports() {
                             <div className="space-y-2">
                                 {forecastResult.income_breakdown.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center py-2 border-b border-border/50">
-                                        <div>
-                                            <p className="text-sm text-text-primary">{item.name}</p>
-                                            <p className="text-xs text-text-secondary">{item.frequency}</p>
-                                        </div>
-                                        <p className="text-sm font-semibold text-emerald-600">+{formatCurrency(item.monthly_equivalent)}/mo</p>
+                                        <p className="text-sm text-text-primary">{item.name}</p>
+                                        <p className="text-sm font-semibold text-emerald-600">+{formatCurrency(item.monthly_budget)}/mo</p>
                                     </div>
                                 ))}
                             </div>

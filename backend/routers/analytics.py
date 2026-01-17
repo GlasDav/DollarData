@@ -2453,41 +2453,42 @@ def get_cash_flow_forecast(
     ]
     
     # =========================================================================
-    # 2. MONTHLY BUDGETED INCOME (from Subscriptions type='Income')
+    # 2. MONTHLY BUDGETED INCOME (from Budget Buckets with group='Income')
     # =========================================================================
-    income_subscriptions = db.query(models.Subscription).filter(
-        models.Subscription.user_id == user.id,
-        models.Subscription.type == "Income",
-        models.Subscription.is_active == True
+    income_buckets = db.query(models.BudgetBucket).filter(
+        models.BudgetBucket.user_id == user.id,
+        models.BudgetBucket.group == "Income",
+        models.BudgetBucket.is_hidden == False
     ).all()
     
     monthly_income = 0.0
     income_breakdown = []
     
-    for sub in income_subscriptions:
-        monthly_amount = abs(sub.amount) * _frequency_to_monthly_multiplier(sub.frequency)
-        monthly_income += monthly_amount
-        income_breakdown.append({
-            "name": sub.name,
-            "amount": round(sub.amount, 2),
-            "frequency": sub.frequency,
-            "monthly_equivalent": round(monthly_amount, 2)
-        })
+    for bucket in income_buckets:
+        if bucket.limits:
+            bucket_limit = sum(l.amount for l in bucket.limits)
+            if bucket_limit > 0:
+                monthly_income += bucket_limit
+                income_breakdown.append({
+                    "name": bucket.name,
+                    "monthly_budget": round(bucket_limit, 2)
+                })
     
     # =========================================================================
-    # 3. MONTHLY BUDGETED EXPENSES (from all Budget Buckets with limits)
+    # 3. MONTHLY BUDGETED EXPENSES (from Budget Buckets excluding Income/Transfer/Investment)
     # =========================================================================
-    all_buckets = db.query(models.BudgetBucket).filter(
+    expense_buckets = db.query(models.BudgetBucket).filter(
         models.BudgetBucket.user_id == user.id,
         models.BudgetBucket.is_hidden == False,
-        models.BudgetBucket.is_transfer == False,  # Exclude transfers
-        models.BudgetBucket.is_investment == False  # Exclude investments
+        models.BudgetBucket.is_transfer == False,
+        models.BudgetBucket.is_investment == False,
+        models.BudgetBucket.group != "Income"  # Exclude income buckets
     ).all()
     
     monthly_expenses = 0.0
     expense_breakdown = []
     
-    for bucket in all_buckets:
+    for bucket in expense_buckets:
         if bucket.limits:
             bucket_limit = sum(l.amount for l in bucket.limits)
             if bucket_limit > 0:
