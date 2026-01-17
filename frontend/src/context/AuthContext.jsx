@@ -78,12 +78,10 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const googleLogin = async () => {
-        const { data, error } = await supabase.auth.signInWithOAuth({
+    const googleLogin = async (idToken) => {
+        const { data, error } = await supabase.auth.signInWithIdToken({
             provider: 'google',
-            options: {
-                redirectTo: `${window.location.origin}` // Supabase handles session parsing on root load
-            }
+            token: idToken,
         });
         if (error) throw error;
         return data;
