@@ -4,12 +4,15 @@ import { Sparkles, DollarSign, Users, ArrowRight, Check, UploadCloud } from 'luc
 import { useNavigate } from 'react-router-dom';
 import api, { updateSettings, createMember } from '../services/api';
 import Button from './ui/Button';
+import { useTutorial } from '../context/TutorialContext';
+import { TOUR_IDS } from '../constants/tourSteps.jsx';
 
 export default function OnboardingWizard() {
     const [isOpen, setIsOpen] = useState(false);
     const [step, setStep] = useState(1);
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { startTour, isTourCompleted } = useTutorial();
 
     // Check if we should show the wizard
     const { data: transactions } = useQuery({
@@ -41,7 +44,14 @@ export default function OnboardingWizard() {
 
     const handleFinish = () => {
         handleClose();
-        navigate('/data-management');
+        // Navigate to Budget page and start the setup tour
+        navigate('/budget');
+        // Start the tour after a brief delay to allow Budget page to render
+        setTimeout(() => {
+            if (!isTourCompleted(TOUR_IDS.SETUP)) {
+                startTour(TOUR_IDS.SETUP);
+            }
+        }, 500);
     };
 
     if (!isOpen) return null;

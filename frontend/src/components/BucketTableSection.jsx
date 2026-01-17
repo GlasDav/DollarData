@@ -266,6 +266,7 @@ export default function BucketTableSection({
                 {/* Footer / Add Root Category */}
                 <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 flex-shrink-0">
                     <button
+                        data-tour="add-category-btn"
                         onClick={handleAddNew}
                         className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
                     >

@@ -517,7 +517,7 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
                 </p>
             </div>
 
-            <div id="add-rule-form" className="p-4 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div id="add-rule-form" data-tour="create-rule-btn" className="p-4 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Row 1: Keywords, Category, Priority */}
                     <div className="flex flex-wrap gap-4 items-end">

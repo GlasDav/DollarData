@@ -27,6 +27,9 @@ import BasiqCallback from './pages/BasiqCallback';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
+import { TutorialProvider, useTutorial } from './context/TutorialContext';
+import Joyride, { STATUS } from 'react-joyride';
+import { tourStepsMap, TOUR_IDS } from './constants/tourSteps.jsx';
 import { Navigate, Outlet } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -121,6 +124,23 @@ function Layout() {
   const { logout, user } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
   const location = useLocation();
+  const { activeTour, stepIndex, setStepIndex, completeTour, closeTour } = useTutorial();
+
+  // Get tour steps for active tour
+  const tourSteps = activeTour ? tourStepsMap[activeTour] || [] : [];
+
+  // Handle Joyride callbacks
+  const handleJoyrideCallback = (data) => {
+    const { status, index, type } = data;
+
+    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+      if (activeTour) {
+        completeTour(activeTour);
+      }
+    } else if (type === 'step:after') {
+      setStepIndex(index + 1);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark font-sans">
@@ -212,6 +232,43 @@ function Layout() {
 
       {/* AI ChatBot - Available on all pages */}
       <AIChatBot />
+
+      {/* Tutorial Joyride */}
+      <Joyride
+        steps={tourSteps}
+        stepIndex={stepIndex}
+        run={activeTour !== null}
+        continuous
+        showProgress
+        showSkipButton
+        callback={handleJoyrideCallback}
+        styles={{
+          options: {
+            primaryColor: '#5D5DFF',
+            zIndex: 10000,
+          },
+          tooltip: {
+            borderRadius: '12px',
+            padding: '16px',
+          },
+          buttonNext: {
+            borderRadius: '8px',
+          },
+          buttonBack: {
+            borderRadius: '8px',
+          },
+          buttonSkip: {
+            borderRadius: '8px',
+          },
+        }}
+        locale={{
+          back: 'Back',
+          close: 'Close',
+          last: 'Finish',
+          next: 'Next',
+          skip: 'Skip Tour',
+        }}
+      />
     </div>
   );
 }
@@ -222,39 +279,41 @@ function App() {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <Router>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/basiq-callback" element={<BasiqCallback />} />
-                <Route path="/" element={<LandingPage />} />
+            <TutorialProvider>
+              <Router>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/basiq-callback" element={<BasiqCallback />} />
+                  <Route path="/" element={<LandingPage />} />
 
-                {/* Protected Routes */}
-                <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/transactions" element={<TransactionsHub />} />
-                  <Route path="/budget" element={<Budget />} />
-                  <Route path="/net-worth" element={<NetWorth />} />
-                  <Route path="/investments" element={<Navigate to="/net-worth" replace />} />
-                  <Route path="/goals" element={<Goals />} />
-                  <Route path="/reports" element={<ReportsHub />} />
-                  <Route path="/settings" element={<Settings />} />
-                  {/* Legacy routes - redirect to consolidated pages */}
-                  <Route path="/subscriptions" element={<Subscriptions />} />
-                  <Route path="/review" element={<TransactionsHub />} />
-                  <Route path="/calendar" element={<ReportsHub />} />
-                  <Route path="/insights" element={<ReportsHub />} />
-                  <Route path="/data-management" element={<DataManagement />} />
-                  <Route path="/tools" element={<Settings />} />
+                  {/* Protected Routes */}
+                  <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/transactions" element={<TransactionsHub />} />
+                    <Route path="/budget" element={<Budget />} />
+                    <Route path="/net-worth" element={<NetWorth />} />
+                    <Route path="/investments" element={<Navigate to="/net-worth" replace />} />
+                    <Route path="/goals" element={<Goals />} />
+                    <Route path="/reports" element={<ReportsHub />} />
+                    <Route path="/settings" element={<Settings />} />
+                    {/* Legacy routes - redirect to consolidated pages */}
+                    <Route path="/subscriptions" element={<Subscriptions />} />
+                    <Route path="/review" element={<TransactionsHub />} />
+                    <Route path="/calendar" element={<ReportsHub />} />
+                    <Route path="/insights" element={<ReportsHub />} />
+                    <Route path="/data-management" element={<DataManagement />} />
+                    <Route path="/tools" element={<Settings />} />
 
-                </Route>
-              </Routes>
-            </Router>
+                  </Route>
+                </Routes>
+              </Router>
+            </TutorialProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
