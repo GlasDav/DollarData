@@ -19,8 +19,8 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Monthly Expense Breakdown:** Clickable monthly totals to drill down into expense specifics.
 - [ ] **Professional Exports:** High-quality PDF/Excel reports suitable for sharing with accountants/banks.
   - [x] Initial PDF implementation (Tables, Charts, Branding)
-  - [ ] **Fix:** Refine PDF layout (Legend overlap, Logo positioning)
-  - [ ] **Fix:** Remove "Investments" line from top section
+  - [x] **Fix:** Refine PDF layout (Legend overlap, Logo positioning, Donut Charts)
+  - [x] **Fix:** Remove "Investments" line from top section
   - [x] Initial Excel implementation
 - [ ] **Cash Flow Forecast Overhaul:** Improve forecasting methodology using budget categories for better accuracy.
 

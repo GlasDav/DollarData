@@ -615,7 +615,19 @@ docker compose exec backend python /app/seed_demo_user.py
 
 ### **Achievements Logic Restoration (Jan 2026)**
 - **Restored Logic:** Reverted accidental regression where `backend/routers/achievements.py` was replaced with a mock.
+- **Restored Logic:** Reverted accidental regression where `backend/routers/achievements.py` was replaced with a mock.
 - **Verification:** Audited critical routers (`transactions.py`, `goals.py`) to confirm they remained intact.
+
+### **PDF Export Polish (Jan 2026)**
+- **500 Error Fix:** Resolved crash when generating reports with no data or `Decimal` values.
+  - Implemented `float` casting for all chart values.
+  - Added robust handling for empty datasets (returning "No Data" placeholder).
+  - Fixed `AttributeError` by replacing invalid `innerRadius` property with white circle overlay for Donut Charts.
+- **Layout & Style:**
+  - Optimized table widths to fit strictly within A4 printable area (preventing `LayoutError`).
+  - Enhanced aesthetics: Larger logo, increased header spacing, cleaner legend with white separators.
+  - Wrapped generation logic in `try/except` to return descriptive 500 error details to frontend.
+- **Files:** `backend/routers/export.py`.
 ---
 
 *Generated for AI context. Do not commit to version control.*
