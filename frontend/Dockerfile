@@ -18,8 +18,8 @@ ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 # Copy package files
 COPY frontend/package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (--legacy-peer-deps for React 19 compatibility with react-joyride)
+RUN npm ci --legacy-peer-deps
 
 # Copy source and build
 COPY frontend/ .
