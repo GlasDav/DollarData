@@ -131,7 +131,7 @@ def export_report_pdf(
 ):
     """
     Generate a professional PDF financial report.
-    Includes: Vector Logo, summary statistics, 
+    Includes: PNG Logo, summary statistics, 
     expense donut chart, income donut chart, category breakdown tables.
     Excludes transfers. Fits on single page (or two if needed).
     """
@@ -139,30 +139,34 @@ def export_report_pdf(
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch, cm
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-    from reportlab.graphics.shapes import Drawing, String, Circle, Group, Path
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as ReportLabImage
+    from reportlab.graphics.shapes import Drawing
     from reportlab.graphics.charts.piecharts import Pie
-    from .logo_data import LOGO_PATH
     import io
     import os
     
     # Brand colors
-    BRAND_PRIMARY = colors.HexColor('#5D5DFF')
-    BRAND_SUCCESS = colors.HexColor('#10b981')
-    BRAND_ERROR = colors.HexColor('#ef4444')
+    BRAND_PRIMARY = colors.HexColor('#5D5DFF')  # Electric Indigo
+    BRAND_SUCCESS = colors.HexColor('#34D399')  # Emerald
+    BRAND_WARNING = colors.HexColor('#FB923C')  # Orange
+    BRAND_ERROR = colors.HexColor('#EF4444')    # Red
     TEXT_PRIMARY = colors.HexColor('#191B18')
     TEXT_MUTED = colors.HexColor('#666666')
+    BACKGROUND_SURFACE = colors.HexColor('#F8FAFC')
+    BORDER_COLOR = colors.HexColor('#E2E8F0')
     
-    # Chart colors (standard palette for BOTH charts)
+    # Chart colors (Brand Palette + Distinct additions)
     CHART_COLORS = [
-        colors.HexColor('#f59e0b'),  # Amber
-        colors.HexColor('#06b6d4'),  # Cyan
-        colors.HexColor('#6366f1'),  # Indigo
-        colors.HexColor('#10b981'),  # Emerald
-        colors.HexColor('#ec4899'),  # Pink
-        colors.HexColor('#84cc16'),  # Lime
-        colors.HexColor('#8b5cf6'),  # Violet
-        colors.HexColor('#ef4444'),  # Red
+        BRAND_PRIMARY,    # #5D5DFF
+        BRAND_SUCCESS,    # #34D399
+        BRAND_WARNING,    # #FB923C
+        BRAND_ERROR,      # #EF4444
+        colors.HexColor('#8B5CF6'),  # Violet
+        colors.HexColor('#EC4899'),  # Pink
+        colors.HexColor('#06B6D4'),  # Cyan
+        colors.HexColor('#F59E0B'),  # Amber
+        colors.HexColor('#6366F1'),  # Indigo-500
+        colors.HexColor('#10B981'),  # Emerald-500
     ]
     
     try:
@@ -180,7 +184,7 @@ def export_report_pdf(
         models.Transaction.date <= e_date
     )
     
-    # Exclude transfers (bucket name contains "transfer" case-insensitive)
+    # Exclude transfers
     transactions = transactions.filter(
         ~models.BudgetBucket.name.ilike('%transfer%')
     )
@@ -190,7 +194,7 @@ def export_report_pdf(
     
     transactions = transactions.all()
     
-    # === PROCESS DATA (Separate Investments) ===
+    # === PROCESS DATA ===
     total_income = 0
     total_expenses = 0
     total_invested = 0
@@ -215,90 +219,58 @@ def export_report_pdf(
                 total_expenses += abs_amount
                 expense_categories[cat_name] = expense_categories.get(cat_name, 0) + abs_amount
                 
-    # Net Savings = Income - Expenses (excluding investments from expenses)
     net_savings = total_income - total_expenses
-    
-    # Savings Rate = Net Savings / Income (Investments are part of savings)
     savings_rate = (net_savings / total_income * 100) if total_income > 0 else 0
     
     # Create PDF
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1.0*cm, bottomMargin=1*cm, leftMargin=2*cm, rightMargin=2*cm)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*cm, bottomMargin=0.8*cm, leftMargin=1.5*cm, rightMargin=1.5*cm)
     styles = getSampleStyleSheet()
     
     # Custom styles
-    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=22, spaceAfter=5, textColor=TEXT_PRIMARY)
-    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=11, textColor=TEXT_MUTED)
-    section_style = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=14, spaceBefore=15, spaceAfter=8, textColor=BRAND_PRIMARY)
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=24, spaceAfter=2, textColor=TEXT_PRIMARY, alignment=0) # Left Align
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=10, textColor=TEXT_MUTED, alignment=0)
+    section_style = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=16, spaceBefore=20, spaceAfter=12, textColor=BRAND_PRIMARY)
     
     elements = []
     
-    # === DRAW VECTOR LOGO ===
-    def get_vector_logo():
-        """Draws exact logo from SVG path"""
-        d = Drawing(40, 40)
-        
-        # Determine scale and translation based on viewbox 317 311 400 400
-        # Target size 40x40. Scale = 0.1
-        # Flip Y because SVG is top-down, ReportLab is bottom-up? 
-        # Actually simplest to just scale and translate.
-        
-        g = Group(Path(d=LOGO_PATH, fillColor=BRAND_PRIMARY, strokeColor=None))
-        
-        # Transform: Scale 0.1, Translate to origin
-        # Note: SVG Y coordinates go DOWN. PDF Y coordinates go UP.
-        # We likely need to flip Y and translate up.
-        # Let's try uniform scaling first.
-        g.translate(-317 * 0.1, -311 * 0.1) # Shift to 0,0 locally
-        g.scale(0.1, 0.1)
-        # Flip Y to correct orientation if needed (assuming SVG coords)
-        # For now, let's assume standard orientation preserves.
-        
-        # Center in drawing?
-        g.translate(0, 40) # Move down if it was flipped...
-        g.scale(1, -1) # Flip Y axis to match SVG top-down logic ??
-        # Actually, let's just create a Group and transform it.
-        # SVG 0,0 is top-left. PDF 0,0 is bottom-left.
-        # We need to Scale(0.1, -0.1) and Translate(0, 40) to flip it into the 40x40 box.
-        
-        final_g = Group(g)
-        final_g.translate(0, 40)
-        final_g.scale(1, -1)
-        
-        d.add(final_g)
-        return d
+    # === HEADER: Logo + Title (Left Aligned) ===
+    # Attempt to load logo from backend/assets/logo.png
+    logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "logo.png")
     
-    # Logo fallback (if path fails/looks wrong, using simple circle)
-    # BUT user insisted on actual logo. I'll use the path.
-    # To be safe, let's wrap in Try/Except
-    try:
-        logo_drawing = get_vector_logo()
-    except:
-        # Fallback to circle
-        d = Drawing(40, 40)
-        d.add(Circle(20, 20, 20, fillColor=BRAND_PRIMARY, strokeColor=None))
-        d.add(String(20, 13, "DD", textAnchor="middle", fontSize=18, fontName="Helvetica-Bold", fillColor=colors.white))
-        logo_drawing = d
-
-    # === Header ===
-    header_data = [[logo_drawing, Paragraph("DollarData Financial Report", title_style)]]
-    header_table = Table(header_data, colWidths=[0.7*inch, 5*inch])
-    header_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (0, 0), 0),
-    ]))
-    elements.append(header_table)
+    logo_img = None
+    if os.path.exists(logo_path):
+        try:
+             # Resize constraint: fit within width=2.5inch, height=0.8inch (aspect ratio preserved)
+            logo_img = ReportLabImage(logo_path, width=2.0*inch, height=0.6*inch, kind='proportional')
+            logo_img.hAlign = 'LEFT'
+        except Exception as e:
+            print(f"Error loading logo: {e}")
+            pass
     
-    elements.append(Paragraph(
-        f"Period: {s_date.strftime('%B %d, %Y')} to {e_date.strftime('%B %d, %Y')}",
-        subtitle_style
-    ))
+    # Title Block
+    title_text = "DollarData Financial Report"
+    period_text = f"Period: {s_date.strftime('%B %d, %Y')} to {e_date.strftime('%B %d, %Y')}"
+    generated_text = f"Generated: {datetime.now().strftime('%B %d, %Y')}"
+    
+    # Create a table for the header to position Logo and Title nicely
+    # Row 1: Logo
+    # Row 2: Title
+    # Row 3: Metadata
+    
+    if logo_img:
+         elements.append(logo_img)
+         elements.append(Spacer(1, 0.1*inch))
+         
+    elements.append(Paragraph(title_text, title_style))
+    elements.append(Paragraph(period_text, subtitle_style))
     if spender != "Combined":
         elements.append(Paragraph(f"Spender: {spender}", subtitle_style))
-    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", subtitle_style))
-    elements.append(Spacer(1, 0.2*inch))
+    elements.append(Paragraph(generated_text, subtitle_style))
     
-    # === Summary Section ===
+    elements.append(Spacer(1, 0.4*inch))
+    
+    # === Financial Summary ===
     elements.append(Paragraph("Financial Summary", section_style))
     
     summary_data = [
@@ -306,15 +278,17 @@ def export_report_pdf(
         ["Total Expenses", f"${total_expenses:,.2f}", "Investments", f"${total_invested:,.2f}"],
         ["", "", "Savings Rate", f"{savings_rate:.1f}%"]
     ]
-    summary_table = Table(summary_data, colWidths=[1.8*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+    
+    # Wider summary table for cleaner look
+    summary_table = Table(summary_data, colWidths=[2.0*inch, 1.8*inch, 2.0*inch, 1.8*inch])
     summary_table.setStyle(TableStyle([
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 11),
-        ('TEXTCOLOR', (0, 0), (0, -1), TEXT_MUTED),
-        ('TEXTCOLOR', (2, 0), (2, -1), TEXT_MUTED),
+        ('TEXTCOLOR', (0, 0), (0, -1), TEXT_MUTED), # Labels
+        ('TEXTCOLOR', (2, 0), (2, -1), TEXT_MUTED), # Labels col 3
         
-        ('TEXTCOLOR', (1, 0), (1, 0), BRAND_SUCCESS),  # Income
-        ('TEXTCOLOR', (1, 1), (1, 1), BRAND_ERROR),    # Expenses
+        ('TEXTCOLOR', (1, 0), (1, 0), BRAND_SUCCESS),  # Income Value
+        ('TEXTCOLOR', (1, 1), (1, 1), BRAND_ERROR),    # Expenses Value
         ('TEXTCOLOR', (3, 0), (3, 0), BRAND_SUCCESS if net_savings >= 0 else BRAND_ERROR), # Net Savings
         ('TEXTCOLOR', (3, 1), (3, 1), BRAND_PRIMARY),  # Investments
         ('TEXTCOLOR', (3, 2), (3, 2), BRAND_PRIMARY),  # Rate
@@ -325,32 +299,37 @@ def export_report_pdf(
         ('ALIGN', (1, 0), (1, -1), 'LEFT'),
         ('ALIGN', (3, 0), (3, -1), 'LEFT'),
         
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
-        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ('BACKGROUND', (0, 0), (-1, -1), BACKGROUND_SURFACE),
+        ('BOX', (0, 0), (-1, -1), 1, BORDER_COLOR),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     elements.append(summary_table)
-    elements.append(Spacer(1, 0.2*inch))
+    elements.append(Spacer(1, 0.4*inch))
     
-    # === Charts Section ===
+    # === Breakdown Charts (VERTICAL STACK) ===
+    # Row 1: Title "Spending Breakdown" | "Income Breakdown"
+    # Row 2: Pie Charts
+    # Row 3: Legends (below charts)
+    
     elements.append(Paragraph("Spending & Income Breakdown", section_style))
     
-    # Prepare data
+    # Sort data
     exp_sorted = sorted(expense_categories.items(), key=lambda x: x[1], reverse=True)[:6]
     inc_sorted = sorted(income_categories.items(), key=lambda x: x[1], reverse=True)[:6]
     
     exp_values = [x[1] for x in exp_sorted]
     inc_values = [x[1] for x in inc_sorted]
     
-    def create_pie_drawing(values, colors_list, width=150, height=150):
+    def create_pie_drawing(values, colors_list, width=160, height=160):
         if not values: return None
         d = Drawing(width, height)
         pie = Pie()
-        pie.x = 0
-        pie.y = 10
-        pie.width = width
-        pie.height = height - 20
+        pie.x = 15 # Center X
+        pie.y = 15 # Center Y
+        pie.width = width - 30
+        pie.height = height - 30
         pie.data = values
         pie.labels = None
         pie.slices.strokeWidth = 1
@@ -360,151 +339,139 @@ def export_report_pdf(
         d.add(pie)
         return d
     
-    # Vary colors for Income chart too (shift standard palette)
+    # Shift colors for income so it doesn't look identical if proportions are similar
     inc_colors = CHART_COLORS[3:] + CHART_COLORS[:3]
     
     exp_drawing = create_pie_drawing(exp_values, CHART_COLORS)
     inc_drawing = create_pie_drawing(inc_values, inc_colors)
-    
-    # Create Legend Tables
-    def create_legend_table(sorted_items, color_palette):
-        if not sorted_items: return None
-        l_data = []
+
+    # Legends (Below charts)
+    def create_legend_paragraph(sorted_items, color_palette):
+        if not sorted_items: return Paragraph("No data", subtitle_style)
+        
+        legend_items = []
         total = sum([x[1] for x in sorted_items])
+        
+        # Create a mini table for the legend to ensure alignment
+        # Format: [ColorBox] Name (XX%)
+        l_data = []
         for i, (label, value) in enumerate(sorted_items):
             color = color_palette[i % len(color_palette)]
             pct = (value/total*100) if total > 0 else 0
-            label_trunc = (label[:18] + '..') if len(label) > 18 else label
+            label_trunc = (label[:20] + '..') if len(label) > 20 else label
+            
+            # Using Paragraph with embedded color square might be hard.
+            # Table is reliable.
             l_data.append(["", f"{label_trunc} ({pct:.0f}%)"])
             
-        t = Table(l_data, colWidths=[0.2*inch, 2.0*inch]) # Wider column for text
+        t = Table(l_data, colWidths=[0.3*inch, 2.8*inch])
         styles_list = [
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('TEXTCOLOR', (0, 0), (-1, -1), TEXT_MUTED),
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('RIGHTPADDING', (0,0), (-1,-1), 0),
         ]
         for i in range(len(l_data)):
             color = color_palette[i % len(color_palette)]
             styles_list.append(('BACKGROUND', (0, i), (0, i), color))
-            styles_list.append(('BOTTOMPADDING', (0, i), (-1, i), 2))
-            styles_list.append(('TOPPADDING', (0, i), (-1, i), 2))
+            # Small spacer between rows?
+            styles_list.append(('BOTTOMPADDING', (0, i), (-1, i), 3))
+            styles_list.append(('TOPPADDING', (0, i), (-1, i), 3))
+            
         t.setStyle(TableStyle(styles_list))
         return t
 
-    exp_legend = create_legend_table(exp_sorted, CHART_COLORS)
-    inc_legend = create_legend_table(inc_sorted, inc_colors)
+    exp_legend = create_legend_paragraph(exp_sorted, CHART_COLORS)
+    inc_legend = create_legend_paragraph(inc_sorted, inc_colors)
     
-    # Chart Rows - Side by side chart+legend groups
-    # Layout: [ Chart | Legend ]
+    # Layout Table
+    # Col 1: Expense Chart + Legend
+    # Col 2: Income Chart + Legend
+    # We will nest them.
     
-    if exp_drawing or inc_drawing:
-        # Expenses Group
-        exp_cell = Table([[exp_drawing if exp_drawing else "", exp_legend if exp_legend else ""]], 
-                        colWidths=[2.2*inch, 2.3*inch])
-        exp_cell.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
-        
-        # Income Group
-        inc_cell = Table([[inc_drawing if inc_drawing else "", inc_legend if inc_legend else ""]], 
-                        colWidths=[2.2*inch, 2.3*inch])
-        inc_cell.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
-        
-        # Main container tables for titles
-        exp_container = Table([[Paragraph("Expenses", subtitle_style)], [exp_cell]], colWidths=[4.5*inch])
-        inc_container = Table([[Paragraph("Income", subtitle_style)], [inc_cell]], colWidths=[4.5*inch])
-        
-        # Add to elements - Stacked vertically if needed for space, or side-by-side?
-        # A4 is 8.3 inch wide. 4.5+4.5 = 9. Too wide.
-        # Must stack them or make them smaller.
-        # User wants "Fits on single page".
-        # Stacked is safer for readability if tables are present.
-        # With layout [Chart][Legend], width is ~4.5 inch.
-        # We can put Expenses and Income side-by-side if we reduce width.
-        # Chart 1.5 inch, Legend 1.8 inch -> 3.3 inch. 
-        # 3.3 * 2 = 6.6 inch. Fits.
-        
-        # Reduced width groups
-        exp_cell_sm = Table([[exp_drawing if exp_drawing else "", exp_legend if exp_legend else ""]], 
-                           colWidths=[1.6*inch, 2.0*inch]) # Total 3.6 inch
-        exp_cell_sm.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
-        
-        inc_cell_sm = Table([[inc_drawing if inc_drawing else "", inc_legend if inc_legend else ""]], 
-                           colWidths=[1.6*inch, 2.0*inch]) # Total 3.6 inch
-        inc_cell_sm.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
-        
-        main_charts = Table([
-            [Paragraph("Expenses", subtitle_style), Paragraph("Income", subtitle_style)],
-            [exp_cell_sm, inc_cell_sm]
-        ], colWidths=[3.7*inch, 3.7*inch])
-        
-        main_charts.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'), # Center align content
-        ]))
-        elements.append(main_charts)
+    # Column 1 Content
+    c1_elements = []
+    c1_elements.append(Paragraph("Expenses", subtitle_style))
+    if exp_drawing:
+        c1_elements.append(exp_drawing)
+        c1_elements.append(Spacer(1, 0.1*inch))
+        c1_elements.append(exp_legend)
     
-    elements.append(Spacer(1, 0.2*inch))
+    # Column 2 Content
+    c2_elements = []
+    c2_elements.append(Paragraph("Income", subtitle_style))
+    if inc_drawing:
+        c2_elements.append(inc_drawing)
+        c2_elements.append(Spacer(1, 0.1*inch))
+        c2_elements.append(inc_legend)
+
+    # We need to render these into a Table because ReportLab flowables don't float
+    # But passing a list of flowables into a Table cell works.
     
-    # === Category Breakdown Tables (RESTORED) ===
-    # Expense categories table
-    exp_full_sorted = sorted(expense_categories.items(), key=lambda x: x[1], reverse=True)[:8]
-    inc_full_sorted = sorted(income_categories.items(), key=lambda x: x[1], reverse=True)[:8]
+    chart_layout_data = [[c1_elements, c2_elements]]
+    chart_table = Table(chart_layout_data, colWidths=[3.6*inch, 3.6*inch])
+    chart_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
     
-    # Build expense column
+    elements.append(chart_table)
+    elements.append(Spacer(1, 0.4*inch))
+    
+    # === Detailed Breakdown Tables ===
+    # UNIFIED BRAND COLOR HEADER
+    
+    exp_full_sorted = sorted(expense_categories.items(), key=lambda x: x[1], reverse=True)[:10]
+    inc_full_sorted = sorted(income_categories.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Build expense data
     exp_data = [["Category", "Amount", "%"]]
     for cat_name, amount in exp_full_sorted:
         pct = (amount / total_expenses * 100) if total_expenses > 0 else 0
-        exp_data.append([cat_name[:20], f"${amount:,.0f}", f"{pct:.0f}%"])
+        exp_data.append([cat_name[:25], f"${amount:,.0f}", f"{pct:.0f}%"])
     
-    # Build income column  
+    # Build income data
     inc_data = [["Category", "Amount", "%"]]
     for cat_name, amount in inc_full_sorted:
         pct = (amount / total_income * 100) if total_income > 0 else 0
-        inc_data.append([cat_name[:20], f"${amount:,.0f}", f"{pct:.0f}%"])
+        inc_data.append([cat_name[:25], f"${amount:,.0f}", f"{pct:.0f}%"])
+        
+    # Pad
+    while len(exp_data) < len(inc_data): exp_data.append(["", "", ""])
+    while len(inc_data) < len(exp_data): inc_data.append(["", "", ""])
     
-    # Pad to same length
-    while len(exp_data) < len(inc_data):
-        exp_data.append(["", "", ""])
-    while len(inc_data) < len(exp_data):
-        inc_data.append(["", "", ""])
-    
-    exp_table = Table(exp_data, colWidths=[1.6*inch, 0.8*inch, 0.5*inch])
-    exp_table.setStyle(TableStyle([
+    # Common Table Style
+    common_ts = [
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BACKGROUND', (0, 0), (-1, 0), BRAND_ERROR),
+        ('BACKGROUND', (0, 0), (-1, 0), BRAND_PRIMARY), # Unified Header Color
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-    ]))
+        ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, BACKGROUND_SURFACE]), # Zebra striping
+    ]
     
-    inc_table = Table(inc_data, colWidths=[1.6*inch, 0.8*inch, 0.5*inch])
-    inc_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BACKGROUND', (0, 0), (-1, 0), BRAND_SUCCESS),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-    ]))
+    exp_table = Table(exp_data, colWidths=[2.0*inch, 1.0*inch, 0.6*inch])
+    exp_table.setStyle(TableStyle(common_ts))
     
-    # Side by side data tables
-    tables_data = [[exp_table, Spacer(0.2*inch, 0), inc_table]]
-    tables_layout = Table(tables_data, colWidths=[3*inch, 0.3*inch, 3*inch])
-    tables_layout.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
+    inc_table = Table(inc_data, colWidths=[2.0*inch, 1.0*inch, 0.6*inch])
+    inc_table.setStyle(TableStyle(common_ts))
+    
+    # Place tables side-by-side
+    tables_layout = Table([[exp_table, Spacer(0.4*inch, 0), inc_table]], colWidths=[3.6*inch, 0.4*inch, 3.6*inch])
+    tables_layout.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+    
     elements.append(tables_layout)
     
-    # === Footer ===
-    elements.append(Spacer(1, 0.4*inch))
+    # Footer
+    elements.append(Spacer(1, 0.5*inch))
     footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=TEXT_MUTED, alignment=1)
     elements.append(Paragraph("Generated by DollarData • dollardata.au", footer_style))
     
-    # Build PDF
     doc.build(elements)
     buffer.seek(0)
     
