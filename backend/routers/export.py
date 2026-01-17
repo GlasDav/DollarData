@@ -234,7 +234,7 @@ def export_report_pdf(
     # Blue Bar Section Header Style
     def get_section_header_table(text):
         p = Paragraph(text, ParagraphStyle('SectionHeader', parent=styles['Normal'], fontSize=12, textColor=WHITE, fontName='Helvetica-Bold'))
-        t = Table([[p]], colWidths=[7.5*inch]) # Full width
+        t = Table([[p]], colWidths=[7.3*inch]) # SAFE WIDTH
         t.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,-1), BRAND_PRIMARY),
             ('LEFTPADDING', (0,0), (-1,-1), 10),
@@ -270,7 +270,8 @@ def export_report_pdf(
     meta_elements.append(Paragraph(generated_text, subtitle_style))
     
     # Header Table: Logo Left | Meta Right
-    header_table = Table([[logo_img if logo_img else "", meta_elements]], colWidths=[3.5*inch, 4.0*inch])
+    # Reduced to 7.3 total
+    header_table = Table([[logo_img if logo_img else "", meta_elements]], colWidths=[3.5*inch, 3.8*inch])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -294,7 +295,8 @@ def export_report_pdf(
         create_stat_box("Savings Rate", f"{savings_rate:.1f}%", BRAND_PRIMARY)
     ]]
     
-    stats_table = Table(stats_data, colWidths=[1.9*inch]*4)
+    # Reduced to 7.2 total (1.8 * 4) to be very safe
+    stats_table = Table(stats_data, colWidths=[1.8*inch]*4)
     stats_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('BOX', (0,0), (0,0), 0.5, BORDER_COLOR),
@@ -321,7 +323,7 @@ def export_report_pdf(
     exp_values = [x[1] for x in exp_sorted]
     inc_values = [x[1] for x in inc_sorted]
     
-    def create_donut_drawing(values, colors_list, width=140, height=140):
+    def create_donut_drawing(values, colors_list, width=125, height=125):
         if not values: return None
         d = Drawing(width, height)
         pie = Pie()
@@ -354,7 +356,7 @@ def export_report_pdf(
             label_trunc = (label[:15] + '.') if len(label) > 15 else label
             l_data.append(["", f"{label_trunc}", f"{pct:.0f}%"])
             
-        t = Table(l_data, colWidths=[0.15*inch, 1.3*inch, 0.4*inch])
+        t = Table(l_data, colWidths=[0.15*inch, 1.15*inch, 0.4*inch])
         styles_list = [
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTSIZE', (0, 0), (-1, -1), 8),
@@ -387,17 +389,17 @@ def export_report_pdf(
         content = [
             [drawing, legend]
         ]
-        t = Table(content, colWidths=[2.0*inch, 2.0*inch])
+        t = Table(content, colWidths=[1.8*inch, 1.8*inch])
         t.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
         
-        container = Table([[Paragraph(title, subtitle_style)], [t]], colWidths=[3.8*inch])
+        container = Table([[Paragraph(title, subtitle_style)], [t]], colWidths=[3.6*inch])
         container.setStyle(TableStyle([('LEFTPADDING', (0,0), (-1,-1), 0)]))
         return container
         
     exp_group = create_chart_group("Expenses Breakdown", exp_drawing, exp_legend_side)
     inc_group = create_chart_group("Income Breakdown", inc_drawing, inc_legend_side)
     
-    main_charts = Table([[exp_group, inc_group]], colWidths=[3.75*inch, 3.75*inch])
+    main_charts = Table([[exp_group, inc_group]], colWidths=[3.65*inch, 3.65*inch])
     main_charts.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
     
     elements.append(main_charts)
