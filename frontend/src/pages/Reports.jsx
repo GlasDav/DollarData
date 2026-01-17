@@ -681,7 +681,7 @@ export default function Reports() {
                             </div>
                             <div className="text-right">
                                 <p className="text-xs text-text-secondary uppercase tracking-wider">Net Monthly</p>
-                                <p className={`text-xl font-bold ${(forecastResult?.net_monthly || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                <p className={`text-xl font-bold ${(forecastResult?.net_monthly || 0) >= 0 ? 'text-accent-success' : 'text-accent-error'}`}>
                                     {(forecastResult?.net_monthly || 0) >= 0 ? '+' : ''}{formatCurrency(forecastResult?.net_monthly || 0)}
                                 </p>
                             </div>
@@ -693,7 +693,7 @@ export default function Reports() {
                 <div className="grid grid-cols-3 gap-4 p-6 border-b border-border bg-surface">
                     <div className="text-center">
                         <p className="text-xs text-text-secondary uppercase tracking-wide">Monthly Income</p>
-                        <p className="text-lg font-bold text-emerald-600 mt-1">
+                        <p className="text-lg font-bold text-accent-success mt-1">
                             +{formatCurrency(forecastResult?.monthly_income || 0)}
                         </p>
                     </div>
@@ -728,16 +728,16 @@ export default function Reports() {
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={cashFlowData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
                                 <XAxis
                                     dataKey="label"
-                                    stroke="#94A3B8"
+                                    className="fill-text-secondary"
                                     fontSize={11}
                                     tickLine={false}
                                     axisLine={false}
                                 />
                                 <YAxis
-                                    stroke="#94A3B8"
+                                    className="fill-text-secondary"
                                     fontSize={11}
                                     tickLine={false}
                                     axisLine={false}
@@ -750,17 +750,17 @@ export default function Reports() {
                                     contentStyle={{
                                         borderRadius: '12px',
                                         border: 'none',
-                                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                                        backgroundColor: 'rgba(30, 41, 59, 0.95)'
+                                        boxShadow: 'var(--shadow-card)',
+                                        backgroundColor: 'var(--color-card-dark)'
                                     }}
-                                    labelStyle={{ color: '#94A3B8' }}
+                                    labelStyle={{ color: 'var(--color-text-muted-dark)' }}
                                     formatter={(val, name) => {
                                         if (name === 'balance') return [formatCurrency(val), "Balance"];
                                         return [formatCurrency(val), name];
                                     }}
                                 />
-                                <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" />
-                                <Bar dataKey="balance" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                                <ReferenceLine y={0} stroke="var(--color-accent-error)" strokeDasharray="3 3" />
+                                <Bar dataKey="balance" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -776,7 +776,7 @@ export default function Reports() {
                                 {forecastResult.income_breakdown.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center py-2 border-b border-border/50">
                                         <p className="text-sm text-text-primary">{item.name}</p>
-                                        <p className="text-sm font-semibold text-emerald-600">+{formatCurrency(item.monthly_budget)}/mo</p>
+                                        <p className="text-sm font-semibold text-accent-success">+{formatCurrency(item.monthly_budget)}/mo</p>
                                     </div>
                                 ))}
                             </div>

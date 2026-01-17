@@ -2499,6 +2499,9 @@ def get_cash_flow_forecast(
                     "monthly_budget": round(bucket_limit, 2)
                 })
     
+    # Sort expense breakdown by monthly_budget (largest first)
+    expense_breakdown.sort(key=lambda x: x["monthly_budget"], reverse=True)
+    
     # =========================================================================
     # 4. NET MONTHLY CASH FLOW
     # =========================================================================
