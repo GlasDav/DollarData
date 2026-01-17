@@ -9,7 +9,11 @@ This document outlines the planned features, improvements, and future direction 
 ## 💸 Transactions & Integrations
 
 - [ ] **Transaction Notes:** Add ability to annotate transactions with custom notes (pending Basiq integration).
-- [ ] **Basiq Integration:** Full bank feed integration for automatic transaction import.
+- [/] **Basiq Integration:** Full bank feed integration for automatic transaction import.
+  - [x] Research existing implementation and create implementation plan
+  - [ ] Create shared ingestion utilities (`ingestion_utils.py`)
+  - [ ] Update `connections.py` with full ingestion pipeline
+  - [ ] Add Open Banking filter to `ConnectBank.jsx`
 - [ ] **Amazon Extension:** Browser extension or integration to categorize Amazon purchases automatically.
 
 ## 📊 Reports & Analytics

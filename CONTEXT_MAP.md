@@ -659,6 +659,22 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Wrap-Up Workflow Update:** Added Step 4 to `.agent/workflows/wrap-up.md` requiring onboarding tutorial updates when user-facing features change.
 - **Files:** `docs/ONBOARDING_TUTORIAL.md`, `.agent/workflows/wrap-up.md`, `ROADMAP.md`.
 
+### **Google OAuth Branding Fix (Jan 2026)**
+- **Client-Side ID Token Flow:** Implemented `signInWithIdToken` to show `dollardata.au` instead of Supabase URL on consent screen.
+  - Re-integrated `@react-oauth/google` with `GoogleLogin` component.
+  - Updated `AuthContext.jsx` to use `supabase.auth.signInWithIdToken()`.
+  - Updated `Login.jsx` to handle credential response.
+- **Docker Build Update:** Added `VITE_GOOGLE_CLIENT_ID` as a build argument in `frontend/Dockerfile` and `docker-compose.yml`.
+- **Files:** `frontend/src/main.jsx`, `frontend/src/context/AuthContext.jsx`, `frontend/src/pages/Login.jsx`, `frontend/Dockerfile`, `docker-compose.yml`.
+
+### **Basiq Integration Planning (Jan 2026)**
+- **Implementation Plan:** Created detailed plan for Open Banking (CDR) integration.
+  - Researched existing `basiq.py` service and `connections.py` router.
+  - Identified gap: transactions not using ingestion pipeline for deduplication/categorization.
+  - Planned `ingestion_utils.py` for shared transaction processing logic.
+  - Planned Open Banking filter parameter for `ConnectBank.jsx`.
+- **Files:** `.gemini/.../implementation_plan.md`, `.gemini/.../task.md`.
+
 ---
 
 *Generated for AI context. Do not commit to version control.*
