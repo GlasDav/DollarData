@@ -2414,26 +2414,28 @@ def get_group_spending(
 
 @router.get("/forecast")
 def get_cash_flow_forecast(
-    days: int = 90,
+    months: int = 12,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
     """
-    Cash Flow Forecast - Projects liquid cash position over time.
+    Cash Flow Forecast - 12-month projection based on net budget.
     
-    Uses:
-    - Liquid accounts only (Cash, Savings, Offset, Credit Card)
-    - Scheduled subscription events (income and expenses)
-    - Budget-based discretionary spending estimate
+    Simple approach:
+    - Starting balance: Sum of liquid accounts (Cash, Savings, Offset, Credit Card)
+    - Monthly income: From subscriptions with type='Income'
+    - Monthly expenses: From budget limits (all budget buckets)
+    - Net monthly: Income - Expenses
     
-    Returns actionable insights including upcoming events and lowest projected balance.
+    Returns monthly projections for the next 12 months.
     """
+    from dateutil.relativedelta import relativedelta
+    
     user = current_user
     today = datetime.now().date()
-    end_date = today + timedelta(days=days)
     
     # =========================================================================
-    # 1. LIQUID ACCOUNTS ONLY
+    # 1. LIQUID ACCOUNTS - Starting Balance
     # =========================================================================
     liquid_categories = ["Cash", "Savings", "Offset", "Credit Card"]
     
@@ -2445,289 +2447,134 @@ def get_cash_flow_forecast(
     
     current_balance = sum(a.balance for a in liquid_accounts)
     
-    # Build account summary for transparency
     accounts_summary = [
-        {
-            "id": a.id,
-            "name": a.name,
-            "category": a.category,
-            "balance": round(a.balance, 2)
-        }
+        {"id": a.id, "name": a.name, "category": a.category, "balance": round(a.balance, 2)}
         for a in liquid_accounts
     ]
     
     # =========================================================================
-    # 2. SCHEDULED EVENTS FROM SUBSCRIPTIONS
+    # 2. MONTHLY BUDGETED INCOME (from Subscriptions type='Income')
     # =========================================================================
-    subscriptions = db.query(models.Subscription).filter(
+    income_subscriptions = db.query(models.Subscription).filter(
         models.Subscription.user_id == user.id,
+        models.Subscription.type == "Income",
         models.Subscription.is_active == True
     ).all()
     
-    # Build events by date
-    events_by_date = {}
-    all_upcoming_events = []
+    monthly_income = 0.0
+    income_breakdown = []
     
-    for sub in subscriptions:
-        if not sub.next_due_date:
-            continue
-            
-        current_due = sub.next_due_date
-        
-        # Advance past dates to find next occurrence
-        while current_due < today:
-            current_due = _advance_date(current_due, sub.frequency)
-        
-        # Collect all occurrences within forecast window
-        while current_due <= end_date:
-            # Amount: positive for income, negative for expenses
-            amt = abs(sub.amount)
-            if sub.type == "Expense":
-                amt = -amt
-            
-            event = {
-                "id": sub.id,
-                "name": sub.name,
-                "amount": round(amt, 2),
-                "type": sub.type,
-                "date": current_due.isoformat(),
-                "frequency": sub.frequency
-            }
-            
-            if current_due not in events_by_date:
-                events_by_date[current_due] = []
-            events_by_date[current_due].append(event)
-            
-            # Track upcoming events (next 10)
-            if len(all_upcoming_events) < 20:
-                all_upcoming_events.append(event)
-            
-            # Move to next occurrence
-            current_due = _advance_date(current_due, sub.frequency)
-    
-    # Sort upcoming events by date
-    all_upcoming_events.sort(key=lambda x: x["date"])
-    upcoming_events = all_upcoming_events[:10]
+    for sub in income_subscriptions:
+        monthly_amount = abs(sub.amount) * _frequency_to_monthly_multiplier(sub.frequency)
+        monthly_income += monthly_amount
+        income_breakdown.append({
+            "name": sub.name,
+            "amount": round(sub.amount, 2),
+            "frequency": sub.frequency,
+            "monthly_equivalent": round(monthly_amount, 2)
+        })
     
     # =========================================================================
-    # 3. DAILY DISCRETIONARY SPENDING (from budget limits)
+    # 3. MONTHLY BUDGETED EXPENSES (from all Budget Buckets with limits)
     # =========================================================================
-    # Get monthly budget for discretionary categories
-    discretionary_buckets = db.query(models.BudgetBucket).filter(
+    all_buckets = db.query(models.BudgetBucket).filter(
         models.BudgetBucket.user_id == user.id,
-        models.BudgetBucket.group == "Discretionary",
-        models.BudgetBucket.is_hidden == False
+        models.BudgetBucket.is_hidden == False,
+        models.BudgetBucket.is_transfer == False,  # Exclude transfers
+        models.BudgetBucket.is_investment == False  # Exclude investments
     ).all()
     
-    monthly_discretionary_budget = 0.0
-    for bucket in discretionary_buckets:
+    monthly_expenses = 0.0
+    expense_breakdown = []
+    
+    for bucket in all_buckets:
         if bucket.limits:
             bucket_limit = sum(l.amount for l in bucket.limits)
-            monthly_discretionary_budget += bucket_limit
-    
-    # Convert to daily (assume 30.4 days per month average)
-    daily_discretionary = monthly_discretionary_budget / 30.4
-    
-    # Also get non-discretionary budget for variable expenses not in subscriptions
-    # (e.g., groceries that aren't a fixed subscription)
-    non_disc_buckets = db.query(models.BudgetBucket).filter(
-        models.BudgetBucket.user_id == user.id,
-        models.BudgetBucket.group == "Non-Discretionary",
-        models.BudgetBucket.is_hidden == False
-    ).all()
-    
-    monthly_non_disc_budget = 0.0
-    for bucket in non_disc_buckets:
-        if bucket.limits:
-            bucket_limit = sum(l.amount for l in bucket.limits)
-            monthly_non_disc_budget += bucket_limit
-    
-    # Subtract subscription amounts from non-discretionary to avoid double-counting
-    subscription_monthly_total = sum(
-        abs(s.amount) * _frequency_to_monthly_multiplier(s.frequency)
-        for s in subscriptions if s.type == "Expense"
-    )
-    
-    # Remaining non-discretionary = variable expenses like groceries
-    variable_monthly = max(0, monthly_non_disc_budget - subscription_monthly_total)
-    daily_variable = variable_monthly / 30.4
-    
-    # Total daily spending estimate
-    daily_spend_estimate = daily_discretionary + daily_variable
+            if bucket_limit > 0:
+                monthly_expenses += bucket_limit
+                expense_breakdown.append({
+                    "name": bucket.name,
+                    "group": bucket.group,
+                    "monthly_budget": round(bucket_limit, 2)
+                })
     
     # =========================================================================
-    # 4. BUILD PROJECTION
+    # 4. NET MONTHLY CASH FLOW
     # =========================================================================
-    forecast_data = []
-    weekly_summary = []
+    net_monthly = monthly_income - monthly_expenses
+    
+    # =========================================================================
+    # 5. BUILD 12-MONTH PROJECTION
+    # =========================================================================
+    forecast = []
     running_balance = current_balance
     min_balance = running_balance
-    min_balance_date = today
+    min_balance_month = 0
     
-    # Track weekly data
-    week_start_balance = running_balance
-    week_income = 0.0
-    week_expenses = 0.0
-    
-    # Day 0: Today
-    forecast_data.append({
+    # Month 0: Current
+    forecast.append({
+        "month": 0,
+        "label": today.strftime("%b %Y"),
         "date": today.isoformat(),
         "balance": round(running_balance, 2),
-        "label": "Today",
-        "events": [],
-        "is_projected": False
+        "income": 0,
+        "expenses": 0,
+        "net_change": 0,
+        "is_current": True
     })
     
-    for d in range(1, days + 1):
-        f_date = today + timedelta(days=d)
-        daily_change = 0.0
-        day_events = events_by_date.get(f_date, [])
+    for m in range(1, months + 1):
+        future_date = today + relativedelta(months=m)
+        running_balance += net_monthly
         
-        # Apply scheduled events
-        for event in day_events:
-            daily_change += event["amount"]
-            if event["amount"] > 0:
-                week_income += event["amount"]
-            else:
-                week_expenses += abs(event["amount"])
-        
-        # Apply daily discretionary spending (weekdays only for conservative estimate)
-        if f_date.weekday() < 5:  # Monday-Friday
-            daily_change -= daily_spend_estimate
-            week_expenses += daily_spend_estimate
-        else:
-            # Weekends: slightly less spending
-            weekend_spend = daily_spend_estimate * 0.7
-            daily_change -= weekend_spend
-            week_expenses += weekend_spend
-        
-        running_balance += daily_change
-        
-        # Track minimum
         if running_balance < min_balance:
             min_balance = running_balance
-            min_balance_date = f_date
+            min_balance_month = m
         
-        # Serialize events for response
-        serialized_events = [
-            {"name": e["name"], "amount": e["amount"], "type": e["type"]}
-            for e in day_events
-        ]
-        
-        forecast_data.append({
-            "date": f_date.isoformat(),
+        forecast.append({
+            "month": m,
+            "label": future_date.strftime("%b %Y"),
+            "date": future_date.isoformat(),
             "balance": round(running_balance, 2),
-            "label": f_date.strftime("%b %d"),
-            "events": serialized_events,
-            "is_projected": True
+            "income": round(monthly_income, 2),
+            "expenses": round(monthly_expenses, 2),
+            "net_change": round(net_monthly, 2),
+            "is_current": False
         })
-        
-        # Weekly summary (every 7 days)
-        if d % 7 == 0:
-            weekly_summary.append({
-                "week": len(weekly_summary) + 1,
-                "end_date": f_date.isoformat(),
-                "start_balance": round(week_start_balance, 2),
-                "end_balance": round(running_balance, 2),
-                "income": round(week_income, 2),
-                "expenses": round(week_expenses, 2),
-                "net_change": round(running_balance - week_start_balance, 2)
-            })
-            week_start_balance = running_balance
-            week_income = 0.0
-            week_expenses = 0.0
     
     # =========================================================================
-    # 5. BUILD INSIGHTS
+    # 6. INSIGHTS
     # =========================================================================
-    danger_threshold = 500  # Configurable: warn if balance drops below this
-    days_until_danger = None
+    danger_threshold = 0
+    months_until_danger = None
     
-    for i, point in enumerate(forecast_data):
-        if point["balance"] < danger_threshold:
-            days_until_danger = i
-            break
-    
-    # Calculate average daily net change
-    if len(forecast_data) > 1:
-        total_change = forecast_data[-1]["balance"] - forecast_data[0]["balance"]
-        avg_daily_change = total_change / days
-    else:
-        avg_daily_change = 0
+    if net_monthly < 0:
+        # Calculate when balance goes negative
+        for point in forecast:
+            if point["balance"] < danger_threshold:
+                months_until_danger = point["month"]
+                break
     
     insights = {
-        "lowest_point": {
-            "date": min_balance_date.isoformat(),
-            "balance": round(min_balance, 2),
-            "days_away": (min_balance_date - today).days
-        },
-        "days_until_danger": days_until_danger,
-        "danger_threshold": danger_threshold,
-        "avg_daily_change": round(avg_daily_change, 2),
+        "net_monthly": round(net_monthly, 2),
+        "is_positive": net_monthly >= 0,
+        "lowest_balance": round(min_balance, 2),
+        "lowest_balance_month": min_balance_month,
+        "months_until_negative": months_until_danger,
         "projected_end_balance": round(running_balance, 2)
     }
-    
-    # Calculate spending breakdown for display
-    monthly_scheduled_expenses = sum(
-        abs(s.amount) * _frequency_to_monthly_multiplier(s.frequency)
-        for s in subscriptions if s.type == "Expense"
-    )
-    monthly_scheduled_income = sum(
-        abs(s.amount) * _frequency_to_monthly_multiplier(s.frequency)
-        for s in subscriptions if s.type == "Income"
-    )
     
     return {
         "current_balance": round(current_balance, 2),
         "accounts": accounts_summary,
-        "upcoming_events": upcoming_events,
-        "weekly_summary": weekly_summary,
-        "forecast": forecast_data,
-        "insights": insights,
-        "spending_breakdown": {
-            "daily_discretionary": round(daily_discretionary, 2),
-            "daily_variable": round(daily_variable, 2),
-            "daily_total": round(daily_spend_estimate, 2),
-            "monthly_scheduled_expenses": round(monthly_scheduled_expenses, 2),
-            "monthly_scheduled_income": round(monthly_scheduled_income, 2),
-            "monthly_discretionary_budget": round(monthly_discretionary_budget, 2)
-        }
+        "monthly_income": round(monthly_income, 2),
+        "monthly_expenses": round(monthly_expenses, 2),
+        "net_monthly": round(net_monthly, 2),
+        "income_breakdown": income_breakdown,
+        "expense_breakdown": expense_breakdown,
+        "forecast": forecast,
+        "insights": insights
     }
-
-
-def _advance_date(current_date: date, frequency: str) -> date:
-    """Helper to advance a date based on subscription frequency."""
-    if frequency == "Weekly":
-        return current_date + timedelta(days=7)
-    elif frequency == "Bi-Weekly":
-        return current_date + timedelta(days=14)
-    elif frequency == "Monthly":
-        # Use calendar month advancement
-        month = current_date.month + 1
-        year = current_date.year
-        if month > 12:
-            month = 1
-            year += 1
-        # Handle day overflow (e.g., Jan 31 -> Feb 28)
-        day = min(current_date.day, 28)  # Safe for all months
-        return date(year, month, day)
-    elif frequency == "Quarterly":
-        month = current_date.month + 3
-        year = current_date.year
-        while month > 12:
-            month -= 12
-            year += 1
-        day = min(current_date.day, 28)
-        return date(year, month, day)
-    elif frequency == "Yearly":
-        try:
-            return current_date.replace(year=current_date.year + 1)
-        except ValueError:
-            # Feb 29 in leap year -> Feb 28
-            return current_date.replace(year=current_date.year + 1, day=28)
-    else:
-        # Default to monthly
-        return current_date + timedelta(days=30)
 
 
 def _frequency_to_monthly_multiplier(frequency: str) -> float:

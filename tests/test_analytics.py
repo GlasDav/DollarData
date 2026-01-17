@@ -99,19 +99,20 @@ class TestProjections:
     """Tests for projection endpoints."""
     
     def test_cashflow_forecast(self, client, auth_headers):
-        """Cash flow forecast returns data with new structure."""
+        """Cash flow forecast returns 12-month budget-based projection."""
         response = client.get("/api/analytics/forecast", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        # Verify new response structure
+        # Verify new simplified response structure
         assert "current_balance" in data
         assert "accounts" in data
+        assert "monthly_income" in data
+        assert "monthly_expenses" in data
+        assert "net_monthly" in data
         assert "forecast" in data
         assert "insights" in data
-        assert "spending_breakdown" in data
-        # Check insights structure
-        assert "lowest_point" in data["insights"]
-        assert "days_until_danger" in data["insights"]
+        # Check forecast is 12 months + current = 13 entries
+        assert len(data["forecast"]) == 13
     
     def test_networth_projection(self, client, auth_headers):
         """Net worth projection returns data."""
