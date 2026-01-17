@@ -304,6 +304,11 @@ erDiagram
   - **Category Filter UI:** Fixed z-index issue where checkboxes overlapped sticky group headers.
   - **Category Filter Logic:** Added `exact_bucket_ids` backend parameter to prevent automatic hierarchy expansion when child categories are deselected.
   - **Chart Labels:** Replaced inline pie chart labels with `Legend` component for better readability and no cutoff.
+  - **PDF Export (v1):**
+    - Added endpoints for Professional PDF generation with Charts, Summary, and Category Breakdown (`GET /export/report/pdf`).
+    - Added simple Excel export (`GET /export/report/excel`).
+    - Implemented vector logo drawing logic.
+    - **Known Issue:** PDF layout needs spacing adjustments (legends overlap) and logo rendering needs verification.
 - **UI Unification:**
   - **Budget Page Tabs:** Changed from pill-style tabs (right-aligned) to underline-style tabs (left-aligned) to match Reports page.
   - **Page Container Layout:** Removed inconsistent `-m-8` wrappers in ReportsHub; Reports and Calendar pages now use consistent container styling.
