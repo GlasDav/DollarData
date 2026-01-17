@@ -13,8 +13,6 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Amazon Extension:** Browser extension or integration to categorize Amazon purchases automatically.
 
 ## 📊 Reports & Analytics
-
-- [ ] **Income by Type:** Detailed breakdown of income sources.
 - [ ] **Filtered Reports:** Advanced filtering (tags, dates, categories, accounts) for custom reports.
 - [ ] **Monthly Expense Breakdown:** Clickable monthly totals to drill down into expense specifics.
 

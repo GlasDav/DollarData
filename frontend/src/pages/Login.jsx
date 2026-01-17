@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Lock, Mail, TrendingUp, Play } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
+
 
 // Demo account credentials
 const DEMO_EMAIL = "demo@dollardata.app";
@@ -58,33 +58,18 @@ export default function Login() {
         }
     };
 
-    const handleGoogleSuccess = async (tokenResponse) => {
+    const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         setError("");
         try {
-            // tokenResponse.access_token is the OAuth access token
-            await googleLogin(tokenResponse.access_token);
-            navigate(from, { replace: true });
+            await googleLogin();
+            // No navigate needed as it redirects to provider
         } catch (err) {
             console.error('Google login error:', err);
-            const detail = err.response?.data?.detail;
-            if (typeof detail === 'string') {
-                setError(detail);
-            } else {
-                setError("Failed to sign in with Google. Please try again.");
-            }
-        } finally {
+            setError("Failed to initialize Google sign-in.");
             setIsGoogleLoading(false);
         }
     };
-
-    const googleLoginHook = useGoogleLogin({
-        onSuccess: handleGoogleSuccess,
-        onError: (error) => {
-            console.error('Google OAuth error:', error);
-            setError("Google sign-in was cancelled or failed.");
-        },
-    });
 
     return (
         <div className="min-h-screen bg-surface dark:bg-surface-dark flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
@@ -144,7 +129,7 @@ export default function Login() {
                 {/* Google Login Button */}
                 <button
                     type="button"
-                    onClick={() => googleLoginHook()}
+                    onClick={handleGoogleLogin}
                     disabled={isGoogleLoading}
                     className="w-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark text-text-primary dark:text-text-primary-dark font-medium py-3 rounded-xl transition-all hover:bg-surface-hover dark:hover:bg-surface-dark-hover hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
                 >

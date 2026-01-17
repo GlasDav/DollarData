@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback` // Ensure this route exists or backend handles it
+                redirectTo: `${window.location.origin}` // Supabase handles session parsing on root load
             }
         });
         if (error) throw error;

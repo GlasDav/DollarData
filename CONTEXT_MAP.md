@@ -463,7 +463,7 @@ docker compose exec backend python /app/seed_demo_user.py
 4. **Drag-Drop** - Uses `@dnd-kit` for widget reordering and rule prioritization
 5. **Toast Notifications** - Custom `ToastContext` replaces browser alerts
 6. **Command Palette** - `Cmd/Ctrl+K` for quick navigation
-7. **Demo Account** - `demo@dollardata.app` / `demo123` with realistic sample data
+7. **Demo Account** - `demo@dollardata.app` / `demo1234` with realistic sample data
 
 ---
 
