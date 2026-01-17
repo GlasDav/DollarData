@@ -628,6 +628,20 @@ docker compose exec backend python /app/seed_demo_user.py
   - Enhanced aesthetics: Larger logo, increased header spacing, cleaner legend with white separators.
   - Wrapped generation logic in `try/except` to return descriptive 500 error details to frontend.
 - **Files:** `backend/routers/export.py`.
+
+### **Cash Flow Forecast Simplification (Jan 2026)**
+- **Backend Overhaul:** Rewrote `/analytics/forecast` endpoint for 12-month budget-based projection.
+  - Income: From budget buckets with `group='Income'` (not subscriptions).
+  - Expenses: From all non-Income/Transfer/Investment budget limits.
+  - Net monthly = Budgeted Income - Budgeted Expenses.
+  - Dates: End-of-month with MMM-YY format (Jan-26, Feb-26).
+  - Expense breakdown sorted largest → smallest.
+- **Frontend Updates:**
+  - Bar chart showing monthly projected balances.
+  - Summary cards: Monthly Income / Expenses / 12-Month End Balance.
+  - Income Sources and Top Expense Categories breakdown panels.
+  - Design token compliance: Replaced hardcoded hex colors with CSS variables.
+- **Files:** `backend/routers/analytics.py`, `frontend/src/pages/Reports.jsx`, `frontend/src/components/CashFlowForecast.jsx`.
 ---
 
 *Generated for AI context. Do not commit to version control.*

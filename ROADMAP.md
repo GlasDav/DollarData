@@ -22,7 +22,7 @@ This document outlines the planned features, improvements, and future direction 
   - [x] **Fix:** Refine PDF layout (Legend overlap, Logo positioning, Donut Charts)
   - [x] **Fix:** Remove "Investments" line from top section
   - [x] Initial Excel implementation
-- [ ] **Cash Flow Forecast Overhaul:** Improve forecasting methodology using budget categories for better accuracy.
+- [x] **Cash Flow Forecast Overhaul:** Simplified to 12-month projection based on budgeted income minus expenses.
 
 ## 💰 Budget & Goals
 
