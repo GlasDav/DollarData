@@ -320,8 +320,9 @@ def export_report_pdf(
     exp_sorted = sorted(expense_categories.items(), key=lambda x: x[1], reverse=True)[:6]
     inc_sorted = sorted(income_categories.items(), key=lambda x: x[1], reverse=True)[:6]
     
-    exp_values = [float(x[1]) for x in exp_sorted]
-    inc_values = [float(x[1]) for x in inc_sorted]
+    # Filter small values to prevent chart crashes
+    exp_values = [float(x[1]) for x in exp_sorted if float(x[1]) > 0.01]
+    inc_values = [float(x[1]) for x in inc_sorted if float(x[1]) > 0.01]
     
     def create_donut_drawing(values, colors_list, width=125, height=125):
         if not values: return None
