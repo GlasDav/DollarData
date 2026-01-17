@@ -2506,16 +2506,21 @@ def get_cash_flow_forecast(
     # =========================================================================
     # 5. BUILD 12-MONTH PROJECTION
     # =========================================================================
+    from calendar import monthrange
+    
     forecast = []
     running_balance = current_balance
     min_balance = running_balance
     min_balance_month = 0
     
-    # Month 0: Current
+    # Start from current month's end
+    current_month_end = date(today.year, today.month, monthrange(today.year, today.month)[1])
+    
+    # Month 0: Current month end
     forecast.append({
         "month": 0,
-        "label": today.strftime("%b %Y"),
-        "date": today.isoformat(),
+        "label": current_month_end.strftime("%b-%y"),  # Jan-26 format
+        "date": current_month_end.isoformat(),
         "balance": round(running_balance, 2),
         "income": 0,
         "expenses": 0,
@@ -2524,7 +2529,10 @@ def get_cash_flow_forecast(
     })
     
     for m in range(1, months + 1):
-        future_date = today + relativedelta(months=m)
+        # Get end of month for m months ahead
+        future_month_date = today + relativedelta(months=m)
+        end_of_month = date(future_month_date.year, future_month_date.month, 
+                           monthrange(future_month_date.year, future_month_date.month)[1])
         running_balance += net_monthly
         
         if running_balance < min_balance:
@@ -2533,8 +2541,8 @@ def get_cash_flow_forecast(
         
         forecast.append({
             "month": m,
-            "label": future_date.strftime("%b %Y"),
-            "date": future_date.isoformat(),
+            "label": end_of_month.strftime("%b-%y"),  # Feb-26 format
+            "date": end_of_month.isoformat(),
             "balance": round(running_balance, 2),
             "income": round(monthly_income, 2),
             "expenses": round(monthly_expenses, 2),
