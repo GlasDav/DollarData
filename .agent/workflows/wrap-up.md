@@ -57,7 +57,35 @@ Only if styling/design changes were made:
 
 ---
 
-## 4. Review and Commit Changes
+## 4. Update Onboarding Tutorial (if user-facing changes)
+
+```bash
+view_file "docs/ONBOARDING_TUTORIAL.md"
+```
+
+If any user-facing features were added, modified, or removed:
+- Add new features to the relevant module
+- Update instructions if workflows changed
+- Add new modules for major features
+- Update component references in HTML comments
+
+**Modules to update based on change type:**
+
+| Change Area | Tutorial Module |
+|-------------|-----------------|
+| Account/Household settings | Module 1: Getting Started |
+| Budget categories | Module 2: Categories |
+| Smart rules/automation | Module 3: Smart Rules |
+| Import/Data management | Module 4: Import Transactions |
+| Net worth/investments | Module 5: Net Worth & Accounts |
+| Dashboard/widgets | Module 6: Dashboard |
+| Budget progress/limits | Module 7: Budgeting |
+| Goals/Achievements | Module 8: Goals & Achievements |
+| Reports/Analytics/AI | Module 9: Reports & Analytics |
+
+---
+
+## 5. Review and Commit Changes
 
 // turbo
 ```bash
@@ -80,7 +108,7 @@ Use conventional commit prefixes:
 
 ---
 
-## 5. Push to GitHub (Optional)
+## 6. Push to GitHub (Optional)
 
 If ready to push changes:
 
@@ -96,6 +124,8 @@ If ready to push changes:
 |------|----------------|
 | `CONTEXT_MAP.md` | Always - document all changes |
 | `ROADMAP.md` | When completing or adding tasks |
+| `docs/ONBOARDING_TUTORIAL.md` | User-facing feature changes |
 | `frontend/BRAND GUIDELINES.md` | UI/styling changes only |
 | `backend/auto_migrate.py` | Database schema changes |
 | `.agent/workflows/*.md` | New reusable processes |
+

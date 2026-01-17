@@ -642,6 +642,23 @@ docker compose exec backend python /app/seed_demo_user.py
   - Income Sources and Top Expense Categories breakdown panels.
   - Design token compliance: Replaced hardcoded hex colors with CSS variables.
 - **Files:** `backend/routers/analytics.py`, `frontend/src/pages/Reports.jsx`, `frontend/src/components/CashFlowForecast.jsx`.
+
+### **Onboarding Tutorial Documentation (Jan 2026)**
+- **User Documentation:** Created comprehensive 9-module user guide at `docs/ONBOARDING_TUTORIAL.md`.
+  - Module 1: Getting Started (Household, Currency, Preferences)
+  - Module 2: Setting Up Categories
+  - Module 3: Creating Smart Rules
+  - Module 4: Importing Transactions (CSV/PDF/Bank)
+  - Module 5: Net Worth & Accounts
+  - Module 6: Understanding Your Dashboard
+  - Module 7: Budgeting Like a Pro
+  - Module 8: Goals & Achievements
+  - Module 9: Reports & Analytics
+- **Critical Sequencing:** Emphasizes Categories → Rules → Import order to prevent user headaches.
+- **In-App Tutorial Plan:** Designed React Joyride-based implementation with `TutorialContext.jsx` provider and modular tour definitions.
+- **Wrap-Up Workflow Update:** Added Step 4 to `.agent/workflows/wrap-up.md` requiring onboarding tutorial updates when user-facing features change.
+- **Files:** `docs/ONBOARDING_TUTORIAL.md`, `.agent/workflows/wrap-up.md`, `ROADMAP.md`.
+
 ---
 
 *Generated for AI context. Do not commit to version control.*
