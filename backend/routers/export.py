@@ -228,7 +228,7 @@ def export_report_pdf(
     styles = getSampleStyleSheet()
     
     # Custom styles
-    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=28, spaceAfter=2, textColor=TEXT_PRIMARY, alignment=0) 
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=28, spaceAfter=12, textColor=TEXT_PRIMARY, alignment=0) 
     subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=10, textColor=TEXT_MUTED, alignment=0)
     
     # Blue Bar Section Header Style
@@ -251,8 +251,8 @@ def export_report_pdf(
     logo_img = ""
     if os.path.exists(logo_path):
         try:
-             # Larger logo: width=2.5inch
-            logo_img = ReportLabImage(logo_path, width=2.5*inch, height=0.8*inch, kind='proportional')
+             # Larger logo: width=3.5inch
+            logo_img = ReportLabImage(logo_path, width=3.5*inch, height=1.2*inch, kind='proportional')
             logo_img.hAlign = 'LEFT'
         except Exception: pass
     
@@ -383,8 +383,10 @@ def export_report_pdf(
         for i in range(len(l_data)):
             color = color_palette[i % len(color_palette)]
             styles_list.append(('BACKGROUND', (0, i), (0, i), color))
-            styles_list.append(('BOTTOMPADDING', (0, i), (-1, i), 1)) # Tight rows
-            styles_list.append(('TOPPADDING', (0, i), (-1, i), 1))
+            styles_list.append(('BOTTOMPADDING', (0, i), (-1, i), 3)) # More padding
+            styles_list.append(('TOPPADDING', (0, i), (-1, i), 3))
+            # Add white line below to create "gap" between colored boxes
+            styles_list.append(('LINEBELOW', (0, i), (-1, i), 3, colors.white))
             
         t.setStyle(TableStyle(styles_list))
         return t
