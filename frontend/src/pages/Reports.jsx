@@ -147,10 +147,6 @@ export default function Reports() {
         queryFn: async () => (await api.get('/analytics/forecast?days=90')).data
     });
     const cashFlowData = forecastResult?.forecast || [];
-    const minBalance = forecastResult?.min_projected_balance;
-    const dailyBurn = forecastResult?.daily_burn_rate;
-    const dailyIncome = forecastResult?.daily_income_rate;
-    const netDaily = forecastResult?.net_daily_rate;
 
     // Fetch Transactions for Export (Raw Data)
     const handleExport = async () => {
@@ -665,57 +661,215 @@ export default function Reports() {
 
             <DrilldownModal />
 
-            {/* Cash Flow Forecast */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <div className="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Cash Flow Forecast (90 Days)</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Projected balance based on average income and spending.</p>
-                    </div>
-                    {(minBalance !== undefined) && (
-                        <div className="flex gap-4 flex-wrap">
-                            <div className="text-right">
-                                <p className="text-xs text-slate-400">Daily Income</p>
-                                <p className="text-sm font-semibold text-emerald-600">{formatCurrency(dailyIncome)}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs text-slate-400">Daily Spend</p>
-                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(dailyBurn)}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs text-slate-400">Net/Day</p>
-                                <p className={`text-sm font-semibold ${netDaily >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{formatCurrency(netDaily)}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs text-slate-400">Min Projected</p>
-                                <p className={`text-sm font-semibold ${minBalance < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{formatCurrency(minBalance)}</p>
-                            </div>
+            {/* Cash Flow Forecast - Redesigned */}
+            <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+                {/* Header */}
+                <div className="p-6 border-b border-border">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                        <div>
+                            <h2 className="text-lg font-bold text-text-primary mb-1">Cash Flow Forecast</h2>
+                            <p className="text-sm text-text-secondary">
+                                Projected balance based on your budget and scheduled payments
+                            </p>
                         </div>
-                    )}
+                        <div className="flex items-center gap-6">
+                            <div className="text-right">
+                                <p className="text-xs text-text-secondary uppercase tracking-wider">Available Cash</p>
+                                <p className="text-2xl font-bold text-text-primary">
+                                    {formatCurrency(forecastResult?.current_balance || 0)}
+                                </p>
+                            </div>
+                            {forecastResult?.insights?.lowest_point && (
+                                <div className="text-right">
+                                    <p className="text-xs text-text-secondary uppercase tracking-wider">Lowest Point</p>
+                                    <p className={`text-lg font-semibold ${forecastResult.insights.lowest_point.balance < 500 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                        {formatCurrency(forecastResult.insights.lowest_point.balance)}
+                                    </p>
+                                    <p className="text-xs text-text-secondary">
+                                        in {forecastResult.insights.lowest_point.days_away} days
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={cashFlowData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                            <XAxis
-                                dataKey="date"
-                                stroke="#94A3B8"
-                                fontSize={12}
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                            />
-                            <YAxis stroke="#94A3B8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
-                            <Tooltip
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                formatter={(val) => [`$${val.toLocaleString()}`, "Projected Balance"]}
-                                labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                            />
-                            <Line type="monotone" dataKey="balance" stroke="#8b5cf6" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
-                        </LineChart>
-                    </ResponsiveContainer>
+                {/* Accounts Included */}
+                {forecastResult?.accounts && forecastResult.accounts.length > 0 && (
+                    <div className="px-6 py-3 bg-surface border-b border-border">
+                        <p className="text-xs text-text-secondary mb-2">Accounts included:</p>
+                        <div className="flex flex-wrap gap-2">
+                            {forecastResult.accounts.map(acc => (
+                                <span
+                                    key={acc.id}
+                                    className="px-2 py-1 bg-card rounded-md text-xs text-text-primary border border-border"
+                                >
+                                    {acc.name}: {formatCurrency(acc.balance)}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Danger Warning */}
+                {forecastResult?.insights?.days_until_danger !== null && forecastResult?.insights?.days_until_danger !== undefined && (
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-800/50 flex items-center justify-center">
+                            <span className="text-red-500">⚠️</span>
+                        </div>
+                        <p className="text-sm text-red-700 dark:text-red-300">
+                            <strong>Warning:</strong> Balance drops below ${forecastResult.insights.danger_threshold} in {forecastResult.insights.days_until_danger} days
+                        </p>
+                    </div>
+                )}
+
+                {/* Upcoming Events Timeline */}
+                {forecastResult?.upcoming_events && forecastResult.upcoming_events.length > 0 && (
+                    <div className="p-6 border-b border-border">
+                        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Upcoming Events</p>
+                        <div className="flex gap-3 overflow-x-auto pb-2">
+                            {forecastResult.upcoming_events.slice(0, 6).map((event, idx) => (
+                                <div
+                                    key={`${event.id}-${idx}`}
+                                    className={`flex-shrink-0 px-4 py-3 rounded-xl border ${event.type === 'Income'
+                                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+                                        : 'bg-card border-border'
+                                        }`}
+                                    style={{ minWidth: '140px' }}
+                                >
+                                    <p className={`text-sm font-semibold ${event.type === 'Income' ? 'text-emerald-600' : 'text-text-primary'}`}>
+                                        {event.type === 'Income' ? '+' : ''}{formatCurrency(Math.abs(event.amount))}
+                                    </p>
+                                    <p className="text-xs text-text-secondary truncate" title={event.name}>{event.name}</p>
+                                    <p className="text-xs text-text-secondary mt-1">
+                                        {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Chart */}
+                <div className="p-6">
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={cashFlowData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="#94A3B8"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    interval="preserveStartEnd"
+                                />
+                                <YAxis
+                                    stroke="#94A3B8"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(val) => {
+                                        if (Math.abs(val) >= 1000) return `$${(val / 1000).toFixed(0)}k`;
+                                        return `$${val}`;
+                                    }}
+                                    domain={['dataMin - 500', 'dataMax + 500']}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                        backgroundColor: 'rgba(30, 41, 59, 0.95)'
+                                    }}
+                                    labelStyle={{ color: '#94A3B8' }}
+                                    formatter={(val) => [formatCurrency(val), "Balance"]}
+                                    labelFormatter={(label) => new Date(label).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                />
+                                {/* Zero line reference */}
+                                <Line
+                                    type="monotone"
+                                    dataKey={() => 0}
+                                    stroke="#ef4444"
+                                    strokeWidth={1}
+                                    strokeDasharray="5 5"
+                                    dot={false}
+                                    isAnimationActive={false}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="balance"
+                                    stroke="#8b5cf6"
+                                    strokeWidth={3}
+                                    dot={false}
+                                    activeDot={{ r: 6, fill: '#8b5cf6' }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
+
+                {/* Weekly Summary */}
+                {forecastResult?.weekly_summary && forecastResult.weekly_summary.length > 0 && (
+                    <div className="px-6 pb-6">
+                        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Weekly Breakdown</p>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-border">
+                                        <th className="text-left py-2 text-text-secondary font-medium">Week</th>
+                                        <th className="text-right py-2 text-text-secondary font-medium">Income</th>
+                                        <th className="text-right py-2 text-text-secondary font-medium">Expenses</th>
+                                        <th className="text-right py-2 text-text-secondary font-medium">Net</th>
+                                        <th className="text-right py-2 text-text-secondary font-medium">End Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {forecastResult.weekly_summary.slice(0, 6).map((week) => (
+                                        <tr key={week.week} className="border-b border-border/50">
+                                            <td className="py-2 text-text-primary">
+                                                Week {week.week}
+                                                <span className="text-text-secondary text-xs ml-2">
+                                                    ({new Date(week.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})
+                                                </span>
+                                            </td>
+                                            <td className="py-2 text-right text-emerald-600">
+                                                {week.income > 0 ? `+${formatCurrency(week.income)}` : '-'}
+                                            </td>
+                                            <td className="py-2 text-right text-text-secondary">
+                                                {formatCurrency(week.expenses)}
+                                            </td>
+                                            <td className={`py-2 text-right font-medium ${week.net_change >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                {week.net_change >= 0 ? '+' : ''}{formatCurrency(week.net_change)}
+                                            </td>
+                                            <td className="py-2 text-right font-semibold text-text-primary">
+                                                {formatCurrency(week.end_balance)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* Footer with spending breakdown */}
+                {forecastResult?.spending_breakdown && (
+                    <div className="px-6 py-4 bg-surface border-t border-border">
+                        <div className="flex flex-wrap gap-6 text-xs text-text-secondary">
+                            <div>
+                                <span className="font-medium">Daily Discretionary:</span> {formatCurrency(forecastResult.spending_breakdown.daily_discretionary)}
+                            </div>
+                            <div>
+                                <span className="font-medium">Monthly Scheduled:</span> {formatCurrency(forecastResult.spending_breakdown.monthly_scheduled_expenses)}
+                            </div>
+                            <div>
+                                <span className="font-medium">Proj. End Balance:</span> {formatCurrency(forecastResult.insights?.projected_end_balance || 0)}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div >
     );

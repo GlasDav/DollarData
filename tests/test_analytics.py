@@ -98,14 +98,24 @@ class TestAnomalies:
 class TestProjections:
     """Tests for projection endpoints."""
     
-    def test_cashflow_projection(self, client, auth_headers):
-        """Cash flow projection returns data."""
-        response = client.get("/analytics/cashflow-projection", headers=auth_headers)
+    def test_cashflow_forecast(self, client, auth_headers):
+        """Cash flow forecast returns data with new structure."""
+        response = client.get("/api/analytics/forecast", headers=auth_headers)
         assert response.status_code == 200
+        data = response.json()
+        # Verify new response structure
+        assert "current_balance" in data
+        assert "accounts" in data
+        assert "forecast" in data
+        assert "insights" in data
+        assert "spending_breakdown" in data
+        # Check insights structure
+        assert "lowest_point" in data["insights"]
+        assert "days_until_danger" in data["insights"]
     
     def test_networth_projection(self, client, auth_headers):
         """Net worth projection returns data."""
-        response = client.get("/analytics/networth-projection", headers=auth_headers)
+        response = client.get("/api/analytics/networth-projection", headers=auth_headers)
         assert response.status_code == 200
 
 
