@@ -737,6 +737,15 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Text Update:** Changed hero description from "modern investor" to "modern professional".
 - **Files:** `frontend/src/pages/LandingPage.jsx`.
 
+### **Quick Roadmap Fixes (Jan 2026)**
+- **Recent Transactions Empty State:** Updated widget text from "No transactions yet" to "No transactions in the past 3 days".
+  - **File:** `frontend/src/components/widgets/RecentTransactionsWidget.jsx`.
+- **Default Categories Fix:** Changed `Kids` parent category from `Discretionary` to `Non-Discretionary` (Childcare is a need, not a want).
+  - **File:** `backend/auth.py`.
+- **Dark Mode Forecast:** Added comprehensive `dark:` variant classes to the 12-month Cash Flow Forecast component.
+  - Affected: loading skeleton, card backgrounds, borders, text colors, chart grid/axis styling.
+  - **File:** `frontend/src/components/CashFlowForecast.jsx`.
+
 ---
 
 *Generated for AI context. Do not commit to version control.*
