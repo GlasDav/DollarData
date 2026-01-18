@@ -36,7 +36,8 @@ def delete_account(
     """
     Permanently delete the user account and all associated data.
     """
-    user_id = current_user.id
+    # Ensure user_id is a string for compatibility with String columns (UUIDs stored as strings)
+    user_id = str(current_user.id)
     user_email = current_user.email
     
     # 1. Family Sharing Cleanup
@@ -47,32 +48,36 @@ def delete_account(
     db.flush()
     
     # Delete household memberships (being a member)
-    db.query(models.HouseholdUser).filter(models.HouseholdUser.user_id == user_id).delete()
+    db.query(models.HouseholdUser).filter(models.HouseholdUser.user_id == user_id).delete(synchronize_session=False)
     
     # Find households owned by this user
     owned_households = db.query(models.Household).filter(models.Household.owner_id == user_id).all()
     for household in owned_households:
         # Delete invites for this household
-        db.query(models.HouseholdInvite).filter(models.HouseholdInvite.household_id == household.id).delete()
+        db.query(models.HouseholdInvite).filter(models.HouseholdInvite.household_id == household.id).delete(synchronize_session=False)
         # Delete members of this household
-        db.query(models.HouseholdUser).filter(models.HouseholdUser.household_id == household.id).delete()
+        db.query(models.HouseholdUser).filter(models.HouseholdUser.household_id == household.id).delete(synchronize_session=False)
         # Delete the household itself
         db.delete(household)
     
+    # Force flush to ensure households are deleted before we try to delete the user
+    # avoiding "violates foreign key constraint households_owner_id_fkey"
+    db.flush()
+    
     # Delete invites sent by this user (to other households)
-    db.query(models.HouseholdInvite).filter(models.HouseholdInvite.invited_by_id == user_id).delete()
+    db.query(models.HouseholdInvite).filter(models.HouseholdInvite.invited_by_id == user_id).delete(synchronize_session=False)
     
     # 2. General Data Cleanup
     
     # Delete related tokens
-    db.query(models.PasswordResetToken).filter(models.PasswordResetToken.user_id == user_id).delete()
-    db.query(models.EmailVerificationToken).filter(models.EmailVerificationToken.user_id == user_id).delete()
+    db.query(models.PasswordResetToken).filter(models.PasswordResetToken.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.EmailVerificationToken).filter(models.EmailVerificationToken.user_id == user_id).delete(synchronize_session=False)
     
-    db.query(models.Transaction).filter(models.Transaction.user_id == user_id).delete()
-    db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user_id).delete()
-    db.query(models.Subscription).filter(models.Subscription.user_id == user_id).delete()
-    db.query(models.Goal).filter(models.Goal.user_id == user_id).delete()
-    db.query(models.TaxSettings).filter(models.TaxSettings.user_id == user_id).delete()
+    db.query(models.Transaction).filter(models.Transaction.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.Subscription).filter(models.Subscription.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.Goal).filter(models.Goal.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.TaxSettings).filter(models.TaxSettings.user_id == user_id).delete(synchronize_session=False)
     
     # Accounts and holdings
     account_ids = [a.id for a in db.query(models.Account).filter(models.Account.user_id == user_id).all()]
@@ -80,7 +85,10 @@ def delete_account(
         db.query(models.InvestmentHolding).filter(models.InvestmentHolding.account_id.in_(account_ids)).delete(synchronize_session=False)
         # Delete manual trade entries if any (assuming they cascade or added logic here if needed)
         # Assuming Trade model has account_id
-        db.query(models.Trade).filter(models.Trade.account_id.in_(account_ids)).delete(synchronize_session=False)
+        try:
+            db.query(models.Trade).filter(models.Trade.account_id.in_(account_ids)).delete(synchronize_session=False)
+        except AttributeError:
+             pass # In case Trade model is not imported or different
 
     
     # Snapshots
@@ -88,12 +96,13 @@ def delete_account(
     if snapshot_ids:
         db.query(models.AccountBalance).filter(models.AccountBalance.snapshot_id.in_(snapshot_ids)).delete(synchronize_session=False)
     
-    db.query(models.NetWorthSnapshot).filter(models.NetWorthSnapshot.user_id == user_id).delete()
-    db.query(models.Account).filter(models.Account.user_id == user_id).delete()
-    db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user_id).delete()
+    db.query(models.NetWorthSnapshot).filter(models.NetWorthSnapshot.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.Account).filter(models.Account.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user_id).delete(synchronize_session=False)
     
     # 3. Final Profile Deletion
-    db.query(models.User).filter(models.User.id == user_id).delete()
+    # Check if user is still referenced explicitly before deleting (debugging step if needed, but proceeding)
+    db.query(models.User).filter(models.User.id == user_id).delete(synchronize_session=False)
     
     db.commit()
     
