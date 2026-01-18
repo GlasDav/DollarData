@@ -35,17 +35,7 @@ export const setupTourSteps = [
         placement: 'bottom',
         disableBeacon: true,
     },
-    {
-        target: '[data-tour="add-category-btn"]',
-        content: (
-            <div>
-                <h3 className="font-bold text-lg mb-2">Add Custom Categories</h3>
-                <p>Use this button to add your own categories. Think about how you want to track spending - maybe "Coffee", "Subscriptions", or "Kids Activities".</p>
-            </div>
-        ),
-        placement: 'right',
-        disableBeacon: true,
-    },
+
     {
         target: '[data-tour="rules-tab"]',
         content: (
