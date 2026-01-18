@@ -389,4 +389,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             db.rollback()
             raise credentials_exception
     
+    # Check if user exists but has no defaults (created by Supabase trigger without setup)
+    bucket_count = db.query(models.BudgetBucket).filter(
+        models.BudgetBucket.user_id == user.id
+    ).count()
+    
+    if bucket_count == 0:
+        logger.info(f"User {user.email} exists but has no budget buckets. Applying default setup...")
+        try:
+            create_default_user_setup(user, db)
+            logger.info(f"Successfully applied default setup for user {user.email}")
+        except Exception as e:
+            logger.error(f"Failed to apply defaults for user {user.id}: {e}")
+            db.rollback()
+            # Don't raise - user can still use the app, just without defaults
+    
     return user
