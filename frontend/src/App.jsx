@@ -241,6 +241,8 @@ function Layout() {
         continuous
         showProgress
         showSkipButton
+        spotlightClicks
+        disableOverlayClose
         callback={handleJoyrideCallback}
         styles={{
           options: {

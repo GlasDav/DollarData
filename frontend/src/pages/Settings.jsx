@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
     Bell, Shield, Landmark, Tag, BookPlus, Save,
-    Settings as SettingsIcon, Moon, Sun, DollarSign, Key, UserCircle
+    Settings as SettingsIcon, Moon, Sun, DollarSign, Key, UserCircle, HelpCircle
 } from 'lucide-react';
 
 // Sub-components
@@ -13,6 +13,7 @@ import AccountsSettings from '../components/settings/AccountsSettings';
 import CategoriesSettings from '../components/settings/CategoriesSettings';
 import RulesSettings from '../components/settings/RulesSettings';
 import DataSettings from '../components/settings/DataSettings';
+import HelpSettings from '../components/settings/HelpSettings';
 
 /**
  * Settings Page with Fixed Sidebar Navigation
@@ -30,6 +31,7 @@ export default function Settings() {
         { id: 'categories', label: 'Categories', icon: Tag, component: CategoriesSettings },
         { id: 'rules', label: 'Rules', icon: BookPlus, component: RulesSettings },
         { id: 'data', label: 'Data', icon: Save, component: DataSettings },
+        { id: 'help', label: 'Help', icon: HelpCircle, component: HelpSettings },
     ];
 
     const ActiveComponent = tabs.find(t => t.id === activeTab)?.component || AccountInfoSettings;

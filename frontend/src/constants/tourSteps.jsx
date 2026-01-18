@@ -69,14 +69,33 @@ export const setupTourSteps = [
         disableBeacon: true,
     },
     {
-        target: '[data-tour="nav-data-management"]',
+        target: '[data-tour="budget-tabs"]',
         content: (
             <div>
-                <h3 className="font-bold text-lg mb-2">You're Ready to Import! 🚀</h3>
-                <p>Great job! Now head to <strong>Settings</strong> → <strong>Data Management</strong> to import your transactions. Your rules will automatically categorize them!</p>
+                <h3 className="font-bold text-lg mb-2">You're All Set! 🚀</h3>
+                <p className="mb-3">Here's your setup checklist:</p>
+                <ul className="text-left space-y-2 mb-3">
+                    <li className="flex items-center gap-2">
+                        <span className="text-green-500">✓</span>
+                        <span>Explore your categories</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                        <span className="text-slate-400">○</span>
+                        <span>Customize categories for your needs</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                        <span className="text-slate-400">○</span>
+                        <span>Create rules for auto-categorization</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                        <span className="text-slate-400">○</span>
+                        <span>Import your transactions</span>
+                    </li>
+                </ul>
+                <p className="text-sm text-slate-500">Tip: You can restart this tutorial anytime from Settings → Help</p>
             </div>
         ),
-        placement: 'right',
+        placement: 'bottom',
         disableBeacon: true,
     },
 ];
