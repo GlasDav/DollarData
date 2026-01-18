@@ -663,7 +663,15 @@ class HouseholdCreate(HouseholdBase):
 class Household(HouseholdBase):
     id: int
     created_at: datetime
-    owner_id: Optional[int] = None
+    owner_id: Optional[str] = None
+    
+    @field_validator('owner_id', mode='before')
+    @classmethod
+    def serialize_uuid(cls, v):
+        """Convert UUID to string if needed"""
+        if v is not None and not isinstance(v, str):
+            return str(v)
+        return v
     
     class Config:
         from_attributes = True
