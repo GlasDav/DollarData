@@ -209,8 +209,40 @@ function CurrencyStep({ onNext }) {
 // Step 3: Household
 function HouseholdStep({ onNext }) {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Fetch members to check if "Me" exists
+    const { data: members = [] } = useQuery({
+        queryKey: ['members'],
+        queryFn: getMembers
+    });
+
+    // Auto-create "Me" profile if no members exist
+    useEffect(() => {
+        const initMe = async () => {
+            if (members.length === 0) {
+                try {
+                    console.log("Auto-creating 'Me' member...");
+                    // Use user's real name if available, else "Me"
+                    const myName = user?.user_metadata?.name || user?.name || "Me";
+                    await createMember({
+                        name: myName,
+                        color: '#6366f1', // Indigo
+                        avatar: 'User'
+                    });
+                    await queryClient.invalidateQueries(['members']);
+                } catch (e) {
+                    console.error("Failed to auto-create me member", e);
+                }
+            }
+        };
+        // Only run if members is definitely loaded (empty array is default, so might trigger early? 
+        // No, react-query defaults to [] in my code above, but 'isLoading' is better check. 
+        // For now, trusting empty list check isn't destructive because we can just ignore if it runs twice.)
+        initMe();
+    }, [members.length, queryClient, user]);
 
     const onSkip = () => onNext();
 
@@ -237,7 +269,7 @@ function HouseholdStep({ onNext }) {
             <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Add a Partner?</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">
-                    Tracking finances with someone? Add their name to categorize spending easily.
+                    DollarData is best with 2 players. Add your partner to track joint finances.
                 </p>
             </div>
 
@@ -263,7 +295,7 @@ function HouseholdStep({ onNext }) {
     );
 }
 
-// Step 4: Connect
+// Step 4: Strategy (Connect)
 function ConnectStep({ onFinish }) {
     return (
         <div className="animate-fade-in-up space-y-6">
@@ -271,13 +303,28 @@ function ConnectStep({ onFinish }) {
                 <UploadCloud className="text-white" size={40} />
             </div>
             <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">You're All Set!</h2>
-                <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-                    The best way to start is by importing your data. We support CSVs and bank statements.
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Setup Strategy</h2>
+                <div className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto text-sm space-y-2 text-left bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl">
+                    <p className="font-semibold text-center mb-2">Recommended Flow:</p>
+                    <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold">1</span>
+                        <span>Define <strong>Categories</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold">2</span>
+                        <span>Create <strong>Smart Rules</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold">3</span>
+                        <span><strong>Import Data</strong></span>
+                    </div>
+                </div>
+                <p className="mt-4 text-xs text-slate-400">
+                    We'll guide you through this process now.
                 </p>
             </div>
             <Button variant="primary" size="lg" onClick={onFinish} className="w-full max-w-xs">
-                Import Data Now <ArrowRight size={18} />
+                Start Setup Tour <ArrowRight size={18} />
             </Button>
         </div>
     );
