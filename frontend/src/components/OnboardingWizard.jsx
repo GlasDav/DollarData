@@ -32,12 +32,17 @@ export default function OnboardingWizard() {
         retry: 1
     });
 
+    const storageKey = user?.id ? `hasSeenOnboarding_${user.id}` : 'hasSeenOnboarding_guest';
+
     useEffect(() => {
-        const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+        if (!user) return; // Wait for user to be loaded
+
+        const hasSeenOnboarding = localStorage.getItem(storageKey);
+        // console.log(`[Onboarding] Checking key: ${storageKey}, Value: ${hasSeenOnboarding}`);
 
         // Logic:
         // 1. If user has ALREADY seen it, don't show.
-        // 2. If user is NEW (created < 10 mins ago), force show it even if connection fails.
+        // 2. If user is NEW (created < 60 mins ago), force show it even if connection fails.
         // 3. If user has 0 transactions, show it.
 
         if (!hasSeenOnboarding) {
@@ -79,11 +84,13 @@ export default function OnboardingWizard() {
             }, 1000); // Slight delay for smooth entrance
             return () => clearTimeout(timer);
         }
-    }, [transactions, user]);
+    }, [transactions, user, storageKey]);
 
     const handleClose = () => {
         setIsOpen(false);
-        localStorage.setItem('hasSeenOnboarding', 'true');
+        if (user?.id) {
+            localStorage.setItem(storageKey, 'true');
+        }
     };
 
     const handleFinish = () => {
