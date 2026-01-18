@@ -68,7 +68,13 @@ async def get_supabase_jwks(supabase_url: str) -> Dict[str, Any]:
         )
 
 def create_default_user_setup(user: models.User, db: Session):
-    """Create default accounts and buckets for a new user with hierarchical categories."""
+    """Create default accounts and buckets for a new user with hierarchical categories.
+    
+    Uses raw SQL with explicit UUID casting for PostgreSQL compatibility.
+    """
+    from sqlalchemy import text
+    
+    user_id = str(user.id)  # Ensure it's a string
     
     # Default Balance Sheet Accounts
     default_accounts = [
@@ -78,14 +84,15 @@ def create_default_user_setup(user: models.User, db: Session):
     ]
     
     for account_data in default_accounts:
-        account = models.Account(
-            user_id=user.id,
-            name=account_data["name"],
-            type=account_data["type"],
-            category=account_data["category"],
-            is_active=True
-        )
-        db.add(account)
+        db.execute(text("""
+            INSERT INTO accounts (user_id, name, type, category, balance, is_active)
+            VALUES (:user_id::uuid, :name, :type, :category, 0.0, true)
+        """), {
+            "user_id": user_id,
+            "name": account_data["name"],
+            "type": account_data["type"],
+            "category": account_data["category"]
+        })
     
     # === HIERARCHICAL BUDGET CATEGORIES ===
     DEFAULT_CATEGORIES = {
@@ -206,53 +213,59 @@ def create_default_user_setup(user: models.User, db: Session):
     display_order = 0
     
     for parent_name, config in DEFAULT_CATEGORIES.items():
-        parent_bucket = models.BudgetBucket(
-            user_id=user.id,
-            name=parent_name,
-            icon_name=config.get("icon", "Wallet"),
-            group=config.get("group", "Discretionary"),
-            display_order=display_order
-        )
-        db.add(parent_bucket)
-        db.flush()
+        # Insert parent bucket and get its ID
+        result = db.execute(text("""
+            INSERT INTO budget_buckets (user_id, name, icon_name, "group", display_order)
+            VALUES (:user_id::uuid, :name, :icon_name, :group, :display_order)
+            RETURNING id
+        """), {
+            "user_id": user_id,
+            "name": parent_name,
+            "icon_name": config.get("icon", "Wallet"),
+            "group": config.get("group", "Discretionary"),
+            "display_order": display_order
+        })
+        parent_id = result.fetchone()[0]
         display_order += 1
         
         child_order = 0
         for child in config.get("children", []):
-            child_bucket = models.BudgetBucket(
-                user_id=user.id,
-                name=child["name"],
-                icon_name=child.get("icon", "Wallet"),
-                group=config.get("group", "Discretionary"),
-                parent_id=parent_bucket.id,
-                display_order=child_order
-            )
-            db.add(child_bucket)
+            db.execute(text("""
+                INSERT INTO budget_buckets (user_id, name, icon_name, "group", parent_id, display_order)
+                VALUES (:user_id::uuid, :name, :icon_name, :group, :parent_id, :display_order)
+            """), {
+                "user_id": user_id,
+                "name": child["name"],
+                "icon_name": child.get("icon", "Wallet"),
+                "group": config.get("group", "Discretionary"),
+                "parent_id": parent_id,
+                "display_order": child_order
+            })
             child_order += 1
     
     # Special Buckets
-    db.add(models.BudgetBucket(
-        user_id=user.id, name="Transfers", icon_name="ArrowLeftRight",
-        group="Non-Discretionary", is_transfer=True, display_order=display_order
-    ))
+    db.execute(text("""
+        INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_transfer, display_order)
+        VALUES (:user_id::uuid, 'Transfers', 'ArrowLeftRight', 'Non-Discretionary', true, :display_order)
+    """), {"user_id": user_id, "display_order": display_order})
     display_order += 1
     
-    db.add(models.BudgetBucket(
-        user_id=user.id, name="Investments", icon_name="TrendingUp",
-        group="Non-Discretionary", is_investment=True, display_order=display_order
-    ))
+    db.execute(text("""
+        INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_investment, display_order)
+        VALUES (:user_id::uuid, 'Investments', 'TrendingUp', 'Non-Discretionary', true, :display_order)
+    """), {"user_id": user_id, "display_order": display_order})
     display_order += 1
     
-    db.add(models.BudgetBucket(
-        user_id=user.id, name="One Off", icon_name="Zap",
-        group="Non-Discretionary", is_one_off=True, display_order=display_order
-    ))
+    db.execute(text("""
+        INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_one_off, display_order)
+        VALUES (:user_id::uuid, 'One Off', 'Zap', 'Non-Discretionary', true, :display_order)
+    """), {"user_id": user_id, "display_order": display_order})
     display_order += 1
     
-    db.add(models.BudgetBucket(
-        user_id=user.id, name="Reimbursable", icon_name="ReceiptText",
-        group="Non-Discretionary", display_order=display_order
-    ))
+    db.execute(text("""
+        INSERT INTO budget_buckets (user_id, name, icon_name, "group", display_order)
+        VALUES (:user_id::uuid, 'Reimbursable', 'ReceiptText', 'Non-Discretionary', :display_order)
+    """), {"user_id": user_id, "display_order": display_order})
     
     db.commit()
     logger.info(f"Created default configuration for user {user.email}")
