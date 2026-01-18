@@ -51,14 +51,17 @@ def delete_account(
     db.query(models.HouseholdUser).filter(models.HouseholdUser.user_id == user_id).delete(synchronize_session=False)
     
     # Find households owned by this user
+    # Find households owned by this user
     owned_households = db.query(models.Household).filter(models.Household.owner_id == user_id).all()
-    for household in owned_households:
-        # Delete invites for this household
-        db.query(models.HouseholdInvite).filter(models.HouseholdInvite.household_id == household.id).delete(synchronize_session=False)
-        # Delete members of this household
-        db.query(models.HouseholdUser).filter(models.HouseholdUser.household_id == household.id).delete(synchronize_session=False)
-        # Delete the household itself
-        db.delete(household)
+    owned_household_ids = [h.id for h in owned_households]
+    
+    if owned_household_ids:
+        # Delete invites for these households
+        db.query(models.HouseholdInvite).filter(models.HouseholdInvite.household_id.in_(owned_household_ids)).delete(synchronize_session=False)
+        # Delete members of these households
+        db.query(models.HouseholdUser).filter(models.HouseholdUser.household_id.in_(owned_household_ids)).delete(synchronize_session=False)
+        # Delete the households themselves
+        db.query(models.Household).filter(models.Household.id.in_(owned_household_ids)).delete(synchronize_session=False)
     
     # Force flush to ensure households are deleted before we try to delete the user
     # avoiding "violates foreign key constraint households_owner_id_fkey"

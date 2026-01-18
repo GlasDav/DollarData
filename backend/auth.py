@@ -75,6 +75,7 @@ def create_default_user_setup(user: models.User, db: Session):
     from sqlalchemy import text
     
     user_id = str(user.id)  # Ensure it's a string
+    logger.info(f"Starting default setup for user {user_id}...")
     
     # Default Balance Sheet Accounts
     default_accounts = [
