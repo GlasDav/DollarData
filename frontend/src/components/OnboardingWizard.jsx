@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Sparkles, DollarSign, Users, ArrowRight, Check, UploadCloud } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import api, { updateSettings, createMember } from '../services/api';
+import api, { updateSettings, createMember, getMembers } from '../services/api';
 import Button from './ui/Button';
 import { useTutorial } from '../context/TutorialContext';
 import { useAuth } from '../context/AuthContext';
@@ -107,6 +107,9 @@ export default function OnboardingWizard() {
 
     if (!isOpen) return null;
 
+    // Progress bar calculation based on 4 steps now
+    const totalSteps = 4;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
@@ -115,7 +118,7 @@ export default function OnboardingWizard() {
                 <div className="h-1.5 bg-slate-100 dark:bg-slate-700 w-full">
                     <div
                         className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500 ease-in-out"
-                        style={{ width: `${(step / 3) * 100}%` }}
+                        style={{ width: `${(step / totalSteps) * 100}%` }}
                     ></div>
                 </div>
 
@@ -123,8 +126,9 @@ export default function OnboardingWizard() {
                 <div className="p-8 flex-1 flex flex-col text-center items-center justify-center min-h-[320px]">
 
                     {step === 1 && <WelcomeStep onNext={() => setStep(2)} />}
-                    {step === 2 && <HouseholdStep onNext={() => setStep(3)} />}
-                    {step === 3 && <ConnectStep onFinish={handleFinish} />}
+                    {step === 2 && <CurrencyStep onNext={() => setStep(3)} />}
+                    {step === 3 && <HouseholdStep onNext={() => setStep(4)} />}
+                    {step === 4 && <ConnectStep onFinish={handleFinish} />}
 
                 </div>
             </div>
