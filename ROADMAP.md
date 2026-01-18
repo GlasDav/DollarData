@@ -39,19 +39,21 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 🎨 UI/UX Improvements
 
-- [ ] **Tutorial System:** In-app walkthrough using React Joyride. See [Implementation Plan](file:///C:/Users/David%20Glasser/.gemini/antigravity/brain/76091029-2416-4e0b-877f-6510f83bccd4/implementation_plan.md).
+- [x] **Tutorial System:** In-app walkthrough using React Joyride.
   - [x] User documentation created (`docs/ONBOARDING_TUTORIAL.md`)
-  - [ ] **Phase 1 (MVP):** Setup Tour (Modules 1-4)
-    - [ ] Install `react-joyride` package
-    - [ ] Create `TutorialContext.jsx` provider
-    - [ ] Implement setup tour steps (Categories → Rules → Import)
-    - [ ] Add `data-tour` attributes to navigation & Budget page
-    - [ ] Integrate with existing `OnboardingWizard.jsx`
+  - [x] **Phase 1 (MVP):** Setup Tour (Modules 1-4)
+    - [x] Install `react-joyride` package
+    - [x] Create `TutorialContext.jsx` provider
+    - [x] Implement setup tour steps (Categories → Rules → Import)
+    - [x] Add `data-tour` attributes to navigation & Budget page
+    - [x] Integrate with existing `OnboardingWizard.jsx`
+    - [x] Enable `spotlightClicks` for interactive tour
+    - [x] Add "Help" tab to Settings with restart button
+    - [x] Checklist summary on final step
   - [ ] **Phase 2:** Dashboard & Core Features
     - [ ] Dashboard tour (widget explanations)
     - [ ] Net Worth tour
     - [ ] `TutorialLauncher.jsx` help menu component
-    - [ ] Progress persistence (localStorage)
   - [ ] **Phase 3:** Advanced Features
     - [ ] Budgeting tour
     - [ ] Goals & Achievements tour

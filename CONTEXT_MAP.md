@@ -675,6 +675,20 @@ docker compose exec backend python /app/seed_demo_user.py
   - Planned Open Banking filter parameter for `ConnectBank.jsx`.
 - **Files:** `.gemini/.../implementation_plan.md`, `.gemini/.../task.md`.
 
+### **In-App Tutorial System Phase 1 (Jan 2026)**
+- **React Joyride Integration:** Implemented guided "Setup Tour" for new users.
+  - Created `TutorialContext.jsx` for tour state management with localStorage persistence.
+  - Created `tourSteps.jsx` with 6-step setup tour (Categories → Rules → Import).
+  - Added `Joyride` component to `App.jsx` with styled tooltips.
+  - Added `data-tour` attributes to Budget page tabs and buttons.
+  - Modified `OnboardingWizard.jsx` to trigger tour after wizard completion.
+- **UX Improvements:**
+  - Enabled `spotlightClicks` for interactive tour (users can click highlighted elements).
+  - Added "Help" tab to Settings with "Restart Tutorial" button (`HelpSettings.jsx`).
+  - Updated final tour step with checklist summary and restart tip.
+- **Docker Fix:** Added `--legacy-peer-deps` to `frontend/Dockerfile` for React 19 compatibility.
+- **Files:** `frontend/src/context/TutorialContext.jsx`, `frontend/src/constants/tourSteps.jsx`, `frontend/src/App.jsx`, `frontend/src/components/OnboardingWizard.jsx`, `frontend/src/pages/Budget.jsx`, `frontend/src/components/settings/HelpSettings.jsx`, `frontend/src/pages/Settings.jsx`, `frontend/Dockerfile`.
+
 ---
 
 *Generated for AI context. Do not commit to version control.*
