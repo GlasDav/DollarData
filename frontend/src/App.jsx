@@ -129,6 +129,13 @@ function Layout() {
   // Get tour steps for active tour
   const tourSteps = activeTour ? tourStepsMap[activeTour] || [] : [];
 
+  // Close tour when navigating away from Budget page (where setup tour runs)
+  React.useEffect(() => {
+    if (activeTour === TOUR_IDS.SETUP && location.pathname !== '/budget') {
+      closeTour();
+    }
+  }, [location.pathname, activeTour, closeTour]);
+
   // Handle Joyride callbacks
   const handleJoyrideCallback = (data) => {
     const { status, index, type } = data;
@@ -233,44 +240,46 @@ function Layout() {
       {/* AI ChatBot - Available on all pages */}
       <AIChatBot />
 
-      {/* Tutorial Joyride */}
-      <Joyride
-        steps={tourSteps}
-        stepIndex={stepIndex}
-        run={activeTour !== null}
-        continuous
-        showProgress
-        showSkipButton
-        spotlightClicks
-        disableOverlayClose
-        callback={handleJoyrideCallback}
-        styles={{
-          options: {
-            primaryColor: '#5D5DFF',
-            zIndex: 10000,
-          },
-          tooltip: {
-            borderRadius: '12px',
-            padding: '16px',
-          },
-          buttonNext: {
-            borderRadius: '8px',
-          },
-          buttonBack: {
-            borderRadius: '8px',
-          },
-          buttonSkip: {
-            borderRadius: '8px',
-          },
-        }}
-        locale={{
-          back: 'Back',
-          close: 'Close',
-          last: 'Finish',
-          next: 'Next',
-          skip: 'Skip Tour',
-        }}
-      />
+      {/* Tutorial Joyride - only run on appropriate pages */}
+      {activeTour === TOUR_IDS.SETUP && location.pathname === '/budget' && (
+        <Joyride
+          steps={tourSteps}
+          stepIndex={stepIndex}
+          run={activeTour !== null && tourSteps.length > 0}
+          continuous
+          showProgress
+          showSkipButton
+          spotlightClicks
+          disableOverlayClose
+          callback={handleJoyrideCallback}
+          styles={{
+            options: {
+              primaryColor: '#5D5DFF',
+              zIndex: 10000,
+            },
+            tooltip: {
+              borderRadius: '12px',
+              padding: '16px',
+            },
+            buttonNext: {
+              borderRadius: '8px',
+            },
+            buttonBack: {
+              borderRadius: '8px',
+            },
+            buttonSkip: {
+              borderRadius: '8px',
+            },
+          }}
+          locale={{
+            back: 'Back',
+            close: 'Close',
+            last: 'Finish',
+            next: 'Next',
+            skip: 'Skip Tour',
+          }}
+        />
+      )}
     </div>
   );
 }
