@@ -66,6 +66,17 @@ Before diving in, take a moment to personalize your experience:
 | Theme | Sidebar footer | Switch between light and dark mode |
 | Notifications | Settings → Notifications | Control email and in-app alerts |
 
+### 1.4 Managing Your Data
+
+You have full control over your data.
+
+**To delete your account:**
+1. Go to **Settings** → **Data Management**
+2. Scroll to the "Danger Zone"
+3. Click **Delete Account**
+4. Type "DELETE" to confirm
+5. **Warning:** This permanently wipes all your data, including households you own.
+
 ---
 
 ## Module 2: Setting Up Your Categories

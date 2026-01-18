@@ -36,6 +36,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Security (MFA):** Multi-Factor Authentication setup.
 - [ ] **Email Verification:** Verify user email addresses for security.
 - [ ] **Notifications Overhaul:** Fix currently broken notifications system and improve customization.
+- [x] **Delete Account:** Allow users to permanently delete their account and data (GDPR compliance).
 
 ## 🎨 UI/UX Improvements
 
