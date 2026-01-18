@@ -37,6 +37,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Email Verification:** Verify user email addresses for security.
 - [ ] **Notifications Overhaul:** Fix currently broken notifications system and improve customization.
 - [x] **Delete Account:** Allow users to permanently delete their account and data (GDPR compliance).
+- [x] **Account Creation Stability:** Fixed 504 timeouts and database locks during signup.
 
 ## 🎨 UI/UX Improvements
 

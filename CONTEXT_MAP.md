@@ -602,6 +602,10 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Transaction Tests:** Updated `tests/test_transactions.py` to use correct `/api/` prefix and skipped tests for unimplemented features.
 - **Result:** CI Pipeline is now green and stable for merging.
 - **Resolves:** Notifications 500 Error (fixed schema validator) and Transactions 405 Error (fixed router path).
+  - **Create Account Timeout Fix:** 
+    - Resolved 504 Gateway Timeout during registration by identifying and removing blocking `on_auth_user_created` trigger in Supabase.
+    - Resolved 500 Internal Server Error in `delete_account` by implementing bulk deletes to prevent foreign key locks.
+    - Added logging to JIT provisioning in `backend/auth.py`.
 
 ### **Console Error Fixes (Jan 2026)**
 - **Transactions 405 Error (Frontend):** Fixed trailing slash in API calls for `OnboardingWizard.jsx` and `CreateTransactionModal.jsx`.
