@@ -698,24 +698,23 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Docker Fix:** Added `--legacy-peer-deps` to `frontend/Dockerfile` for React 19 compatibility.
 - **Files:** `frontend/src/context/TutorialContext.jsx`, `frontend/src/constants/tourSteps.jsx`, `frontend/src/App.jsx`, `frontend/src/components/OnboardingWizard.jsx`, `frontend/src/pages/Budget.jsx`, `frontend/src/components/settings/HelpSettings.jsx`, `frontend/src/pages/Settings.jsx`, `frontend/Dockerfile`.
 
+### **Missing Defaults & Category Fixes (Jan 2026)**
+- **Default Categories Bug:** Fixed issue where new users created via Supabase trigger were missing default budget buckets.
+  - **Root Cause:** Type mismatch between SQLAlchemy (`String`) and PostgreSQL (`UUID`) for `user_id` when inserting defaults.
+  - **Fix:** Updated `backend/auth.py` to use raw SQL with explicit `CAST(:user_id AS uuid)`.
+  - **Logic:** Added checking logic to `get_current_user` to retroactively apply defaults if a user has 0 buckets.
+- **Refinement:** Removed redundant "Investment Contributions" from default category set.
+- **Files:** `backend/auth.py`.
+
+### **Tutorial System Navigation Fix (Jan 2026)**
+- **Bug Fix:** Resolved crash causing blank white screen when navigating from Budget page to Settings (or any other page) after starting the setup tutorial.
+  - **Root Cause:** React Joyride trying to find Budget-specific DOM elements (`data-tour` attributes) on pages where they don't exist, throwing "Cannot read properties of null (reading 'nodeName')" error.
+  - **Solution:**
+    - Added `useEffect` hook to auto-close tour when navigating away from Budget page.
+    - Wrapped Joyride component in conditional render - only displays when `activeTour === TOUR_IDS.SETUP` AND `location.pathname === '/budget'`.
+  - **Impact:** Tour now gracefully closes on navigation and can be restarted from Settings → Help without crashes.
+- **Files:** `frontend/src/App.jsx`.
+
 ---
 
 *Generated for AI context. Do not commit to version control.*
-
-
- 
- # # #   * * M i s s i n g   D e f a u l t s   &   C a t e g o r y   F i x e s   ( J a n   2 0 2 6 ) * * 
- 
- -   * * D e f a u l t   C a t e g o r i e s   B u g : * *   F i x e d   i s s u e   w h e r e   n e w   u s e r s   c r e a t e d   v i a   S u p a b a s e   t r i g g e r   w e r e   m i s s i n g   d e f a u l t   b u d g e t   b u c k e t s . 
- 
-     -   * * R o o t   C a u s e : * *   T y p e   m i s m a t c h   b e t w e e n   S Q L A l c h e m y   ( ` S t r i n g ` )   a n d   P o s t g r e S Q L   ( ` U U I D ` )   f o r   ` u s e r _ i d `   w h e n   i n s e r t i n g   d e f a u l t s . 
- 
-     -   * * F i x : * *   U p d a t e d   ` b a c k e n d / a u t h . p y `   t o   u s e   r a w   S Q L   w i t h   e x p l i c i t   ` C A S T ( : u s e r _ i d   A S   u u i d ) ` . 
- 
-     -   * * L o g i c : * *   A d d e d   c h e c k i n g   l o g i c   t o   ` g e t _ c u r r e n t _ u s e r `   t o   r e t r o a c t i v e l y   a p p l y   d e f a u l t s   i f   a   u s e r   h a s   0   b u c k e t s . 
- 
- -   * * R e f i n e m e n t : * *   R e m o v e d   r e d u n d a n t   " I n v e s t m e n t   C o n t r i b u t i o n s "   f r o m   d e f a u l t   c a t e g o r y   s e t . 
- 
- -   * * F i l e s : * *   ` b a c k e n d / a u t h . p y ` . 
- 
- 
