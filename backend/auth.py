@@ -70,6 +70,7 @@ async def get_supabase_jwks(supabase_url: str) -> Dict[str, Any]:
 def create_default_user_setup(user: models.User, db: Session):
     """Create default accounts and buckets for a new user with hierarchical categories.
     
+    Optimized to use batched INSERTs to reduce database roundtrips.
     Uses raw SQL with explicit UUID casting for PostgreSQL compatibility.
     """
     from sqlalchemy import text
@@ -77,195 +78,205 @@ def create_default_user_setup(user: models.User, db: Session):
     user_id = str(user.id)  # Ensure it's a string
     logger.info(f"Starting default setup for user {user_id}...")
     
-    # Default Balance Sheet Accounts
-    default_accounts = [
-        {"name": "Checking Account", "type": "Asset", "category": "Cash"},
-        {"name": "Savings Account", "type": "Asset", "category": "Cash"},
-        {"name": "Credit Card", "type": "Liability", "category": "Credit Card"},
-    ]
+    # 1. Batch Create Default Accounts
+    # --------------------------------
+    logger.info("Batch creating default accounts...")
     
-    for account_data in default_accounts:
-        db.execute(text("""
-            INSERT INTO accounts (user_id, name, type, category, balance, is_active)
-            VALUES (CAST(:user_id AS uuid), :name, :type, :category, 0.0, true)
-        """), {
-            "user_id": user_id,
-            "name": account_data["name"],
-            "type": account_data["type"],
-            "category": account_data["category"]
-        })
+    # Using raw SQL values batching
+    db.execute(text("""
+        INSERT INTO accounts (user_id, name, type, category, balance, is_active)
+        VALUES 
+            (CAST(:user_id AS uuid), 'Checking Account', 'Asset', 'Cash', 0.0, true),
+            (CAST(:user_id AS uuid), 'Savings Account', 'Asset', 'Cash', 0.0, true),
+            (CAST(:user_id AS uuid), 'Credit Card', 'Liability', 'Credit Card', 0.0, true)
+    """), {"user_id": user_id})
     
-    # === HIERARCHICAL BUDGET CATEGORIES ===
+    # 2. Batch Create Parent Buckets
+    # ------------------------------
+    logger.info("Batch creating parent buckets...")
+    
+    # Define parents and their config
     DEFAULT_CATEGORIES = {
-        "Income": {
-            "icon": "TrendingUp",
-            "group": "Income",
-            "children": [
-                {"name": "Salaries", "icon": "Briefcase"},
-                {"name": "Interest", "icon": "TrendingUp"},
-                {"name": "Business", "icon": "Building"},
-                {"name": "Other Income", "icon": "DollarSign"},
-            ]
-        },
-        "Household Expenses": {
-            "icon": "Home",
-            "group": "Non-Discretionary",
-            "children": [
-                {"name": "Gas & Electricity", "icon": "Zap"},
-                {"name": "Water", "icon": "Droplet"},
-                {"name": "Internet", "icon": "Wifi"},
-                {"name": "Mobile Phone", "icon": "Smartphone"},
-                {"name": "Mortgage/Rent", "icon": "Home"},
-                {"name": "Strata Levies", "icon": "Building"},
-                {"name": "Council Rates", "icon": "Landmark"},
-                {"name": "Subscriptions", "icon": "CreditCard"},
-                {"name": "Maintenance", "icon": "Wrench"},
-                {"name": "Household General", "icon": "Home"},
-            ]
-        },
-        "Vehicle": {
-            "icon": "Car",
-            "group": "Non-Discretionary",
-            "children": [
-                {"name": "Petrol", "icon": "Fuel"},
-                {"name": "Insurance & Registration", "icon": "Shield"},
-                {"name": "Vehicle Maintenance", "icon": "Settings"},
-            ]
-        },
-        "Food": {
-            "icon": "Utensils",
-            "group": "Discretionary",
-            "children": [
-                {"name": "Groceries", "icon": "ShoppingCart"},
-                {"name": "Dining Out", "icon": "Utensils"},
-                {"name": "Coffee", "icon": "Coffee"},
-                {"name": "Snacks", "icon": "Cookie"},
-            ]
-        },
-        "Lifestyle": {
-            "icon": "Heart",
-            "group": "Discretionary",
-            "children": [
-                {"name": "Personal", "icon": "User"},
-                {"name": "Homewares", "icon": "Sofa"},
-                {"name": "Beauty", "icon": "Sparkles"},
-                {"name": "Health & Fitness", "icon": "Dumbbell"},
-                {"name": "Clothing", "icon": "Shirt"},
-                {"name": "Leisure", "icon": "Film"},
-                {"name": "Dates", "icon": "Heart"},
-                {"name": "Gifts", "icon": "Gift"},
-                {"name": "Parking & Tolls", "icon": "ParkingCircle"},
-                {"name": "Public Transport", "icon": "Train"},
-                {"name": "Taxi & Rideshare", "icon": "Car"},
-            ]
-        },
-        "Health & Wellness": {
-            "icon": "HeartPulse",
-            "group": "Non-Discretionary",
-            "children": [
-                {"name": "Medical", "icon": "Stethoscope"},
-                {"name": "Dental", "icon": "Smile"},
-                {"name": "Pharmacy", "icon": "Pill"},
-                {"name": "Fitness", "icon": "Dumbbell"},
-            ]
-        },
-        "Kids": {
-            "icon": "Baby",
-            "group": "Discretionary",
-            "children": [
-                {"name": "Childcare", "icon": "Baby"},
-                {"name": "Education", "icon": "GraduationCap"},
-                {"name": "Kids Expenses", "icon": "ShoppingBag"},
-                {"name": "Activities", "icon": "Gamepad"},
-            ]
-        },
-        "Rollover/Non-Monthly": {
-            "icon": "Calendar",
-            "group": "Discretionary",
-            "children": [
-                {"name": "Donations", "icon": "HandHeart"},
-                {"name": "Renovations", "icon": "Hammer"},
-                {"name": "Travel", "icon": "Plane"},
-                {"name": "Major Purchases", "icon": "ShoppingBag"},
-            ]
-        },
-        "Financial": {
-            "icon": "Landmark",
-            "group": "Non-Discretionary",
-            "children": [
-                {"name": "Cash & ATM Fees", "icon": "Banknote"},
-                {"name": "Financial Fees", "icon": "Building2"},
-                {"name": "Accounting", "icon": "Calculator"},
-            ]
-        },
-        "Other": {
-            "icon": "MoreHorizontal",
-            "group": "Discretionary",
-            "children": [
-                {"name": "Work Expenses", "icon": "Briefcase"},
-                {"name": "Business Expenses", "icon": "Building"},
-                {"name": "Miscellaneous", "icon": "MoreHorizontal"},
-                {"name": "Uncategorised", "icon": "HelpCircle"},
-            ]
-        },
+        "Income": {"icon": "TrendingUp", "group": "Income", "display_order": 0},
+        "Household Expenses": {"icon": "Home", "group": "Non-Discretionary", "display_order": 1},
+        "Vehicle": {"icon": "Car", "group": "Non-Discretionary", "display_order": 2},
+        "Food": {"icon": "Utensils", "group": "Discretionary", "display_order": 3},
+        "Lifestyle": {"icon": "Heart", "group": "Discretionary", "display_order": 4},
+        "Health & Wellness": {"icon": "HeartPulse", "group": "Non-Discretionary", "display_order": 5},
+        "Kids": {"icon": "Baby", "group": "Discretionary", "display_order": 6},
+        "Rollover/Non-Monthly": {"icon": "Calendar", "group": "Discretionary", "display_order": 7},
+        "Financial": {"icon": "Landmark", "group": "Non-Discretionary", "display_order": 8},
+        "Other": {"icon": "MoreHorizontal", "group": "Discretionary", "display_order": 9},
     }
     
-    display_order = 0
+    # Construct VALUES part dynamically to ensure order matches our dictionary if we iterated, 
+    # but a static big query is cleaner if we hardcode or just loop construction.
+    # Let's use a parameterized execute with multiple sets of params is not supported by text() usually in this way 
+    # without executemany, but we want one roundtrip.
+    # We will construct a single INSERT statement with multiple VALUES.
     
-    for parent_name, config in DEFAULT_CATEGORIES.items():
-        # Insert parent bucket and get its ID
-        result = db.execute(text("""
-            INSERT INTO budget_buckets (user_id, name, icon_name, "group", display_order)
-            VALUES (CAST(:user_id AS uuid), :name, :icon_name, :group, :display_order)
-            RETURNING id
-        """), {
-            "user_id": user_id,
-            "name": parent_name,
-            "icon_name": config.get("icon", "Wallet"),
-            "group": config.get("group", "Discretionary"),
-            "display_order": display_order
-        })
-        parent_id = result.fetchone()[0]
-        display_order += 1
+    parent_insert_values = []
+    parent_params = {"user_id": user_id}
+    
+    for i, (name, config) in enumerate(DEFAULT_CATEGORIES.items()):
+        # Parameter keys must be unique
+        p_name = f"p_name_{i}"
+        p_icon = f"p_icon_{i}"
+        p_group = f"p_group_{i}"
+        p_order = f"p_order_{i}"
         
-        child_order = 0
-        for child in config.get("children", []):
-            db.execute(text("""
-                INSERT INTO budget_buckets (user_id, name, icon_name, "group", parent_id, display_order)
-                VALUES (CAST(:user_id AS uuid), :name, :icon_name, :group, :parent_id, :display_order)
-            """), {
-                "user_id": user_id,
-                "name": child["name"],
-                "icon_name": child.get("icon", "Wallet"),
-                "group": config.get("group", "Discretionary"),
-                "parent_id": parent_id,
-                "display_order": child_order
-            })
-            child_order += 1
-    
-    # Special Buckets
-    db.execute(text("""
-        INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_transfer, display_order)
-        VALUES (CAST(:user_id AS uuid), 'Transfers', 'ArrowLeftRight', 'Non-Discretionary', true, :display_order)
-    """), {"user_id": user_id, "display_order": display_order})
-    display_order += 1
-    
-    db.execute(text("""
-        INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_investment, display_order)
-        VALUES (CAST(:user_id AS uuid), 'Investments', 'TrendingUp', 'Non-Discretionary', true, :display_order)
-    """), {"user_id": user_id, "display_order": display_order})
-    display_order += 1
-    
-    db.execute(text("""
-        INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_one_off, display_order)
-        VALUES (CAST(:user_id AS uuid), 'One Off', 'Zap', 'Non-Discretionary', true, :display_order)
-    """), {"user_id": user_id, "display_order": display_order})
-    display_order += 1
-    
-    db.execute(text("""
+        parent_insert_values.append(f"(CAST(:user_id AS uuid), :{p_name}, :{p_icon}, :{p_group}, :{p_order})")
+        
+        parent_params[p_name] = name
+        parent_params[p_icon] = config["icon"]
+        parent_params[p_group] = config["group"]
+        parent_params[p_order] = config["display_order"]
+
+    parent_sql = f"""
         INSERT INTO budget_buckets (user_id, name, icon_name, "group", display_order)
-        VALUES (CAST(:user_id AS uuid), 'Reimbursable', 'ReceiptText', 'Non-Discretionary', :display_order)
-    """), {"user_id": user_id, "display_order": display_order})
+        VALUES {', '.join(parent_insert_values)}
+        RETURNING id, name
+    """
+    
+    result = db.execute(text(parent_sql), parent_params)
+    parents_map = {row[1]: row[0] for row in result.fetchall()}
+    
+    # 3. Batch Create Child Buckets
+    # -----------------------------
+    logger.info("Batch creating child buckets...")
+    
+    # Define children structure
+    CHILDREN_definitions = {
+        "Income": [
+            {"name": "Salaries", "icon": "Briefcase"},
+            {"name": "Interest", "icon": "TrendingUp"},
+            {"name": "Business", "icon": "Building"},
+            {"name": "Other Income", "icon": "DollarSign"},
+        ],
+        "Household Expenses": [
+            {"name": "Gas & Electricity", "icon": "Zap"},
+            {"name": "Water", "icon": "Droplet"},
+            {"name": "Internet", "icon": "Wifi"},
+            {"name": "Mobile Phone", "icon": "Smartphone"},
+            {"name": "Mortgage/Rent", "icon": "Home"},
+            {"name": "Strata Levies", "icon": "Building"},
+            {"name": "Council Rates", "icon": "Landmark"},
+            {"name": "Subscriptions", "icon": "CreditCard"},
+            {"name": "Maintenance", "icon": "Wrench"},
+            {"name": "Household General", "icon": "Home"},
+        ],
+        "Vehicle": [
+            {"name": "Petrol", "icon": "Fuel"},
+            {"name": "Insurance & Registration", "icon": "Shield"},
+            {"name": "Vehicle Maintenance", "icon": "Settings"},
+        ],
+        "Food": [
+            {"name": "Groceries", "icon": "ShoppingCart"},
+            {"name": "Dining Out", "icon": "Utensils"},
+            {"name": "Coffee", "icon": "Coffee"},
+            {"name": "Snacks", "icon": "Cookie"},
+        ],
+        "Lifestyle": [
+            {"name": "Personal", "icon": "User"},
+            {"name": "Homewares", "icon": "Sofa"},
+            {"name": "Beauty", "icon": "Sparkles"},
+            {"name": "Health & Fitness", "icon": "Dumbbell"},
+            {"name": "Clothing", "icon": "Shirt"},
+            {"name": "Leisure", "icon": "Film"},
+            {"name": "Dates", "icon": "Heart"},
+            {"name": "Gifts", "icon": "Gift"},
+            {"name": "Parking & Tolls", "icon": "ParkingCircle"},
+            {"name": "Public Transport", "icon": "Train"},
+            {"name": "Taxi & Rideshare", "icon": "Car"},
+        ],
+        "Health & Wellness": [
+            {"name": "Medical", "icon": "Stethoscope"},
+            {"name": "Dental", "icon": "Smile"},
+            {"name": "Pharmacy", "icon": "Pill"},
+            {"name": "Fitness", "icon": "Dumbbell"},
+        ],
+        "Kids": [
+            {"name": "Childcare", "icon": "Baby"},
+            {"name": "Education", "icon": "GraduationCap"},
+            {"name": "Kids Expenses", "icon": "ShoppingBag"},
+            {"name": "Activities", "icon": "Gamepad"},
+        ],
+        "Rollover/Non-Monthly": [
+            {"name": "Donations", "icon": "HandHeart"},
+            {"name": "Renovations", "icon": "Hammer"},
+            {"name": "Travel", "icon": "Plane"},
+            {"name": "Major Purchases", "icon": "ShoppingBag"},
+        ],
+        "Financial": [
+            {"name": "Cash & ATM Fees", "icon": "Banknote"},
+            {"name": "Financial Fees", "icon": "Building2"},
+            {"name": "Accounting", "icon": "Calculator"},
+        ],
+        "Other": [
+            {"name": "Work Expenses", "icon": "Briefcase"},
+            {"name": "Business Expenses", "icon": "Building"},
+            {"name": "Miscellaneous", "icon": "MoreHorizontal"},
+            {"name": "Uncategorised", "icon": "HelpCircle"},
+        ],
+    }
+    
+    child_insert_values = []
+    child_params = {"user_id": user_id}
+    child_param_idx = 0
+    
+    for parent_name, children in CHILDREN_definitions.items():
+        parent_id = parents_map.get(parent_name)
+        parent_group = DEFAULT_CATEGORIES[parent_name]["group"]
+        
+        if not parent_id:
+            logger.error(f"Parent bucket '{parent_name}' not found in map, skipping children.")
+            continue
+            
+        for i, child in enumerate(children):
+            c_name = f"c_name_{child_param_idx}"
+            c_icon = f"c_icon_{child_param_idx}"
+            c_group = f"c_group_{child_param_idx}"
+            c_pid = f"c_pid_{child_param_idx}"
+            c_order = f"c_order_{child_param_idx}"
+            
+            child_insert_values.append(f"(CAST(:user_id AS uuid), :{c_name}, :{c_icon}, :{c_group}, :{c_pid}, :{c_order})")
+            
+            child_params[c_name] = child["name"]
+            child_params[c_icon] = child.get("icon", "Wallet")
+            child_params[c_group] = parent_group
+            child_params[c_pid] = parent_id
+            child_params[c_order] = i
+            
+            child_param_idx += 1
+
+    if child_insert_values:
+        child_sql = f"""
+            INSERT INTO budget_buckets (user_id, name, icon_name, "group", parent_id, display_order)
+            VALUES {', '.join(child_insert_values)}
+        """
+        db.execute(text(child_sql), child_params)
+
+    # 4. Batch Create Special Buckets
+    # -------------------------------
+    logger.info("Batch creating special buckets...")
+    
+    # We continue display_order from where parents left off (len(DEFAULT_CATEGORIES))
+    special_start_order = len(DEFAULT_CATEGORIES)
+    
+    db.execute(text("""
+        INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_transfer, is_investment, is_one_off, display_order)
+        VALUES 
+            (CAST(:user_id AS uuid), 'Transfers', 'ArrowLeftRight', 'Non-Discretionary', true, false, false, :order_1),
+            (CAST(:user_id AS uuid), 'Investments', 'TrendingUp', 'Non-Discretionary', false, true, false, :order_2),
+            (CAST(:user_id AS uuid), 'One Off', 'Zap', 'Non-Discretionary', false, false, true, :order_3),
+            (CAST(:user_id AS uuid), 'Reimbursable', 'ReceiptText', 'Non-Discretionary', false, false, false, :order_4)
+    """), {
+        "user_id": user_id,
+        "order_1": special_start_order,
+        "order_2": special_start_order + 1,
+        "order_3": special_start_order + 2,
+        "order_4": special_start_order + 3
+    })
     
     db.commit()
     logger.info(f"Created default configuration for user {user.email}")
