@@ -251,6 +251,7 @@ function Layout() {
           showSkipButton
           spotlightClicks
           disableOverlayClose
+          disableScrollParentFix={true}
           callback={handleJoyrideCallback}
           styles={{
             options: {
