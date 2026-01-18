@@ -693,3 +693,12 @@ docker compose exec backend python /app/seed_demo_user.py
 
 *Generated for AI context. Do not commit to version control.*
 
+ 
+ # # #   * * M i s s i n g   D e f a u l t s   &   C a t e g o r y   F i x e s   ( J a n   2 0 2 6 ) * *  
+ -   * * D e f a u l t   C a t e g o r i e s   B u g : * *   F i x e d   i s s u e   w h e r e   n e w   u s e r s   c r e a t e d   v i a   S u p a b a s e   t r i g g e r   w e r e   m i s s i n g   d e f a u l t   b u d g e t   b u c k e t s .  
+     -   * * R o o t   C a u s e : * *   T y p e   m i s m a t c h   b e t w e e n   S Q L A l c h e m y   ( ` S t r i n g ` )   a n d   P o s t g r e S Q L   ( ` U U I D ` )   f o r   ` u s e r _ i d `   w h e n   i n s e r t i n g   d e f a u l t s .  
+     -   * * F i x : * *   U p d a t e d   ` b a c k e n d / a u t h . p y `   t o   u s e   r a w   S Q L   w i t h   e x p l i c i t   ` C A S T ( : u s e r _ i d   A S   u u i d ) ` .  
+     -   * * L o g i c : * *   A d d e d   c h e c k i n g   l o g i c   t o   ` g e t _ c u r r e n t _ u s e r `   t o   r e t r o a c t i v e l y   a p p l y   d e f a u l t s   i f   a   u s e r   h a s   0   b u c k e t s .  
+ -   * * R e f i n e m e n t : * *   R e m o v e d   r e d u n d a n t   " I n v e s t m e n t   C o n t r i b u t i o n s "   f r o m   d e f a u l t   c a t e g o r y   s e t .  
+ -   * * F i l e s : * *   ` b a c k e n d / a u t h . p y ` .  
+ 
