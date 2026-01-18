@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, TrendingUp } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Register() {
     const [email, setEmail] = useState("");
@@ -37,32 +37,22 @@ export default function Register() {
         }
     };
 
-    const handleGoogleSuccess = async (tokenResponse) => {
+    const handleGoogleSuccess = async (credentialResponse) => {
         setIsGoogleLoading(true);
         setError("");
         try {
-            await googleLogin(tokenResponse.access_token);
+            await googleLogin(credentialResponse.credential);
             navigate("/"); // Google login verifies email implicitly usually, so we can redirect
         } catch (err) {
             console.error('Google login error:', err);
-            const detail = err.response?.data?.detail;
-            if (typeof detail === 'string') {
-                setError(detail);
-            } else {
-                setError("Failed to sign up with Google. Please try again.");
-            }
-        } finally {
+            setError("Failed to sign up with Google. Please try again.");
             setIsGoogleLoading(false);
         }
     };
 
-    const googleLoginHook = useGoogleLogin({
-        onSuccess: handleGoogleSuccess,
-        onError: (error) => {
-            console.error('Google OAuth error:', error);
-            setError("Google sign-in was cancelled or failed.");
-        },
-    });
+    const handleGoogleError = () => {
+        setError("Google sign-in was cancelled or failed.");
+    };
 
     return (
         <div className="min-h-screen bg-surface dark:bg-surface-dark flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
@@ -137,27 +127,20 @@ export default function Register() {
                         )}
 
                         {/* Google Login Button */}
-                        <button
-                            type="button"
-                            onClick={() => googleLoginHook()}
-                            disabled={isGoogleLoading}
-                            className="w-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark text-text-primary dark:text-text-primary-dark font-medium py-3 rounded-xl transition-all hover:bg-surface-hover dark:hover:bg-surface-dark-hover hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isGoogleLoading ? (
-                                <>
-                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                    </svg>
-                                    Signing up...
-                                </>
-                            ) : (
-                                <>
-                                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
-                                    Sign up with Google
-                                </>
-                            )}
-                        </button>
+
+                        {/* Google Login Button */}
+                        <div className="w-full flex justify-center mb-6">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={handleGoogleError}
+                                useOneTap
+                                theme="filled_blue"
+                                shape="pill"
+                                size="large"
+                                width="100%"
+                                text="signup_with"
+                            />
+                        </div>
 
                         <div className="flex items-center gap-4 mb-6">
                             <div className="flex-1 h-px bg-border dark:bg-border-dark"></div>
