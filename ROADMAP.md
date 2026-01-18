@@ -19,16 +19,21 @@ This document outlines the planned features, improvements, and future direction 
 ## 📊 Reports & Analytics
 - [ ] **Filtered Reports:** Advanced filtering (tags, dates, categories, accounts) for custom reports.
 - [ ] **Monthly Expense Breakdown:** Clickable monthly totals to drill down into expense specifics.
+- [ ] **Fix Calendar:** Restore functionality showing total daily spend and upcoming bills.
+- [ ] **Dark Mode Forecast:** Fix 12-month cash flow forecast in Reports to support dark mode (currently white background).
 
 ## 💰 Budget & Goals
 
 - [ ] **Household vs Individual:** Explore options to have some goals and achievements at household level, and some for individual members.
+- [ ] **Fix Budget Cards:** Ensure budget cards show monthly average instead of aggregate total when viewing periods > 1 month.
+- [ ] **Default Categories:** Change 'Childcare' from 'Needs' to 'Wants' in default setup.
 
 ## 🏦 Net Worth & Assets
 
 - [ ] **Asset Split (Overview):** Distinguish between ETFs and stocks in Asset Allocation chart.
 - [ ] **Asset Split (Investments):** Distinguish between stocks and ETFs in Investments tab.
 - [ ] **HECS Debt:** Add HECS debt account type/calculator.
+- [ ] **Dashboard Widget:** Add asset allocation breakdown to the Net Worth widget on the dashboard.
 
 ## ⚙️ Account & Settings
 
@@ -63,6 +68,7 @@ This document outlines the planned features, improvements, and future direction 
     - [ ] Reports & Analytics tour
     - [ ] Contextual tooltips for complex features
 - [ ] **Revamp Quick Add Button:** Redesign the quick add button for better UX.
+- [ ] **Recent Transactions Empty State:** Update text to say 'No transactions in the past 3 days' instead of 'No transactions yet'.
 
 ## 🚀 Commercialization
 
