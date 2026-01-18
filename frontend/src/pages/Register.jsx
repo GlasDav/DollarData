@@ -74,39 +74,47 @@ export default function Register() {
             </div>
 
             <div className="bg-card dark:bg-card-dark p-8 rounded-3xl shadow-2xl border border-border dark:border-border-dark w-full max-w-md relative z-10 transition-colors duration-300">
-                
+
                 {isSuccess ? (
                     /* Success State - Check Email */
                     <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6 relative">
-                            <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
-                            <Mail className="text-primary relative z-10" size={40} />
+                        <div className="flex justify-center mb-8">
+                            <img src="/brand-logo.svg" alt="DollarData" className="h-12 w-auto dark:hidden" />
+                            <img src="/brand-logo-dark.svg" alt="DollarData" className="h-12 w-auto hidden dark:block" />
                         </div>
-                        <h2 className="text-2xl font-bold text-text-primary dark:text-text-primary-dark mb-4">Verify your email</h2>
-                        <p className="text-text-secondary dark:text-text-secondary-dark mb-8 leading-relaxed">
-                            We've sent a verification link to <br/>
-                            <span className="font-semibold text-text-primary dark:text-text-primary-dark block mt-1">{email}</span>
-                        </p>
-                        <p className="text-sm text-text-muted mb-8">
-                            Please check your inbox (and spam folder) to activate your account.
+
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-6 text-primary">
+                            <Mail size={32} />
+                        </div>
+
+                        <h2 className="text-2xl font-bold text-text-primary dark:text-text-primary-dark mb-3">Check your inbox</h2>
+
+                        <p className="text-text-secondary dark:text-text-secondary-dark mb-8 leading-relaxed max-w-xs mx-auto">
+                            We've sent a confirmation link to <span className="font-semibold text-text-primary dark:text-text-primary-dark">{email}</span>.
+                            <br /><br />
+                            Please click the link in that email to activate your account.
                         </p>
 
-                        <div className="space-y-4">
-                            <Link 
+                        <div className="space-y-6">
+                            <Link
                                 to="/login"
-                                className="block w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                                className="inline-flex items-center justify-center w-full px-4 py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md"
                             >
                                 Back to Log in
                             </Link>
-                            <div className="text-xs text-text-muted">
-                                Wrong email?{' '}
-                                <button 
+
+                            <p className="text-xs text-text-muted">
+                                Didn't receive the email?{' '}
+                                <button
                                     onClick={() => { setIsSuccess(false); setError(""); }}
-                                    className="text-primary hover:text-primary-hover font-medium transition-colors"
+                                    className="text-primary hover:underline font-medium focus:outline-none"
                                 >
-                                    Try again
+                                    Click here to try again
                                 </button>
-                            </div>
+                                <span className="block mt-1 text-text-muted/70">
+                                    (Check your spam folder just in case)
+                                </span>
+                            </p>
                         </div>
                     </div>
                 ) : (
@@ -114,8 +122,9 @@ export default function Register() {
                     <>
                         {/* Logo and branding */}
                         <div className="text-center mb-8">
-                            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg shadow-primary/30">
-                                <TrendingUp className="text-white" size={32} />
+                            <div className="flex justify-center mb-6">
+                                <img src="/brand-logo.svg" alt="DollarData" className="h-16 w-auto dark:hidden" />
+                                <img src="/brand-logo-dark.svg" alt="DollarData" className="h-16 w-auto hidden dark:block" />
                             </div>
                             <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-2">Create Account</h1>
                             <p className="text-text-muted">Start your financial journey today</p>
