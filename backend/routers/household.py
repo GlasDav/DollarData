@@ -73,63 +73,58 @@ def get_household(
     current_user: models.User = Depends(auth.get_current_user)
 ):
     """Get current user's household with members and pending invites."""
-    try:
-        household = _ensure_user_has_household(current_user, db)
-        
-        # Get all household users with their user info
-        household_users = db.query(models.HouseholdUser).filter(
-            models.HouseholdUser.household_id == household.id,
-            models.HouseholdUser.status == "active"
-        ).all()
-        
-        members = []
-        for hu in household_users:
-            user = db.query(models.User).filter(models.User.id == hu.user_id).first()
-            members.append(schemas.HouseholdUserResponse(
-                id=hu.id,
-                household_id=hu.household_id,
-                user_id=hu.user_id,
-                member_id=hu.member_id,
-                role=hu.role,
-                status=hu.status,
-                invited_at=hu.invited_at,
-                joined_at=hu.joined_at,
-                user_email=user.email if user else None,
-                user_name=user.name if user else None
-            ))
-        
-        # Get pending invites
-        invites = db.query(models.HouseholdInvite).filter(
-            models.HouseholdInvite.household_id == household.id,
-            models.HouseholdInvite.accepted_at == None,
-            models.HouseholdInvite.expires_at > datetime.utcnow()
-        ).all()
-        
-        pending_invites = []
-        for inv in invites:
-            inviter = db.query(models.User).filter(models.User.id == inv.invited_by_id).first()
-            pending_invites.append(schemas.HouseholdInviteResponse(
-                id=inv.id,
-                email=inv.email,
-                role=inv.role,
-                expires_at=inv.expires_at,
-                created_at=inv.created_at,
-                accepted_at=inv.accepted_at,
-                invited_by_name=inviter.name if inviter else None
-            ))
-        
-        return schemas.HouseholdWithMembers(
-            id=household.id,
-            name=household.name,
-            created_at=household.created_at,
-            owner_id=household.owner_id,
-            members=members,
-            pending_invites=pending_invites
-        )
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Household Error: {str(e)}")
+    household = _ensure_user_has_household(current_user, db)
+    
+    # Get all household users with their user info
+    household_users = db.query(models.HouseholdUser).filter(
+        models.HouseholdUser.household_id == household.id,
+        models.HouseholdUser.status == "active"
+    ).all()
+    
+    members = []
+    for hu in household_users:
+        user = db.query(models.User).filter(models.User.id == hu.user_id).first()
+        members.append(schemas.HouseholdUserResponse(
+            id=hu.id,
+            household_id=hu.household_id,
+            user_id=hu.user_id,
+            member_id=hu.member_id,
+            role=hu.role,
+            status=hu.status,
+            invited_at=hu.invited_at,
+            joined_at=hu.joined_at,
+            user_email=user.email if user else None,
+            user_name=user.name if user else None
+        ))
+    
+    # Get pending invites
+    invites = db.query(models.HouseholdInvite).filter(
+        models.HouseholdInvite.household_id == household.id,
+        models.HouseholdInvite.accepted_at == None,
+        models.HouseholdInvite.expires_at > datetime.utcnow()
+    ).all()
+    
+    pending_invites = []
+    for inv in invites:
+        inviter = db.query(models.User).filter(models.User.id == inv.invited_by_id).first()
+        pending_invites.append(schemas.HouseholdInviteResponse(
+            id=inv.id,
+            email=inv.email,
+            role=inv.role,
+            expires_at=inv.expires_at,
+            created_at=inv.created_at,
+            accepted_at=inv.accepted_at,
+            invited_by_name=inviter.name if inviter else None
+        ))
+    
+    return schemas.HouseholdWithMembers(
+        id=household.id,
+        name=household.name,
+        created_at=household.created_at,
+        owner_id=household.owner_id,
+        members=members,
+        pending_invites=pending_invites
+    )
 
 
 @router.put("/", response_model=schemas.Household)
