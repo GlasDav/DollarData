@@ -107,8 +107,8 @@ export default function OnboardingWizard() {
 
     if (!isOpen) return null;
 
-    // Progress bar calculation based on 4 steps now
-    const totalSteps = 4;
+    // Progress bar calculation based on 3 steps now
+    const totalSteps = 3;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
@@ -126,9 +126,8 @@ export default function OnboardingWizard() {
                 <div className="p-8 flex-1 flex flex-col text-center items-center justify-center min-h-[320px]">
 
                     {step === 1 && <WelcomeStep onNext={() => setStep(2)} />}
-                    {step === 2 && <CurrencyStep onNext={() => setStep(3)} />}
-                    {step === 3 && <HouseholdStep onNext={() => setStep(4)} />}
-                    {step === 4 && <ConnectStep onFinish={handleFinish} />}
+                    {step === 2 && <HouseholdStep onNext={() => setStep(3)} />}
+                    {step === 3 && <ConnectStep onFinish={handleFinish} />}
 
                 </div>
             </div>
@@ -151,60 +150,6 @@ function WelcomeStep({ onNext }) {
             </div>
             <Button variant="primary" size="lg" onClick={onNext} className="w-full max-w-xs">
                 Get Started <ArrowRight size={18} />
-            </Button>
-        </div>
-    );
-}
-
-// Step 2: Currency
-function CurrencyStep({ onNext }) {
-    const queryClient = useQueryClient();
-    const [currency, setCurrency] = useState('$');
-    const [loading, setLoading] = useState(false);
-
-    const updateCurrency = async () => {
-        setLoading(true);
-        try {
-            await updateSettings({ currency_symbol: currency });
-            await queryClient.invalidateQueries(['userSettings']);
-            onNext();
-        } catch (e) {
-            console.error(e);
-            alert("Failed to save currency. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="animate-fade-in-up space-y-6 w-full max-w-xs">
-            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
-                <DollarSign size={32} />
-            </div>
-            <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Select Currency</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-sm">
-                    Choose the primary symbol for your dashboard.
-                </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-                {['$', '€', '£', '¥', '₹', 'A$'].map(sym => (
-                    <button
-                        key={sym}
-                        onClick={() => setCurrency(sym)}
-                        className={`py-3 rounded-xl border-2 font-bold text-lg transition-all ${currency === sym
-                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 text-slate-600 dark:text-slate-400'
-                            }`}
-                    >
-                        {sym}
-                    </button>
-                ))}
-            </div>
-
-            <Button variant="primary" size="lg" onClick={updateCurrency} disabled={loading} className="w-full">
-                {loading ? 'Saving...' : 'Continue'}
             </Button>
         </div>
     );
