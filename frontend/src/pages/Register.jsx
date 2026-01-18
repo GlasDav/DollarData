@@ -11,6 +11,7 @@ export default function Register() {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false); // New success state
     const { register, googleLogin } = useAuth();
     const navigate = useNavigate();
 
@@ -20,7 +21,7 @@ export default function Register() {
         setIsLoading(true);
         try {
             await register(email, password, name);
-            navigate("/");
+            setIsSuccess(true); // Show success message instead of auto-navigating
         } catch (err) {
             const detail = err.response?.data?.detail;
             if (Array.isArray(detail)) {
@@ -41,7 +42,7 @@ export default function Register() {
         setError("");
         try {
             await googleLogin(tokenResponse.access_token);
-            navigate("/");
+            navigate("/"); // Google login verifies email implicitly usually, so we can redirect
         } catch (err) {
             console.error('Google login error:', err);
             const detail = err.response?.data?.detail;
@@ -73,130 +74,170 @@ export default function Register() {
             </div>
 
             <div className="bg-card dark:bg-card-dark p-8 rounded-3xl shadow-2xl border border-border dark:border-border-dark w-full max-w-md relative z-10 transition-colors duration-300">
-                {/* Logo and branding */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg shadow-primary/30">
-                        <TrendingUp className="text-white" size={32} />
-                    </div>
-                    <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-2">Create Account</h1>
-                    <p className="text-text-muted">Start your financial journey today</p>
-                </div>
-
-                {error && (
-                    <div className="bg-accent-error/20 text-accent-error p-3 rounded-xl mb-6 text-sm text-center border border-accent-error/30">
-                        {error}
-                    </div>
-                )}
-
-                {/* Google Login Button */}
-                <button
-                    type="button"
-                    onClick={() => googleLoginHook()}
-                    disabled={isGoogleLoading}
-                    className="w-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark text-text-primary dark:text-text-primary-dark font-medium py-3 rounded-xl transition-all hover:bg-surface-hover dark:hover:bg-surface-dark-hover hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {isGoogleLoading ? (
-                        <>
-                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
-                            Signing up...
-                        </>
-                    ) : (
-                        <>
-                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
-                            Sign up with Google
-                        </>
-                    )}
-                </button>
-
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="flex-1 h-px bg-border dark:bg-border-dark"></div>
-                    <span className="text-sm text-text-muted">Or continue with email</span>
-                    <div className="flex-1 h-px bg-border dark:bg-border-dark"></div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2">Name</label>
-                        <div className="relative group">
-                            <Lock className="absolute left-3 top-3 text-text-muted group-focus-within:text-primary transition-colors" size={20} />
-                            <input
-                                type="text"
-                                className="w-full pl-10 pr-4 py-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-text-primary-dark placeholder-text-muted/50"
-                                placeholder="Your Name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                            />
+                
+                {isSuccess ? (
+                    /* Success State - Check Email */
+                    <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6 relative">
+                            <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+                            <Mail className="text-primary relative z-10" size={40} />
                         </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2">Email</label>
-                        <div className="relative group">
-                            <Mail className="absolute left-3 top-3 text-text-muted group-focus-within:text-primary transition-colors" size={20} />
-                            <input
-                                type="email"
-                                className="w-full pl-10 pr-4 py-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-text-primary-dark placeholder-text-muted/50"
-                                placeholder="name@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2">Password</label>
-                        <div className="relative group">
-                            <Lock className="absolute left-3 top-3 text-text-muted group-focus-within:text-primary transition-colors" size={20} />
-                            <input
-                                type="password"
-                                className="w-full pl-10 pr-4 py-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-text-primary-dark placeholder-text-muted/50"
-                                placeholder="Choose a password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={8}
-                            />
-                        </div>
-                        <p className="text-xs text-text-muted mt-2">
-                            At least 8 characters, including a letter and a number
+                        <h2 className="text-2xl font-bold text-text-primary dark:text-text-primary-dark mb-4">Verify your email</h2>
+                        <p className="text-text-secondary dark:text-text-secondary-dark mb-8 leading-relaxed">
+                            We've sent a verification link to <br/>
+                            <span className="font-semibold text-text-primary dark:text-text-primary-dark block mt-1">{email}</span>
                         </p>
+                        <p className="text-sm text-text-muted mb-8">
+                            Please check your inbox (and spam folder) to activate your account.
+                        </p>
+
+                        <div className="space-y-4">
+                            <Link 
+                                to="/login"
+                                className="block w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                Back to Log in
+                            </Link>
+                            <div className="text-xs text-text-muted">
+                                Wrong email?{' '}
+                                <button 
+                                    onClick={() => { setIsSuccess(false); setError(""); }}
+                                    className="text-primary hover:text-primary-hover font-medium transition-colors"
+                                >
+                                    Try again
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                ) : (
+                    /* Registration Form */
+                    <>
+                        {/* Logo and branding */}
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg shadow-primary/30">
+                                <TrendingUp className="text-white" size={32} />
+                            </div>
+                            <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-2">Create Account</h1>
+                            <p className="text-text-muted">Start your financial journey today</p>
+                        </div>
 
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                                Creating account...
-                            </span>
-                        ) : 'Create Account'}
-                    </button>
-                </form>
+                        {error && (
+                            <div className="bg-accent-error/20 text-accent-error p-3 rounded-xl mb-6 text-sm text-center border border-accent-error/30">
+                                {error}
+                            </div>
+                        )}
 
-                <div className="mt-8 text-center text-sm text-text-muted">
-                    Already have an account?{' '}
-                    <Link to="/login" className="text-primary font-semibold hover:text-primary-hover transition-colors">
-                        Log in
-                    </Link>
-                </div>
+                        {/* Google Login Button */}
+                        <button
+                            type="button"
+                            onClick={() => googleLoginHook()}
+                            disabled={isGoogleLoading}
+                            className="w-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark text-text-primary dark:text-text-primary-dark font-medium py-3 rounded-xl transition-all hover:bg-surface-hover dark:hover:bg-surface-dark-hover hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isGoogleLoading ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    Signing up...
+                                </>
+                            ) : (
+                                <>
+                                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+                                    Sign up with Google
+                                </>
+                            )}
+                        </button>
 
-                <div className="mt-4 text-center text-xs text-text-muted/80">
-                    By creating an account, you agree to our{' '}
-                    <Link to="/terms" className="text-primary hover:text-primary-hover transition-colors">Terms of Service</Link>
-                    {' '}and{' '}
-                    <Link to="/privacy" className="text-primary hover:text-primary-hover transition-colors">Privacy Policy</Link>
-                </div>
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="flex-1 h-px bg-border dark:bg-border-dark"></div>
+                            <span className="text-sm text-text-muted">Or continue with email</span>
+                            <div className="flex-1 h-px bg-border dark:bg-border-dark"></div>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2">Name</label>
+                                <div className="relative group">
+                                    <Lock className="absolute left-3 top-3 text-text-muted group-focus-within:text-primary transition-colors" size={20} />
+                                    <input
+                                        type="text"
+                                        className="w-full pl-10 pr-4 py-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-text-primary-dark placeholder-text-muted/50"
+                                        placeholder="Your Name"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2">Email</label>
+                                <div className="relative group">
+                                    <Mail className="absolute left-3 top-3 text-text-muted group-focus-within:text-primary transition-colors" size={20} />
+                                    <input
+                                        type="email"
+                                        className="w-full pl-10 pr-4 py-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-text-primary-dark placeholder-text-muted/50"
+                                        placeholder="name@example.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2">Password</label>
+                                <div className="relative group">
+                                    <Lock className="absolute left-3 top-3 text-text-muted group-focus-within:text-primary transition-colors" size={20} />
+                                    <input
+                                        type="password"
+                                        className="w-full pl-10 pr-4 py-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-text-primary-dark placeholder-text-muted/50"
+                                        placeholder="Choose a password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        minLength={8}
+                                    />
+                                </div>
+                                <p className="text-xs text-text-muted mt-2">
+                                    At least 8 characters, including a letter and a number
+                                </p>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                        </svg>
+                                        Creating account...
+                                    </span>
+                                ) : 'Create Account'}
+                            </button>
+                        </form>
+
+                        <div className="mt-8 text-center text-sm text-text-muted">
+                            Already have an account?{' '}
+                            <Link to="/login" className="text-primary font-semibold hover:text-primary-hover transition-colors">
+                                Log in
+                            </Link>
+                        </div>
+
+                        <div className="mt-4 text-center text-xs text-text-muted/80">
+                            By creating an account, you agree to our{' '}
+                            <Link to="/terms" className="text-primary hover:text-primary-hover transition-colors">Terms of Service</Link>
+                            {' '}and{' '}
+                            <Link to="/privacy" className="text-primary hover:text-primary-hover transition-colors">Privacy Policy</Link>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
