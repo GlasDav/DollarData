@@ -39,9 +39,32 @@ def delete_account(
     user_id = current_user.id
     user_email = current_user.email
     
-    # Delete all related data in order
+    # 1. Family Sharing Cleanup
     
-    # Delete related tokens (if table still exists, otherwise ignore)
+    # Update profile to remove household link first (break circular dependency)
+    current_user.household_id = None
+    db.add(current_user)
+    db.flush()
+    
+    # Delete household memberships (being a member)
+    db.query(models.HouseholdUser).filter(models.HouseholdUser.user_id == user_id).delete()
+    
+    # Find households owned by this user
+    owned_households = db.query(models.Household).filter(models.Household.owner_id == user_id).all()
+    for household in owned_households:
+        # Delete invites for this household
+        db.query(models.HouseholdInvite).filter(models.HouseholdInvite.household_id == household.id).delete()
+        # Delete members of this household
+        db.query(models.HouseholdUser).filter(models.HouseholdUser.household_id == household.id).delete()
+        # Delete the household itself
+        db.delete(household)
+    
+    # Delete invites sent by this user (to other households)
+    db.query(models.HouseholdInvite).filter(models.HouseholdInvite.invited_by_id == user_id).delete()
+    
+    # 2. General Data Cleanup
+    
+    # Delete related tokens
     db.query(models.PasswordResetToken).filter(models.PasswordResetToken.user_id == user_id).delete()
     db.query(models.EmailVerificationToken).filter(models.EmailVerificationToken.user_id == user_id).delete()
     
@@ -55,6 +78,10 @@ def delete_account(
     account_ids = [a.id for a in db.query(models.Account).filter(models.Account.user_id == user_id).all()]
     if account_ids:
         db.query(models.InvestmentHolding).filter(models.InvestmentHolding.account_id.in_(account_ids)).delete(synchronize_session=False)
+        # Delete manual trade entries if any (assuming they cascade or added logic here if needed)
+        # Assuming Trade model has account_id
+        db.query(models.Trade).filter(models.Trade.account_id.in_(account_ids)).delete(synchronize_session=False)
+
     
     # Snapshots
     snapshot_ids = [s.id for s in db.query(models.NetWorthSnapshot).filter(models.NetWorthSnapshot.user_id == user_id).all()]
@@ -65,10 +92,10 @@ def delete_account(
     db.query(models.Account).filter(models.Account.user_id == user_id).delete()
     db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user_id).delete()
     
-    # Finally, delete the user (Profile)
+    # 3. Final Profile Deletion
     db.query(models.User).filter(models.User.id == user_id).delete()
     
     db.commit()
     
-    logger.info(f"Account deleted: {user_email}")
+    logger.info(f"Account deleted successfully: {user_email}")
     return {"message": "Your account and all data have been permanently deleted."}

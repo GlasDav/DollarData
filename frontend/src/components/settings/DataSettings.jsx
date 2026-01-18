@@ -1,13 +1,23 @@
 import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toLocalISOString } from '../../utils/dateUtils';
 import { useQueryClient } from '@tanstack/react-query';
-import { Save, Download, Upload, Trash2, ShieldAlert } from 'lucide-react';
+import { Save, Download, Upload, Trash2, ShieldAlert, AlertTriangle } from 'lucide-react';
 import * as api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function DataSettings() {
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     const fileInputRef = useRef(null);
     const [importStatus, setImportStatus] = useState(null);
+
+    // Delete Account State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteConfirmation, setDeleteConfirmation] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState(null);
 
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
@@ -41,6 +51,23 @@ export default function DataSettings() {
         } catch (error) {
             console.error("Export failed:", error);
             alert("Export failed");
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (deleteConfirmation !== "DELETE") return;
+
+        setIsDeleting(true);
+        setDeleteError(null);
+        try {
+            await api.deleteUserAccount();
+            setIsDeleteModalOpen(false);
+            logout(); // Clear auth state
+            navigate('/register'); // Redirect to register
+        } catch (error) {
+            console.error("Delete account failed:", error);
+            setDeleteError(error.response?.data?.detail || error.message || "Failed to delete account");
+            setIsDeleting(false);
         }
     };
 
@@ -112,12 +139,77 @@ export default function DataSettings() {
                         <ShieldAlert size={16} /> Danger Zone
                     </h3>
 
-                    <button className="w-full md:w-auto px-4 py-2 border border-accent-error/30 text-accent-error rounded-lg text-sm font-medium hover:bg-accent-error/10 hover:border-accent-error transition flex items-center gap-2">
+                    <button
+                        onClick={() => setIsDeleteModalOpen(true)}
+                        className="w-full md:w-auto px-4 py-2 border border-accent-error/30 text-accent-error rounded-lg text-sm font-medium hover:bg-accent-error/10 hover:border-accent-error transition flex items-center gap-2"
+                    >
                         <Trash2 size={16} />
-                        Delete All Transactions (Coming Soon)
+                        Delete Account
                     </button>
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-card dark:bg-card-dark rounded-xl shadow-xl w-full max-w-md p-6 border border-border dark:border-border-dark animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3 text-accent-error mb-4">
+                            <div className="p-2 bg-accent-error/10 rounded-full">
+                                <AlertTriangle size={24} />
+                            </div>
+                            <h3 className="text-lg font-semibold">Delete Account?</h3>
+                        </div>
+
+                        <p className="text-text-secondary dark:text-text-secondary-dark mb-4">
+                            This action is <span className="font-bold text-accent-error">irreversible</span>.
+                            All your data, including transactions, budgets, and family sharing setups, will be permanently deleted.
+                        </p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-text-muted mb-1 uppercase">
+                                    Type "DELETE" to confirm
+                                </label>
+                                <input
+                                    type="text"
+                                    value={deleteConfirmation}
+                                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                    placeholder="DELETE"
+                                    className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg focus:ring-2 focus:ring-accent-error/50 outline-none transition"
+                                    autoFocus
+                                />
+                            </div>
+
+                            {deleteError && (
+                                <div className="p-3 bg-accent-error/10 border border-accent-error/20 rounded-lg text-xs text-accent-error">
+                                    {deleteError}
+                                </div>
+                            )}
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setIsDeleteModalOpen(false);
+                                        setDeleteConfirmation("");
+                                        setDeleteError(null);
+                                    }}
+                                    disabled={isDeleting}
+                                    className="flex-1 px-4 py-2 bg-surface dark:bg-surface-dark hover:bg-surface-hover dark:hover:bg-surface-hover-dark text-text-primary dark:text-text-primary-dark rounded-lg font-medium transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    disabled={deleteConfirmation !== "DELETE" || isDeleting}
+                                    className="flex-1 px-4 py-2 bg-accent-error hover:bg-accent-error-hover text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting ? "Deleting..." : "Delete Account"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }
