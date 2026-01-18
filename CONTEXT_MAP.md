@@ -241,6 +241,12 @@ erDiagram
 ---
 
 ## Recent Changes & Fixes
+- **Auth & Registration Overhaul (Jan 2026):**
+  - **Account Deletion:** Fixed "Zombie Account" bug where deleted users could respawn. Added Supabase Admin API deletion to `delete_account` endpoint.
+  - **Registration Fixes:** Resolved 504 Gateway Timeouts by optimizing JIT provisioning and identifying SMTP blockers.
+  - **Email Verification:** Re-enabled Supabase email confirmations with proper UI feedback (no more silent redirects).
+  - **SMTP Setup:** Configured Office 365 "Send As" delegation for `noreply@dollardata.au` to fix delivery issues.
+  - **UI Polish:** Updated Registration page with brand logo and professional "Check your inbox" success screen.
 - **Family Sharing Fix (Jan 2026):**
   - **500 Error Resolved:** Fixed critical `ValidationError` where `owner_id` (UUID) was incorrectly typed as `Integer` in Pydantic schemas.
   - **Account Deletion:** Implemented "Delete Account" feature with robust foreign key cleanup (cascading deletes for households, invites, members).
