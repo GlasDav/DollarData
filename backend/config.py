@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: Optional[str] = None
     BASIQ_API_KEY: Optional[str] = None
     SENTRY_DSN: Optional[str] = None
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
     
     # Redis (Optional)
     REDIS_URL: Optional[str] = None

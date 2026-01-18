@@ -384,7 +384,7 @@ erDiagram
 | **Yahoo Finance** | Stock prices via `yfinance` | `routers/market.py`, `services/` |
 | **Sentry** | Error monitoring | `SENTRY_DSN` env var |
 | **Redis** | Caching (optional) | `REDIS_URL` env var |
-| **SMTP** | Email (password reset, invites) | SMTP env vars |
+| **SMTP** | Email (password reset, invites) | SMTP env vars (GoDaddy via Microsoft 365) |
 
 ---
 

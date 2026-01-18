@@ -109,5 +109,21 @@ def delete_account(
     
     db.commit()
     
+    # 4. Delete from Supabase Auth (Admin)
+    from supabase import create_client, Client
+    from ..config import settings
+    
+    if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
+        try:
+            supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+            # Use the admin api to delete the user
+            supabase.auth.admin.delete_user(user_id)
+            logger.info(f"Supabase Auth identity deleted for user: {user_email}")
+        except Exception as e:
+            # Log but don't fail the request since local data is already gone
+            logger.error(f"Failed to delete Supabase Auth identity for {user_email}: {e}")
+    else:
+        logger.warning(f"Skipping Supabase Auth deletion for {user_email} (Keys missing)")
+
     logger.info(f"Account deleted successfully: {user_email}")
     return {"message": "Your account and all data have been permanently deleted."}
