@@ -721,6 +721,22 @@ docker compose exec backend python /app/seed_demo_user.py
   - **Impact:** Tour now gracefully closes on navigation and can be restarted from Settings → Help without crashes.
 - **Files:** `frontend/src/App.jsx`.
 
+### **Onboarding Tutorial Logic Refinement (Jan 2026)**
+- **Auto-Start Loop Fix:**
+  - Resolved invalid `ReferenceError` crash by importing `getMembers` in `OnboardingWizard.jsx`.
+  - Fixed logic preventing tutorial from auto-starting for new users (scoped localStorage key to user ID).
+- **Flow Simplification:**
+  - Removed **Currency Step** (default is AUD for Australian users).
+  - Removed **Add Custom Categories** tooltip step (caused scrolling bugs/page jumps).
+  - Reordered flow: Welcome → Household → Strategy → Setup Tour.
+- **Scroll Locking Fix:**
+  - Disabled `disableScrollParentFix` in `react-joyride` config to prevent the body from getting stuck in `overflow: hidden` state.
+- **Files:** `frontend/src/components/OnboardingWizard.jsx`, `frontend/src/context/TutorialContext.jsx`, `frontend/src/constants/tourSteps.jsx`.
+
+### **Landing Page Content Update (Jan 2026)**
+- **Text Update:** Changed hero description from "modern investor" to "modern professional".
+- **Files:** `frontend/src/pages/LandingPage.jsx`.
+
 ---
 
 *Generated for AI context. Do not commit to version control.*

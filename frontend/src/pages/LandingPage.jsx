@@ -116,7 +116,7 @@ export default function LandingPage() {
                         </h1>
 
                         <p className="text-xl text-text-muted dark:text-text-muted-dark leading-relaxed max-w-lg mx-auto lg:mx-0">
-                            DollarData isn't just a budget tracker. It's a comprehensive wealth management platform designed for the modern investor.
+                            DollarData isn't just a budget tracker. It's a comprehensive wealth management platform designed for the modern professional.
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">

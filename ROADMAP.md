@@ -52,6 +52,7 @@ This document outlines the planned features, improvements, and future direction 
     - [x] Enable `spotlightClicks` for interactive tour
     - [x] Add "Help" tab to Settings with restart button
     - [x] Checklist summary on final step
+    - [x] **Fix:** Resolved scroll-locking bug and removed problematic steps
   - [ ] **Phase 2:** Dashboard & Core Features
     - [ ] Dashboard tour (widget explanations)
     - [ ] Net Worth tour

@@ -32,7 +32,6 @@ Welcome to DollarData! This guide will walk you through everything you need to k
 After signing up, you'll need to **verify your email address** via the link sent to your inbox. Once verified, log in to land on your personal Dashboard. If this is your first time, a welcome wizard will guide you through the essentials.
 
 **What happens during setup:**
-- Choose your preferred currency symbol (AUD, USD, EUR, etc.)
 - Optionally add household members (partner, family)
 - Get pointed toward your first data import
 
