@@ -43,7 +43,8 @@ export const AuthProvider = ({ children }) => {
                 setUser({
                     email: session.user.email,
                     name: session.user.user_metadata?.name,
-                    id: session.user.id
+                    id: session.user.id,
+                    created_at: session.user.created_at // Ensure we have this for new user detection
                 });
             }
         } else {

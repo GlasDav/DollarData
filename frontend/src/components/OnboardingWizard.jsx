@@ -44,15 +44,25 @@ export default function OnboardingWizard() {
             const timer = setTimeout(() => {
                 let shouldShow = false;
 
-                // Condition A: Account is brand new (< 15 mins old)
+                // Condition A: Account is brand new (< 60 mins old)
+                // Note: user.created_at usually comes from backend (ISO string). 
+                // We must ensure we compare UTC to UTC to avoid timezone issues.
                 if (user?.created_at) {
-                    const createdTime = new Date(user.created_at).getTime();
-                    const now = new Date().getTime();
-                    const diffMins = (now - createdTime) / 60000;
-                    console.log(`Debug: User created ${diffMins.toFixed(1)} mins ago.`);
+                    let createdStr = user.created_at;
+                    // If backend sends "2024-01-01T12:00:00" without Z, and it's meant to be UTC, append Z.
+                    // If it already has Z or offset, this is fine.
+                    if (!createdStr.endsWith('Z') && !createdStr.includes('+')) {
+                        createdStr += 'Z';
+                    }
 
-                    if (diffMins < 15) {
-                        console.log("Debug: New user detected (time-based), showing wizard.");
+                    const createdTime = new Date(createdStr).getTime();
+                    const now = new Date().getTime(); // UTC timestamp
+                    const diffMins = (now - createdTime) / 60000;
+
+                    console.log(`[Onboarding] User created at ${createdStr} (${diffMins.toFixed(1)} mins ago).`);
+
+                    if (diffMins < 60 && diffMins > -5) { // Allow slight clock skew (negative diff)
+                        console.log("[Onboarding] New user detected (time-based), showing wizard.");
                         shouldShow = true;
                     }
                 }
