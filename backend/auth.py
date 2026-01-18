@@ -194,7 +194,6 @@ def create_default_user_setup(user: models.User, db: Session):
             "children": [
                 {"name": "Cash & ATM Fees", "icon": "Banknote"},
                 {"name": "Financial Fees", "icon": "Building2"},
-                {"name": "Investment Contributions", "icon": "TrendingUp"},
                 {"name": "Accounting", "icon": "Calculator"},
             ]
         },
