@@ -23,10 +23,10 @@ export default function CashFlowForecast() {
 
     if (isLoading) {
         return (
-            <div className="bg-card rounded-2xl p-6 border border-border">
+            <div className="bg-card dark:bg-card-dark rounded-2xl p-6 border border-border dark:border-border-dark">
                 <div className="animate-pulse space-y-4">
-                    <div className="h-6 w-48 bg-surface rounded"></div>
-                    <div className="h-64 bg-surface rounded"></div>
+                    <div className="h-6 w-48 bg-surface dark:bg-surface-dark rounded"></div>
+                    <div className="h-64 bg-surface dark:bg-surface-dark rounded"></div>
                 </div>
             </div>
         );
@@ -51,12 +51,12 @@ export default function CashFlowForecast() {
     const willGoNegative = insights.months_until_negative !== null;
 
     return (
-        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+        <div className="bg-card dark:bg-card-dark rounded-2xl border border-border dark:border-border-dark overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-border">
+            <div className="p-6 border-b border-border dark:border-border-dark">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
                             {isPositive ? (
                                 <TrendingUp className="text-emerald-500" />
                             ) : (
@@ -72,27 +72,27 @@ export default function CashFlowForecast() {
             </div>
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-4 gap-4 p-6 border-b border-border">
+            <div className="grid grid-cols-4 gap-4 p-6 border-b border-border dark:border-border-dark">
                 <div className="text-center">
-                    <p className="text-xs text-text-secondary uppercase tracking-wide">Available Cash</p>
-                    <p className="text-xl font-bold text-text-primary mt-1">
+                    <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wide">Available Cash</p>
+                    <p className="text-xl font-bold text-text-primary dark:text-text-primary-dark mt-1">
                         {formatCurrency(currentBalance)}
                     </p>
                 </div>
                 <div className="text-center">
-                    <p className="text-xs text-text-secondary uppercase tracking-wide">Monthly Income</p>
+                    <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wide">Monthly Income</p>
                     <p className="text-xl font-bold text-emerald-600 mt-1">
                         +{formatCurrency(monthlyIncome)}
                     </p>
                 </div>
                 <div className="text-center">
-                    <p className="text-xs text-text-secondary uppercase tracking-wide">Monthly Expenses</p>
-                    <p className="text-xl font-bold text-text-primary mt-1">
+                    <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wide">Monthly Expenses</p>
+                    <p className="text-xl font-bold text-text-primary dark:text-text-primary-dark mt-1">
                         {formatCurrency(monthlyExpenses)}
                     </p>
                 </div>
                 <div className="text-center">
-                    <p className="text-xs text-text-secondary uppercase tracking-wide">Net Monthly</p>
+                    <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wide">Net Monthly</p>
                     <p className={`text-xl font-bold mt-1 ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
                         {isPositive ? '+' : ''}{formatCurrency(netMonthly)}
                     </p>
@@ -114,11 +114,11 @@ export default function CashFlowForecast() {
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={forecast} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border dark:text-border-dark opacity-30" />
                             <XAxis
                                 dataKey="label"
                                 tick={{ fontSize: 11 }}
-                                className="text-text-secondary"
+                                className="fill-text-secondary dark:fill-text-secondary-dark"
                                 tickLine={false}
                             />
                             <YAxis
@@ -127,7 +127,7 @@ export default function CashFlowForecast() {
                                     return `$${val}`;
                                 }}
                                 tick={{ fontSize: 11 }}
-                                className="text-text-secondary"
+                                className="fill-text-secondary dark:fill-text-secondary-dark"
                                 tickLine={false}
                                 axisLine={false}
                             />
@@ -155,8 +155,8 @@ export default function CashFlowForecast() {
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-surface border-t border-border">
-                <p className="text-xs text-text-secondary text-center">
+            <div className="p-4 bg-surface dark:bg-surface-dark border-t border-border dark:border-border-dark">
+                <p className="text-xs text-text-secondary dark:text-text-secondary-dark text-center">
                     Projected end balance in 12 months: <strong>{formatCurrency(insights.projected_end_balance || 0)}</strong>
                 </p>
             </div>

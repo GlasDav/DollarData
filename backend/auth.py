@@ -103,7 +103,7 @@ def create_default_user_setup(user: models.User, db: Session):
         "Food": {"icon": "Utensils", "group": "Discretionary", "display_order": 3},
         "Lifestyle": {"icon": "Heart", "group": "Discretionary", "display_order": 4},
         "Health & Wellness": {"icon": "HeartPulse", "group": "Non-Discretionary", "display_order": 5},
-        "Kids": {"icon": "Baby", "group": "Discretionary", "display_order": 6},
+        "Kids": {"icon": "Baby", "group": "Non-Discretionary", "display_order": 6},
         "Rollover/Non-Monthly": {"icon": "Calendar", "group": "Discretionary", "display_order": 7},
         "Financial": {"icon": "Landmark", "group": "Non-Discretionary", "display_order": 8},
         "Other": {"icon": "MoreHorizontal", "group": "Discretionary", "display_order": 9},
