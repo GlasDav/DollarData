@@ -86,7 +86,7 @@ def create_default_user_setup(user: models.User, db: Session):
     for account_data in default_accounts:
         db.execute(text("""
             INSERT INTO accounts (user_id, name, type, category, balance, is_active)
-            VALUES (:user_id::uuid, :name, :type, :category, 0.0, true)
+            VALUES (CAST(:user_id AS uuid), :name, :type, :category, 0.0, true)
         """), {
             "user_id": user_id,
             "name": account_data["name"],
@@ -216,7 +216,7 @@ def create_default_user_setup(user: models.User, db: Session):
         # Insert parent bucket and get its ID
         result = db.execute(text("""
             INSERT INTO budget_buckets (user_id, name, icon_name, "group", display_order)
-            VALUES (:user_id::uuid, :name, :icon_name, :group, :display_order)
+            VALUES (CAST(:user_id AS uuid), :name, :icon_name, :group, :display_order)
             RETURNING id
         """), {
             "user_id": user_id,
@@ -232,7 +232,7 @@ def create_default_user_setup(user: models.User, db: Session):
         for child in config.get("children", []):
             db.execute(text("""
                 INSERT INTO budget_buckets (user_id, name, icon_name, "group", parent_id, display_order)
-                VALUES (:user_id::uuid, :name, :icon_name, :group, :parent_id, :display_order)
+                VALUES (CAST(:user_id AS uuid), :name, :icon_name, :group, :parent_id, :display_order)
             """), {
                 "user_id": user_id,
                 "name": child["name"],
@@ -246,25 +246,25 @@ def create_default_user_setup(user: models.User, db: Session):
     # Special Buckets
     db.execute(text("""
         INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_transfer, display_order)
-        VALUES (:user_id::uuid, 'Transfers', 'ArrowLeftRight', 'Non-Discretionary', true, :display_order)
+        VALUES (CAST(:user_id AS uuid), 'Transfers', 'ArrowLeftRight', 'Non-Discretionary', true, :display_order)
     """), {"user_id": user_id, "display_order": display_order})
     display_order += 1
     
     db.execute(text("""
         INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_investment, display_order)
-        VALUES (:user_id::uuid, 'Investments', 'TrendingUp', 'Non-Discretionary', true, :display_order)
+        VALUES (CAST(:user_id AS uuid), 'Investments', 'TrendingUp', 'Non-Discretionary', true, :display_order)
     """), {"user_id": user_id, "display_order": display_order})
     display_order += 1
     
     db.execute(text("""
         INSERT INTO budget_buckets (user_id, name, icon_name, "group", is_one_off, display_order)
-        VALUES (:user_id::uuid, 'One Off', 'Zap', 'Non-Discretionary', true, :display_order)
+        VALUES (CAST(:user_id AS uuid), 'One Off', 'Zap', 'Non-Discretionary', true, :display_order)
     """), {"user_id": user_id, "display_order": display_order})
     display_order += 1
     
     db.execute(text("""
         INSERT INTO budget_buckets (user_id, name, icon_name, "group", display_order)
-        VALUES (:user_id::uuid, 'Reimbursable', 'ReceiptText', 'Non-Discretionary', :display_order)
+        VALUES (CAST(:user_id AS uuid), 'Reimbursable', 'ReceiptText', 'Non-Discretionary', :display_order)
     """), {"user_id": user_id, "display_order": display_order})
     
     db.commit()
