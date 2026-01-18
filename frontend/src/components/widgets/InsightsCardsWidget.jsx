@@ -76,6 +76,9 @@ export default function InsightsCardsWidget({ currentStart, currentEnd, spenderM
             <div className="flex items-center gap-2 mb-6">
                 <Sparkles className="text-primary" size={20} />
                 <h2 className="text-lg font-bold text-text-primary dark:text-text-primary-dark">Smart Insights</h2>
+                <span className="ml-auto text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase tracking-wide">
+                    Demo Mode
+                </span>
             </div>
 
             <div className="space-y-4">

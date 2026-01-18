@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import api, { updateSettings, createMember } from '../services/api';
 import Button from './ui/Button';
 import { useTutorial } from '../context/TutorialContext';
+import { useAuth } from '../context/AuthContext';
 import { TOUR_IDS } from '../constants/tourSteps.jsx';
 
 export default function OnboardingWizard() {
@@ -13,29 +14,62 @@ export default function OnboardingWizard() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { startTour, isTourCompleted } = useTutorial();
+    const { user } = useAuth();
 
     // Check if we should show the wizard
-    const { data: transactions } = useQuery({
+    const { data: transactions, isError: isTxError } = useQuery({
         queryKey: ['transactions', 'check-new'],
-        queryFn: async () => (await api.get('/transactions/', { params: { limit: 1 } })).data,
-        staleTime: 60000
+        queryFn: async () => {
+            try {
+                const res = await api.get('/transactions/', { params: { limit: 1 } });
+                return res.data;
+            } catch (err) {
+                console.error("Failed to check transactions for onboarding trigger:", err);
+                return null;
+            }
+        },
+        staleTime: 60000,
+        retry: 1
     });
 
     useEffect(() => {
         const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
 
-        // If never seen AND no data loaded yet (assuming new user)
+        // Logic:
+        // 1. If user has ALREADY seen it, don't show.
+        // 2. If user is NEW (created < 10 mins ago), force show it even if connection fails.
+        // 3. If user has 0 transactions, show it.
+
         if (!hasSeenOnboarding) {
-            // Slight delay for smooth entrance
             const timer = setTimeout(() => {
-                // Only show if we confirm no transactions exist (meaning likely new user)
-                if (transactions && transactions.total === 0) {
+                let shouldShow = false;
+
+                // Condition A: Account is brand new (< 15 mins old)
+                if (user?.created_at) {
+                    const createdTime = new Date(user.created_at).getTime();
+                    const now = new Date().getTime();
+                    const diffMins = (now - createdTime) / 60000;
+                    console.log(`Debug: User created ${diffMins.toFixed(1)} mins ago.`);
+
+                    if (diffMins < 15) {
+                        console.log("Debug: New user detected (time-based), showing wizard.");
+                        shouldShow = true;
+                    }
+                }
+
+                // Condition B: No data matches (and no error reading API)
+                if (!shouldShow && transactions && transactions.total === 0) {
+                    console.log("Debug: Empty account detected (transaction-based), showing wizard.");
+                    shouldShow = true;
+                }
+
+                if (shouldShow) {
                     setIsOpen(true);
                 }
-            }, 1000);
+            }, 1000); // Slight delay for smooth entrance
             return () => clearTimeout(timer);
         }
-    }, [transactions]);
+    }, [transactions, user]);
 
     const handleClose = () => {
         setIsOpen(false);
