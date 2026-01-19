@@ -394,6 +394,35 @@ export default function FinancialCalendar() {
                     </Dialog.Panel>
                 </div>
             </Dialog>
+
+            {/* Calendar Legend */}
+            <div className="mt-8 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Categories</h3>
+                <div className="flex flex-wrap gap-x-6 gap-y-3">
+                    {/* Unique buckets from current view */}
+                    {Array.from(new Set([
+                        ...transactions.map(t => JSON.stringify({ id: t.bucket_id, name: t.bucket?.name || 'Uncategorized', color: t.bucket?.color || getBucketColor(t.bucket_id) })),
+                        ...projectedEvents.map(e => JSON.stringify({ id: e.bucket?.id, name: e.bucket?.name, color: e.bucket?.color }))
+                    ]))
+                        .map(s => JSON.parse(s))
+                        .filter(b => b.name) // Filter out any undefined names if any
+                        // Deduplicate by ID to be safe (JSON stringify might differ on key order if not careful, but usually stable here)
+                        .reduce((acc, curr) => {
+                            if (!acc.find(x => x.name === curr.name)) acc.push(curr);
+                            return acc;
+                        }, [])
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((bucket, idx) => (
+                            <div key={`${bucket.id}-${idx}`} className="flex items-center gap-2">
+                                <div
+                                    className={`w-3 h-3 rounded-full shadow-sm flex-shrink-0 ${bucket.name === 'Recurring' ? 'border-2 border-indigo-500 bg-transparent' : ''}`}
+                                    style={{ backgroundColor: bucket.name === 'Recurring' ? 'transparent' : bucket.color }}
+                                />
+                                <span className="text-sm text-slate-600 dark:text-slate-400 font-medium whitespace-nowrap">{bucket.name}</span>
+                            </div>
+                        ))}
+                </div>
+            </div>
         </div>
     );
 }

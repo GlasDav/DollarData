@@ -3,18 +3,29 @@
  * Use this in all Recharts components for visual consistency.
  */
 
-// Primary chart color palette - 8 colors for pie/bar charts
-// Note: Ordered for maximum distinction (colorblind-friendly)
-// Red moved to end so it's reserved for liabilities/errors
+// Primary chart color palette - Extended 20 colors for maximum distinction
+// Note: Ordered for maximum distinction (colorblind-friendly where possible)
 export const CHART_COLORS = [
-    '#f59e0b', // Amber - Cash (warm, distinct)
-    '#06b6d4', // Cyan - Other (cool, distinct from amber)
-    '#6366f1', // Indigo - Property (primary)
-    '#10b981', // Emerald - Superannuation (success)
+    '#f59e0b', // Amber
+    '#06b6d4', // Cyan
+    '#6366f1', // Indigo
+    '#10b981', // Emerald
     '#ec4899', // Pink
     '#84cc16', // Lime
     '#8b5cf6', // Violet
-    '#ef4444', // Red (error) - kept last for liabilities
+    '#f43f5e', // Rose
+    '#0ea5e9', // Sky
+    '#d946ef', // Fuchsia
+    '#14b8a6', // Teal
+    '#f97316', // Orange
+    '#a855f7', // Purple
+    '#eab308', // Yellow
+    '#3b82f6', // Blue
+    '#22c55e', // Green
+    '#ef4444', // Red
+    '#64748b', // Slate (Neutral)
+    '#a1a1aa', // Zinc (Neutral)
+    '#78716c', // Stone (Neutral)
 ];
 
 // Income-specific greens (for income pie charts)
