@@ -758,6 +758,15 @@ docker compose exec backend python /app/seed_demo_user.py
   - Affected: loading skeleton, card backgrounds, borders, text colors, chart grid/axis styling.
   - **File:** `frontend/src/components/CashFlowForecast.jsx`.
 
+### **Calendar Legend & Visuals (Jan 2026)**
+- **Legend Refinement:**
+  - **Parent Grouping:** Modified `FinancialCalendar.jsx` to group projected/actual transactions by their parent category (e.g., "Food" instead of "Groceries") to reduce legend clutter.
+  - **Deduplication:** Implemented logic to deduplicate legend items based on ID/Name, resolving duplicate entries for categories that act as both parent and child.
+  - **Encoding:** Added `decodeHtml` helper to fix display of entities like `&amp;` in category names.
+- **Chart Colors:**
+  - **Accessibility:** Updated `chartColors.js` to use an Okabe-Ito based colorblind-friendly palette for better distinction.
+  - **Files:** `frontend/src/pages/FinancialCalendar.jsx`, `frontend/src/constants/chartColors.js`.
+
 ---
 
 *Generated for AI context. Do not commit to version control.*

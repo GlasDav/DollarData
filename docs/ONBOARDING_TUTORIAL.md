@@ -590,7 +590,10 @@ The **Calendar** tab shows transactions on a monthly calendar:
 
 - Daily totals visible at a glance
 - Click any day to see that day's transactions
+- Daily totals visible at a glance
+- Click any day to see that day's transactions
 - Color coding for income (green) vs. expenses (red)
+- **Smart Legend:** Transactions are grouped by their main category (e.g., "Food") to keep the view clean. Hover over dots to see specific details.
 
 ### 9.4 AI Insights
 

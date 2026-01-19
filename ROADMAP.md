@@ -21,9 +21,12 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Filtered Reports:** Advanced filtering (tags, dates, categories, accounts) for custom reports.
 - [ ] **Monthly Expense Breakdown:** Clickable monthly totals to drill down into expense specifics.
 - [x] **Fix Calendar:** Restore functionality showing total daily spend and upcoming bills.
+  - [x] **Legend Refinement:** Group by parent category, deduplicate entries, and fix HTML decoding.
 - [x] **Dark Mode Forecast:** Fix 12-month cash flow forecast in Reports to support dark mode (currently white background).
 
-## 💰 Budget & Goals
+## 🎨 UI/UX Improvements
+
+- [x] **Chart Colors:** Updated palette to accessible Okabe-Ito friendly scheme.
 
 - [ ] **Household vs Individual:** Explore options to have some goals and achievements at household level, and some for individual members.
 - [ ] **Fix Budget Cards:** Ensure budget cards show monthly average instead of aggregate total when viewing periods > 1 month.
