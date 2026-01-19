@@ -58,7 +58,7 @@ When adding a new column to any model:
 
 - ⚠️ **Don't commit `.db` files** - They're gitignored but may be tracked from old commits
 - ⚠️ **SQLite vs PostgreSQL** - Local dev uses SQLite, production uses PostgreSQL
-- ⚠️ **Auto-migrate only handles ADD COLUMN** - Complex migrations need manual scripts
+- ⚠️ **Auto-migrate only handles ADD COLUMN** - Complex migrations need manual scripts (e.g. `CREATE TABLE` in `auto_migrate.py`)
 
 ---
 
@@ -241,6 +241,13 @@ erDiagram
 ---
 
 ## Recent Changes & Fixes
+- **Import Handling Fixes (Jan 2026):**
+  - **Job Persistence:** Moved background job content from memory to DB (`background_jobs` table) to support multi-worker Gunicorn deployments.
+  - **Schema Fix:** Added UUID validation to `Transaction` schema to prevent 502/500 errors during confirm.
+  - **Deduplication:** Added secondary hash check in `confirm_transactions` to prevent duplicate inserts on retry.
+  - **502 Startup Fix:** Added explicit table creation in `auto_migrate.py` and robust config checks in `main.py` to prevent crash loops.
+  - **Files:** `backend/routers/ingestion.py`, `backend/models.py`, `backend/schemas.py`, `backend/auto_migrate.py`, `backend/main.py`.
+
 - **Auth & Registration Overhaul (Jan 2026):**
   - **Account Deletion:** Fixed "Zombie Account" bug where deleted users could respawn. Added Supabase Admin API deletion to `delete_account` endpoint.
   - **Registration Fixes:** Resolved 504 Gateway Timeouts by optimizing JIT provisioning and identifying SMTP blockers.

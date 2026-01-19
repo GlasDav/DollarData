@@ -14,6 +14,7 @@ This document outlines the planned features, improvements, and future direction 
   - [ ] Create shared ingestion utilities (`ingestion_utils.py`)
   - [ ] Update `connections.py` with full ingestion pipeline
   - [ ] Add Open Banking filter to `ConnectBank.jsx`
+- [x] **Import Reliability:** Fixed intermittent "Job not found" errors and transaction duplication on save.
 - [ ] **Amazon Extension:** Browser extension or integration to categorize Amazon purchases automatically.
 
 ## 📊 Reports & Analytics
