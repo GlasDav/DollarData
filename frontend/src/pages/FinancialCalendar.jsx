@@ -431,13 +431,16 @@ export default function FinancialCalendar() {
                 <div className="flex flex-wrap gap-x-6 gap-y-3">
                     {/* Unique display buckets from current view */}
                     {Object.values(combinedData).flatMap(d => d.txns)
-                        .map(t => t.displayBucket ? JSON.stringify(t.displayBucket) : null)
+                        .map(t => t.displayBucket)
                         .filter(Boolean)
                         .reduce((acc, curr) => {
-                            if (!acc.includes(curr)) acc.push(curr);
+                            // Deduplicate based on ID if available, otherwise Name
+                            const key = curr.id ? String(curr.id) : curr.name;
+                            if (!acc.find(item => (item.id ? String(item.id) : item.name) === key)) {
+                                acc.push(curr);
+                            }
                             return acc;
                         }, [])
-                        .map(s => JSON.parse(s))
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((bucket, idx) => (
                             <div key={`${bucket.id}-${idx}`} className="flex items-center gap-2">
