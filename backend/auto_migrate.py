@@ -109,7 +109,7 @@ def run_migrations(engine: Engine):
                             exchange_rate REAL DEFAULT 1.0,
                             fees REAL DEFAULT 0.0,
                             notes TEXT,
-                            created_at TIMESTAMP DEFAULT NOW()
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )
                     """))
                     conn.execute(text("CREATE INDEX IF NOT EXISTS idx_trades_account_id ON trades(account_id)"))
@@ -147,7 +147,7 @@ def run_migrations(engine: Engine):
                             duplicate_count INTEGER DEFAULT 0,
                             result {json_type},
                             error VARCHAR,
-                            created_at TIMESTAMP DEFAULT NOW()
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )
                     """))
                     conn.execute(text("CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON background_jobs(user_id)"))
