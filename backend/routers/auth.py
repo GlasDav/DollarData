@@ -76,6 +76,22 @@ def delete_account(
     db.query(models.PasswordResetToken).filter(models.PasswordResetToken.user_id == user_id).delete(synchronize_session=False)
     db.query(models.EmailVerificationToken).filter(models.EmailVerificationToken.user_id == user_id).delete(synchronize_session=False)
     
+    # Delete notifications and settings
+    db.query(models.Notification).filter(models.Notification.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.NotificationSettings).filter(models.NotificationSettings.user_id == user_id).delete(synchronize_session=False)
+    
+    # Delete API keys
+    db.query(models.ApiKey).filter(models.ApiKey.user_id == user_id).delete(synchronize_session=False)
+    
+    # Delete background jobs
+    db.query(models.Job).filter(models.Job.user_id == user_id).delete(synchronize_session=False)
+    
+    # Delete household members (the people/spenders list, not household users)
+    db.query(models.HouseholdMember).filter(models.HouseholdMember.user_id == user_id).delete(synchronize_session=False)
+    
+    # Delete category goals
+    db.query(models.CategoryGoal).filter(models.CategoryGoal.user_id == user_id).delete(synchronize_session=False)
+    
     db.query(models.Transaction).filter(models.Transaction.user_id == user_id).delete(synchronize_session=False)
     db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user_id).delete(synchronize_session=False)
     db.query(models.Subscription).filter(models.Subscription.user_id == user_id).delete(synchronize_session=False)

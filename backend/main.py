@@ -28,6 +28,26 @@ if ENVIRONMENT == "production":
         )
     logger.info("✅ Production environment validated")
 
+# Sentry event scrubber to remove PII
+def _scrub_sentry_event(event):
+    """Remove sensitive data from Sentry events before sending."""
+    SENSITIVE_FIELDS = {'password', 'token', 'api_key', 'secret', 'authorization', 'cookie', 'email'}
+    
+    def scrub_dict(d):
+        if not isinstance(d, dict):
+            return d
+        return {
+            k: '[REDACTED]' if any(s in k.lower() for s in SENSITIVE_FIELDS) else scrub_dict(v)
+            for k, v in d.items()
+        }
+    
+    if 'request' in event and 'data' in event['request']:
+        event['request']['data'] = scrub_dict(event['request']['data'])
+    if 'request' in event and 'headers' in event['request']:
+        event['request']['headers'] = scrub_dict(event['request']['headers'])
+    
+    return event
+
 # Optional: Initialize Sentry for error monitoring
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 if SENTRY_DSN:
@@ -38,6 +58,9 @@ if SENTRY_DSN:
             environment=ENVIRONMENT,
             traces_sample_rate=0.1,  # 10% of transactions for performance monitoring
             profiles_sample_rate=0.1,  # 10% profiling in production
+            send_default_pii=False,  # Never auto-capture PII
+            # Scrub sensitive data from events
+            before_send=lambda event, hint: _scrub_sentry_event(event),
         )
         logger.info("✅ Sentry error monitoring initialized")
     except ImportError:
