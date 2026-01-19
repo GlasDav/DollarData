@@ -22,52 +22,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const originalRequest = error.config;
-
-        // Handle 401 Unauthorized (Token Expired)
-        if (error.response && error.response.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-
-            try {
-                const refreshToken = localStorage.getItem('refreshToken');
-                if (refreshToken) {
-                    // Attempt refresh
-                    const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-                        refresh_token: refreshToken
-                    });
-
-                    if (res.data.access_token) {
-                        // Success - Update tokens
-                        localStorage.setItem('token', res.data.access_token);
-                        // If refresh token rotated, update it too (though backend currently returns same)
-                        if (res.data.refresh_token) {
-                            localStorage.setItem('refreshToken', res.data.refresh_token);
-                        }
-
-                        // Update headers for retry
-                        api.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
-                        originalRequest.headers['Authorization'] = `Bearer ${res.data.access_token}`;
-
-                        // Retry original request
-                        return api(originalRequest);
-                    }
-                }
-            } catch (refreshError) {
-                console.error("Refresh token failed", refreshError);
-                // Fallthrough to redirect
-            }
-
+        // Handle 401 Unauthorized - Session expired
+        // Note: Supabase client handles token refresh automatically.
+        // This interceptor just handles redirect when session is truly invalid.
+        if (error.response && error.response.status === 401) {
             // Only redirect if not already on auth pages
             if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
                 console.warn("Session expired. Redirecting to login.");
                 localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
                 window.location.href = '/login';
             }
         }
         return Promise.reject(error);
     }
 );
+
 
 export const getSettings = async () => {
     const response = await api.get('/settings/user');

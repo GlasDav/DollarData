@@ -180,12 +180,13 @@ from .middleware.request_id import RequestIDMiddleware
 app.add_middleware(RequestIDMiddleware)
 logger.info("✅ Request ID middleware enabled")
 
-# DEBUG: Middle ware to log all requests
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    logger.info(f"DEBUG: Incoming request path: {request.url.path}")
-    response = await call_next(request)
-    return response
+# DEBUG: Middleware to log all requests (development only)
+if ENVIRONMENT != "production":
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        logger.debug(f"Incoming request: {request.method} {request.url.path}")
+        response = await call_next(request)
+        return response
 
 # Add security headers middleware FIRST (middleware runs in reverse order, so this runs AFTER CORS)
 app.add_middleware(SecurityHeadersMiddleware)
