@@ -247,6 +247,11 @@ erDiagram
   - **Deduplication:** Added secondary hash check in `confirm_transactions` to prevent duplicate inserts on retry.
   - **502 Startup Fix:** Added explicit table creation in `auto_migrate.py` and robust config checks in `main.py` to prevent crash loops.
   - **Files:** `backend/routers/ingestion.py`, `backend/models.py`, `backend/schemas.py`, `backend/auto_migrate.py`, `backend/main.py`.
+  - **CSV Import Reliability (Jan 2026):**
+    - **500 Error Fix:** Resolved crash caused by SQL dialect mismatch (`NOW()` vs `CURRENT_TIMESTAMP`) in auto-migrations.
+    - **Schema Fix:** Fixed `background_jobs` table creation on PostgreSQL by correctly handling `UUID` foreign keys.
+    - **JSON Serialization:** Fixed `TypeError` by explicitly casting `UUID` objects to strings before storing in `JSON` columns.
+    - **Files:** `backend/auto_migrate.py`, `backend/routers/ingestion.py`.
 
 - **Auth & Registration Overhaul (Jan 2026):**
   - **Account Deletion:** Fixed "Zombie Account" bug where deleted users could respawn. Added Supabase Admin API deletion to `delete_account` endpoint.
