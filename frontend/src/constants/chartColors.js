@@ -3,29 +3,27 @@
  * Use this in all Recharts components for visual consistency.
  */
 
-// Primary chart color palette - Extended 20 colors for maximum distinction
-// Note: Ordered for maximum distinction (colorblind-friendly where possible)
+// Primary chart color palette - Colorblind-friendly (Okabe-Ito & High Contrast)
+// These colors are chosen to be distinct for deuteranopia, protanopia, and tritanopia.
 export const CHART_COLORS = [
-    '#f59e0b', // Amber
-    '#06b6d4', // Cyan
-    '#6366f1', // Indigo
-    '#10b981', // Emerald
-    '#ec4899', // Pink
-    '#84cc16', // Lime
-    '#8b5cf6', // Violet
-    '#f43f5e', // Rose
-    '#0ea5e9', // Sky
-    '#d946ef', // Fuchsia
-    '#14b8a6', // Teal
-    '#f97316', // Orange
-    '#a855f7', // Purple
-    '#eab308', // Yellow
-    '#3b82f6', // Blue
-    '#22c55e', // Green
-    '#ef4444', // Red
-    '#64748b', // Slate (Neutral)
-    '#a1a1aa', // Zinc (Neutral)
-    '#78716c', // Stone (Neutral)
+    '#E69F00', // Orange (Okabe-Ito)
+    '#56B4E9', // Sky Blue (Okabe-Ito)
+    '#009E73', // Bluish Green (Okabe-Ito)
+    '#F0E442', // Yellow (Okabe-Ito)
+    '#0072B2', // Blue (Okabe-Ito)
+    '#D55E00', // Vermilion (Okabe-Ito)
+    '#CC79A7', // Reddish Purple (Okabe-Ito)
+    '#882255', // Wine
+    '#44AA99', // Teal
+    '#117733', // Green
+    '#332288', // Indigo
+    '#DDCC77', // Sand
+    '#999933', // Olive
+    '#CC6677', // Rose
+    '#88CCEE', // Cyan
+    '#AA4499', // Purple
+    '#64748b', // Slate
+    '#a1a1aa', // Zinc
 ];
 
 // Income-specific greens (for income pie charts)
