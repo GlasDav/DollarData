@@ -119,6 +119,44 @@ def run_migrations(engine: Engine):
                 except Exception as e:
                     logger.error(f"Failed to create trades table: {e}")
 
+        # --- background_jobs table creation ---
+        if "background_jobs" not in table_names:
+            logger.info("Auto-Migration: Creating 'background_jobs' table...")
+            with engine.connect() as conn:
+                try:
+                    # Use TEXT for result to be portable (JSON handling in app layer if needed, or rely on SQLAlchemy coercion)
+                    # Using JSONB/JSON in raw SQL depends on DB. Let's use TEXT to be safe for auto-migration script.
+                    # Ideally we use the model definition, but this is raw SQL fallback.
+                    # Postgres supports JSONB, SQLite doesn't. 
+                    # Let's detect dialect or just use TEXT for the raw SQL creation to be safe?
+                    # Actually, since SQLAlchemy 'JSON' type maps to proper type, create_all should work.
+                    # But if we are here, create_all might have failed or been skipped.
+                    # Let's try to create it relative to the dialect.
+                    
+                    dialect = engine.dialect.name
+                    json_type = "JSONB" if dialect == "postgresql" else "TEXT"
+                    
+                    conn.execute(text(f"""
+                        CREATE TABLE IF NOT EXISTS background_jobs (
+                            id VARCHAR PRIMARY KEY,
+                            user_id VARCHAR REFERENCES profiles(id),
+                            status VARCHAR DEFAULT 'processing',
+                            progress INTEGER DEFAULT 0,
+                            total INTEGER DEFAULT 0,
+                            message VARCHAR,
+                            duplicate_count INTEGER DEFAULT 0,
+                            result {json_type},
+                            error VARCHAR,
+                            created_at TIMESTAMP DEFAULT NOW()
+                        )
+                    """))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON background_jobs(user_id)"))
+                    conn.commit()
+                    logger.info("Auto-Migration: 'background_jobs' table created successfully.")
+                except Exception as e:
+                    logger.error(f"Failed to create background_jobs table: {e}")
+
+
     except Exception as e:
         logger.error(f"Migration check failed: {e}")
 
