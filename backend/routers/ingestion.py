@@ -654,46 +654,54 @@ async def start_csv_import(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    """Start async CSV import - returns immediately with job_id."""
-    if not file.filename.lower().endswith('.csv'):
-        raise HTTPException(status_code=400, detail="Only CSV files are supported")
-    
-    content = await validate_file_size(file)
-    mapping = {
-        "date": map_date, 
-        "description": map_desc, 
-        "amount": map_amount,
-        "debit": map_debit,
-        "credit": map_credit
-    }
-    
-    # Quick parse to get transaction count for progress tracking
     try:
-        preview = parse_preview(content)
-        total_rows = preview.get('row_count', 100)  # Estimate if not available
-    except:
-        total_rows = 100  # Default estimate
-    
-    # Clean up old jobs for this user
-    cleanup_old_jobs(db, current_user.id)
-    
-    # Create job in DB
-    job_id = create_job(db, current_user.id, total_rows)
-    
-    # Start background thread
-    thread = threading.Thread(
-        target=process_csv_background,
-        args=(job_id, current_user.id, content, mapping, spender, skip_duplicates)
-    )
-    thread.daemon = True
-    thread.start()
-    
-    return {
-        "job_id": job_id,
-        "status": "processing",
-        "message": "Import started",
-        "total": total_rows
-    }
+        """Start async CSV import - returns immediately with job_id."""
+        if not file.filename.lower().endswith('.csv'):
+            raise HTTPException(status_code=400, detail="Only CSV files are supported")
+        
+        content = await validate_file_size(file)
+        mapping = {
+            "date": map_date, 
+            "description": map_desc, 
+            "amount": map_amount,
+            "debit": map_debit,
+            "credit": map_credit
+        }
+        
+        # Quick parse to get transaction count for progress tracking
+        try:
+            preview = parse_preview(content)
+            total_rows = preview.get('row_count', 100)  # Estimate if not available
+        except:
+            total_rows = 100  # Default estimate
+        
+        # Clean up old jobs for this user
+        cleanup_old_jobs(db, current_user.id)
+        
+        # Create job in DB
+        job_id = create_job(db, current_user.id, total_rows)
+        
+        # Start background thread
+        thread = threading.Thread(
+            target=process_csv_background,
+            args=(job_id, current_user.id, content, mapping, spender, skip_duplicates)
+        )
+        thread.daemon = True
+        thread.start()
+        
+        return {
+            "job_id": job_id,
+            "status": "processing",
+            "message": "Import started",
+            "total": total_rows
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        logger.error(f"Import failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Debug Error: {str(e)}")
 
 
 @router.get("/csv/status/{job_id}")
