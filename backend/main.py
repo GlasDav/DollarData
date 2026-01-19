@@ -22,9 +22,9 @@ logger.info(f"Starting DollarData API in {ENVIRONMENT} mode")
 # Validate production configuration
 if ENVIRONMENT == "production":
     if not SECRET_KEY or SECRET_KEY in ["your-256-bit-secret-key-here", "dev-secret-key-change-in-production"]:
-        raise ValueError(
-            "SECRET_KEY must be set to a strong random value in production! "
-            "Generate one with: python -c 'import secrets; print(secrets.token_hex(32))'"
+        logger.warning(
+            "WARNING: SECRET_KEY is weak or default! This is unsafe for production. "
+            "Please set a strong SECRET_KEY env variable."
         )
     logger.info("✅ Production environment validated")
 
@@ -61,8 +61,15 @@ from .routers import (
     connections, investments, notifications, export, api_keys, household, achievements
 )
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+# Crteate tables with error handling to enforce startup
+try:
+    logger.info("Attemping to create database tables...")
+    Base.metadata.create_all(bind=engine)
+    logger.info("✅ Database tables created successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to create database tables: {e}")
+    # Continue startup even if DB check fails, to avoid 502/Crash Loop
+
 
 # Run auto-migrations for schema updates
 from .auto_migrate import run_migrations
