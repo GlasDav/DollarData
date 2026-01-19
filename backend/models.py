@@ -1,10 +1,12 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Float, DateTime, Date, LargeBinary, Table
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Float, DateTime, Date, LargeBinary, Table, Text
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
+from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
 
 class User(Base):
+
     __tablename__ = "profiles"
 
     id = Column(String, primary_key=True, index=True)
@@ -65,6 +67,27 @@ class BudgetBucket(Base):
     
     # New: Household Limits
     limits = relationship("BudgetLimit", back_populates="bucket", cascade="all, delete-orphan")
+
+class Job(Base):
+    """
+    Persist background job status (e.g. for CSV imports) so multiple
+    Gunicorn workers can access the shared state.
+    """
+    __tablename__ = "background_jobs"
+
+    id = Column(String, primary_key=True) # UUID string
+    user_id = Column(String, ForeignKey("profiles.id"), index=True)
+    status = Column(String, default="processing") # processing, complete, failed
+    progress = Column(Integer, default=0)
+    total = Column(Integer, default=0)
+    message = Column(String)
+    duplicate_count = Column(Integer, default=0)
+    result = Column(JSON, nullable=True) # Store complex results as JSON
+
+    error = Column(String, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+
+
 
 class Tag(Base):
     __tablename__ = "tags"
