@@ -46,6 +46,7 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **Email Verification:** Verify user email addresses for security.
 - [ ] **Notifications Overhaul:** Fix currently broken notifications system and improve customization.
 - [x] **Delete Account:** Allow users to permanently delete their account and data (GDPR compliance).
+- [x] **Security Audit:** Comprehensive 7-phase audit (auth, API, data protection, DB, frontend, infra, third-party). See `docs/SECURITY_AUDIT_2026-01-19.md`.
 - [x] **Account Creation Stability:** Fixed 504 timeouts and database locks during signup.
 - [ ] **Fix Supabase Warnings:** Address console warnings and deprecation notices from Supabase client.
 
