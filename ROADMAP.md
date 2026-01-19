@@ -26,7 +26,7 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 🎨 UI/UX Improvements
 
-- [x] **Chart Colors:** Updated palette to accessible Okabe-Ito friendly scheme.
+- [x] **Chart Colors:** Updated palette to "Premium & Vibrant" (accessible & high-contrast).
 
 - [ ] **Household vs Individual:** Explore options to have some goals and achievements at household level, and some for individual members.
 - [ ] **Fix Budget Cards:** Ensure budget cards show monthly average instead of aggregate total when viewing periods > 1 month.

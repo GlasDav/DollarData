@@ -84,7 +84,7 @@ All charts must use the unified color palette defined in `frontend/src/constants
 | Assets | `#6366f1` (Indigo) | Asset lines, positive growth |
 | Liabilities | `#ef4444` (Red) | Debt lines, negative trends |
 | Net Worth | `#6366f1` (Indigo/Brand) | Net Worth area/line |
-| Categories | Rainbow Palette | Pie charts, bar charts (Expenses/Income) |
+| Categories | Premium Vibrant Palette | Pie charts, bar charts (Expenses/Income) |
 
 **Usage:**
 ```javascript

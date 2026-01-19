@@ -764,7 +764,7 @@ docker compose exec backend python /app/seed_demo_user.py
   - **Deduplication:** Implemented logic to deduplicate legend items based on ID/Name, resolving duplicate entries for categories that act as both parent and child.
   - **Encoding:** Added `decodeHtml` helper to fix display of entities like `&amp;` in category names.
 - **Chart Colors:**
-  - **Accessibility:** Updated `chartColors.js` to use an Okabe-Ito based colorblind-friendly palette for better distinction.
+  - **Accessibility:** Updated `chartColors.js` to use a "Premium & Vibrant" palette (Tailwind 600s) that balances accessibility/contrast with a deeper, more professional aesthetic.
   - **Files:** `frontend/src/pages/FinancialCalendar.jsx`, `frontend/src/constants/chartColors.js`.
 
 ---
