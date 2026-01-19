@@ -135,11 +135,12 @@ def run_migrations(engine: Engine):
                     
                     dialect = engine.dialect.name
                     json_type = "JSONB" if dialect == "postgresql" else "TEXT"
+                    user_id_type = "UUID" if dialect == "postgresql" else "VARCHAR"
                     
                     conn.execute(text(f"""
                         CREATE TABLE IF NOT EXISTS background_jobs (
                             id VARCHAR PRIMARY KEY,
-                            user_id VARCHAR REFERENCES profiles(id),
+                            user_id {user_id_type} REFERENCES profiles(id),
                             status VARCHAR DEFAULT 'processing',
                             progress INTEGER DEFAULT 0,
                             total INTEGER DEFAULT 0,
