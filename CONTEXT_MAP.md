@@ -60,6 +60,13 @@ When adding a new column to any model:
 - ⚠️ **SQLite vs PostgreSQL** - Local dev uses SQLite, production uses PostgreSQL
 - ⚠️ **Auto-migrate only handles ADD COLUMN** - Complex migrations need manual scripts (e.g. `CREATE TABLE` in `auto_migrate.py`)
 
+### Security Audit
+
+- **Last Audit:** 2026-01-19
+- **Report:** [docs/SECURITY_AUDIT_2026-01-19.md](docs/SECURITY_AUDIT_2026-01-19.md)
+- **Result:** 7 issues found and fixed (see report for details)
+- **Pending Manual Action:** Enable Leaked Password Protection in Supabase Dashboard
+
 ---
 
 ## High-Level Summary
