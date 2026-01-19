@@ -312,6 +312,9 @@ export default function FinancialCalendar() {
         return cells;
     };
 
+    const changeMonth = (delta) => {
+        setCurrentDate(new Date(year, month + delta, 1));
+    };
 
     return (
         <div className="space-y-6 max-w-[1400px] mx-auto p-4 md:p-8">
