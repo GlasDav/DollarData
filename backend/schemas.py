@@ -82,10 +82,15 @@ class BudgetBucketBase(BaseModel):
 class BudgetBucketCreate(BudgetBucketBase):
     pass
 
-class BudgetBucket(BudgetBucketBase):
+class BudgetBucketSimple(BudgetBucketBase):
     id: int
+    class Config:
+        from_attributes = True
+
+class BudgetBucket(BudgetBucketSimple):
     tags: List[Tag] = []
     data_class: str = "BudgetBucket"
+    parent: Optional[BudgetBucketSimple] = None
 
     class Config:
         from_attributes = True

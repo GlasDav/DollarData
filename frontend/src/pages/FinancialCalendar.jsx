@@ -141,25 +141,53 @@ export default function FinancialCalendar() {
         return events;
     }, [subscriptions, year, month, endOfMonth, startOfMonth]);
 
+    // Helper to decode HTML entities (e.g. "Food &amp; Drink" -> "Food & Drink")
+    const decodeHtml = (html) => {
+        const txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+    };
+
+    // Helper to get the "Display Bucket" (Parent if exists, else Self)
+    const getDisplayBucket = (bucket) => {
+        if (!bucket) return { name: 'Uncategorized', color: '#cbd5e1', id: 'uncat' };
+
+        // If parent exists, use parent info
+        if (bucket.parent) {
+            return {
+                id: bucket.parent.id,
+                name: decodeHtml(bucket.parent.name),
+                color: getBucketColor(bucket.parent.id), // Parent ID determines color
+                isParent: true
+            };
+        }
+
+        // Fallback to self
+        return {
+            id: bucket.id,
+            name: decodeHtml(bucket.name),
+            color: bucket.color || getBucketColor(bucket.id),
+            isParent: false
+        };
+    };
+
     // 2. Merge Actual + Projected
     const combinedData = useMemo(() => {
         const map = {};
 
         // Add Actuals
         transactions.forEach(txn => {
-            // Filter out transfers
             if (txn.bucket?.is_transfer) return;
 
             const dateKey = txn.date.split('T')[0];
             if (!map[dateKey]) map[dateKey] = { txns: [], total: 0, hasProjected: false };
 
-            // Assign color if missing (using deterministic hash)
+            // Resolve Display Bucket (Parent or Self)
+            const displayBucket = getDisplayBucket(txn.bucket);
+
             const processedTxn = {
                 ...txn,
-                bucket: {
-                    ...txn.bucket,
-                    color: txn.bucket?.color || getBucketColor(txn.bucket_id)
-                }
+                displayBucket // Attach for rendering
             };
 
             map[dateKey].txns.push(processedTxn);
@@ -171,19 +199,28 @@ export default function FinancialCalendar() {
             const dateKey = p.date;
             if (!map[dateKey]) map[dateKey] = { txns: [], total: 0, hasProjected: true };
 
-            // Logic: Hide projected if date is in the past?
-            // "Ghost" bills for missed payments could be useful, but let's hide to avoid clutter.
             const todayStr = toLocalISOString(new Date());
 
-            // Show projected if strictly in future, OR if it's today
-            // Also, deduplication: if a similar transaction exists (same amount/name), hide?
-            // Keeping it simple for now.
-
             if (dateKey >= todayStr) {
-                // Check for overlap?
-                // Simple check: if a txn with similar name exists on this day?
-                // Let's just add it.
-                map[dateKey].txns.push(p);
+                // For projected, we constructed a bucket object manually in Step 1
+                // logic needs to be robust if p.bucket is just {name, color, id} without parent info
+                // However, subscriptions usually point to a bucket_id. 
+                // We might not have full parent info for subscriptions unless we fetch it.
+                // For now, let's stick to the bucket info we have or try to find it in transactions?
+                // Ideally, we should fetch full bucket info for subscriptions too.
+                // But for "Recurring", we often group them all together or use the specific bucket color.
+
+                // If we want consistent parent grouping, we need to lookup the bucket by ID from a master list
+                // OR we can just rely on what we have. 
+                // Let's rely on what we have for now, but decode name.
+
+                const displayBucket = {
+                    id: p.bucket.id || 'recurring',
+                    name: decodeHtml(p.bucket.name),
+                    color: p.bucket.color
+                };
+
+                map[dateKey].txns.push({ ...p, displayBucket });
                 map[dateKey].hasProjected = true;
             }
         });
@@ -206,19 +243,13 @@ export default function FinancialCalendar() {
         // Days
         for (let d = 1; d <= daysInMonth; d++) {
             const dateObj = new Date(year, month, d);
-            // Format as YYYY-MM-DD without timezone adjustment
             const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
             const data = combinedData[dateKey]; // { txns: [], total: 0, hasProjected: bool }
             const isToday = new Date().toDateString() === dateObj.toDateString();
 
-            // Separate actual vs projected for dots
             const actuals = data?.txns.filter(t => !t.isProjected) || [];
             const projected = data?.txns.filter(t => t.isProjected) || [];
-
-            // Calculate daily total (only actuals usually, or projected too?)
-            // Usually "Daily Spend" implies what I *actually* spent. 
-            // Projected is "Upcoming".
             const dailyTotal = data?.total || 0;
 
             cells.push(
@@ -237,7 +268,6 @@ export default function FinancialCalendar() {
                             ${isToday ? 'bg-indigo-600 text-white' : 'text-slate-500 dark:text-slate-400'}
                         `}>{d}</span>
 
-                        {/* Daily Total Display */}
                         {dailyTotal > 0 && (
                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                                 ${dailyTotal.toFixed(0)}
@@ -249,17 +279,15 @@ export default function FinancialCalendar() {
                         <div className="mt-2 space-y-1">
                             {/* Dots Container */}
                             <div className="flex flex-wrap gap-1 content-start">
-                                {/* Actuals: Solid */}
                                 {actuals.map(t => (
                                     <div
                                         key={t.id}
                                         className="w-2 h-2 rounded-full cursor-help hover:scale-125 transition-transform"
-                                        style={{ backgroundColor: t.bucket?.color || getBucketColor(t.bucket_id) }}
-                                        title={`${t.description}: $${Math.abs(t.amount).toFixed(2)}`}
+                                        style={{ backgroundColor: t.displayBucket.color }}
+                                        title={`${t.description} (${t.displayBucket.name}): $${Math.abs(t.amount).toFixed(2)}`}
                                     />
                                 ))}
 
-                                {/* Projected: Ring/Hollow */}
                                 {projected.map(t => (
                                     <div
                                         key={t.id}
@@ -269,7 +297,7 @@ export default function FinancialCalendar() {
                                 ))}
                             </div>
 
-                            {/* Projected Amount Label */}
+                            {/* Projected Label */}
                             {projected.length > 0 && (
                                 <div className="absolute bottom-1 right-2 left-2 text-[10px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center justify-end gap-1 opacity-80">
                                     <Clock size={10} />
@@ -284,9 +312,6 @@ export default function FinancialCalendar() {
         return cells;
     };
 
-    const changeMonth = (delta) => {
-        setCurrentDate(new Date(year, month + delta, 1));
-    };
 
     return (
         <div className="space-y-6 max-w-[1400px] mx-auto p-4 md:p-8">
@@ -365,7 +390,7 @@ export default function FinancialCalendar() {
                                         {t.isProjected ? (
                                             <div className="w-3 h-3 rounded-full border-2 border-indigo-500 flex-shrink-0" />
                                         ) : (
-                                            <div className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: t.bucket?.color || getBucketColor(t.bucket_id) }} />
+                                            <div className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: t.displayBucket?.color || t.bucket?.color }} />
                                         )}
 
                                         <div>
@@ -377,7 +402,9 @@ export default function FinancialCalendar() {
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-xs text-slate-500 dark:text-slate-400">{t.bucket?.name || 'Uncategorized'}</div>
+                                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                                                {t.displayBucket?.name || t.bucket?.name || 'Uncategorized'}
+                                            </div>
                                         </div>
                                     </div>
                                     <span className={`text-sm font-bold ${t.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'} ${t.isProjected ? 'opacity-80' : ''}`}>
@@ -399,18 +426,15 @@ export default function FinancialCalendar() {
             <div className="mt-8 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Categories</h3>
                 <div className="flex flex-wrap gap-x-6 gap-y-3">
-                    {/* Unique buckets from current view */}
-                    {Array.from(new Set([
-                        ...transactions.map(t => JSON.stringify({ id: t.bucket_id, name: t.bucket?.name || 'Uncategorized', color: t.bucket?.color || getBucketColor(t.bucket_id) })),
-                        ...projectedEvents.map(e => JSON.stringify({ id: e.bucket?.id, name: e.bucket?.name, color: e.bucket?.color }))
-                    ]))
-                        .map(s => JSON.parse(s))
-                        .filter(b => b.name) // Filter out any undefined names if any
-                        // Deduplicate by ID to be safe (JSON stringify might differ on key order if not careful, but usually stable here)
+                    {/* Unique display buckets from current view */}
+                    {Object.values(combinedData).flatMap(d => d.txns)
+                        .map(t => t.displayBucket ? JSON.stringify(t.displayBucket) : null)
+                        .filter(Boolean)
                         .reduce((acc, curr) => {
-                            if (!acc.find(x => x.name === curr.name)) acc.push(curr);
+                            if (!acc.includes(curr)) acc.push(curr);
                             return acc;
                         }, [])
+                        .map(s => JSON.parse(s))
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((bucket, idx) => (
                             <div key={`${bucket.id}-${idx}`} className="flex items-center gap-2">

@@ -694,7 +694,9 @@ def get_calendar_data(
     
     # Fetch all transactions in range
     txns = db.query(models.Transaction)\
-        .options(joinedload(models.Transaction.bucket))\
+        .options(
+            joinedload(models.Transaction.bucket).joinedload(models.BudgetBucket.parent)
+        )\
         .filter(
             models.Transaction.user_id == user.id,
             models.Transaction.date >= s_date,
