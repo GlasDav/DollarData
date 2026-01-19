@@ -491,7 +491,7 @@ def process_transactions_preview_with_progress(
 
         preview_txn = {
             'id': -(i + 1),
-            'user_id': user.id,
+            'user_id': str(user.id),
             'date': data["date"].isoformat() if hasattr(data["date"], 'isoformat') else str(data["date"]),
             'description': result['clean_desc'],
             'raw_description': data["description"],
