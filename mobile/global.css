@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* Brand Primary - Electric Indigo */
+        --color-primary: 93 93 255;
+        /* #5D5DFF */
+        --color-primary-hover: 75 75 230;
+        /* #4B4BE6 */
+        --color-primary-light: 139 139 255;
+        /* #8B8BFF */
+
+        /* Surfaces */
+        --color-surface: 245 245 247;
+        /* #F5F5F7 */
+        --color-card: 255 255 255;
+        /* #FFFFFF */
+
+        /* Text */
+        --color-text-primary: 25 27 24;
+        /* #191B18 */
+        --color-text-muted: 102 102 102;
+        /* #666666 */
+
+        /* Borders */
+        --color-border: 229 229 231;
+        /* #E5E5E7 */
+
+        /* Accents */
+        --color-accent-success: 52 211 153;
+        /* #34D399 */
+        --color-accent-warning: 251 146 60;
+        /* #FB923C */
+        --color-accent-error: 239 68 68;
+        /* #EF4444 */
+        --color-accent-info: 93 93 255;
+        /* #5D5DFF */
+    }
+
+    .dark {
+        /* Brand Primary - Electric Indigo - Slightly lighter for dark mode visibility? Keeping consistent for now */
+        --color-primary: 93 93 255;
+        --color-primary-hover: 75 75 230;
+        --color-primary-light: 139 139 255;
+
+        /* Surfaces */
+        --color-surface: 26 26 46;
+        /* #1A1A2E */
+        --color-card: 37 37 56;
+        /* #252538 */
+
+        /* Text */
+        --color-text-primary: 245 245 247;
+        /* #F5F5F7 */
+        --color-text-muted: 156 163 175;
+        /* #9CA3AF */
+
+        /* Borders */
+        --color-border: 55 65 81;
+        /* #374151 */
+    }
+}
