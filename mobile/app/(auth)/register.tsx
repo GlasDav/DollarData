@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { Mail } from 'lucide-react-native';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 
 export default function Register() {
@@ -42,30 +46,31 @@ export default function Register() {
                 <View className="items-center mb-8">
                     <Image
                         source={require('../../assets/images/logo.png')}
-                        style={{ width: 300, height: 80 }}
+                        style={{ width: 280, height: 70 }}
                         resizeMode="contain"
                     />
                 </View>
 
-                <View className="bg-card p-8 rounded-2xl border border-border items-center">
-                    <View className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full items-center justify-center mb-6">
-                        <Mail size={32} color="#5D5DFF" />
-                    </View>
+                <Card className="w-full">
+                    <CardContent className="pt-6 items-center">
+                        <View className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full items-center justify-center mb-6">
+                            <Mail size={32} color="#5D5DFF" />
+                        </View>
 
-                    <Text className="text-2xl font-bold text-text-primary mb-3 text-center">Check your inbox</Text>
+                        <Text variant="h3" className="mb-2 text-center">Check your inbox</Text>
 
-                    <Text className="text-text-secondary text-center mb-8 leading-relaxed">
-                        We've sent a verification link to <Text className="font-semibold text-text-primary">{email}</Text>.
-                        {'\n\n'}Please click the link in that email to activate your account.
-                    </Text>
+                        <Text className="text-center mb-6 leading-relaxed text-muted-foreground">
+                            We've sent a verification link to <Text className="font-semibold text-foreground">{email}</Text>.
+                            {'\n\n'}Please click the link in that email to activate your account.
+                        </Text>
 
-                    <TouchableOpacity
-                        onPress={() => router.replace('/(auth)/login')}
-                        className="w-full bg-primary p-4 rounded-xl items-center"
-                    >
-                        <Text className="text-white font-bold text-lg">Back to Log in</Text>
-                    </TouchableOpacity>
-                </View>
+                        <Button
+                            className="w-full"
+                            onPress={() => router.replace('/(auth)/login')}
+                            label="Back to Log in"
+                        />
+                    </CardContent>
+                </Card>
             </SafeAreaView>
         );
     }
@@ -77,79 +82,68 @@ export default function Register() {
                 className="flex-1"
             >
                 <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
-                    <View className="items-center mb-10">
-                        <View className="mb-4">
-                            <Image
-                                source={require('../../assets/images/logo.png')}
-                                style={{ width: 300, height: 80 }}
-                                resizeMode="contain"
-                            />
-                        </View>
-                        <Text className="text-text-muted text-base">Create your account</Text>
+                    <View className="items-center mb-8">
+                        <Image
+                            source={require('../../assets/images/logo.png')}
+                            style={{ width: 280, height: 70 }}
+                            resizeMode="contain"
+                        />
+                        <Text className="text-muted-foreground mt-2">Create your account</Text>
                     </View>
 
-                    <View className="space-y-4">
-                        {error ? (
-                            <View className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
-                                <Text className="text-red-600 dark:text-red-400 text-center">{error}</Text>
+                    <Card className="w-full">
+                        <CardContent className="space-y-4 pt-6">
+                            {error ? (
+                                <View className="bg-destructive/10 p-3 rounded-md border border-destructive/20">
+                                    <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
+                                </View>
+                            ) : null}
+
+                            <View className="space-y-2">
+                                <Text className="text-sm font-medium">Full Name</Text>
+                                <Input
+                                    placeholder="John Doe"
+                                    value={name}
+                                    onChangeText={setName}
+                                />
                             </View>
-                        ) : null}
 
-                        <View>
-                            <Text className="text-text-primary mb-2 font-medium">Full Name</Text>
-                            <TextInput
-                                className="bg-card text-text-primary p-4 rounded-xl border border-border"
-                                placeholder="John Doe"
-                                placeholderTextColor="#9CA3AF"
-                                value={name}
-                                onChangeText={setName}
-                            />
-                        </View>
+                            <View className="space-y-2">
+                                <Text className="text-sm font-medium">Email</Text>
+                                <Input
+                                    placeholder="name@example.com"
+                                    placeholderTextColor="#9CA3AF"
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                />
+                            </View>
 
-                        <View>
-                            <Text className="text-text-primary mb-2 font-medium">Email</Text>
-                            <TextInput
-                                className="bg-card text-text-primary p-4 rounded-xl border border-border"
-                                placeholder="name@example.com"
-                                placeholderTextColor="#9CA3AF"
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                                value={email}
-                                onChangeText={setEmail}
-                            />
-                        </View>
+                            <View className="space-y-2">
+                                <Text className="text-sm font-medium">Password</Text>
+                                <Input
+                                    placeholder="Min 8 chars"
+                                    secureTextEntry
+                                    value={password}
+                                    onChangeText={setPassword}
+                                />
+                            </View>
 
-                        <View>
-                            <Text className="text-text-primary mb-2 font-medium">Password</Text>
-                            <TextInput
-                                className="bg-card text-text-primary p-4 rounded-xl border border-border"
-                                placeholder="Min 8 chars"
-                                placeholderTextColor="#9CA3AF"
-                                secureTextEntry
-                                value={password}
-                                onChangeText={setPassword}
-                            />
-                        </View>
+                            <Button
+                                className="mt-4 w-full"
+                                onPress={handleRegister}
+                                disabled={loading}
+                            >
+                                {loading ? <ActivityIndicator color="white" /> : <Text className="text-primary-foreground font-bold">Create Account</Text>}
+                            </Button>
+                        </CardContent>
+                    </Card>
 
-                        <TouchableOpacity
-                            onPress={handleRegister}
-                            disabled={loading}
-                            className={`bg-primary p-4 rounded-xl items-center mt-4 ${loading ? 'opacity-70' : ''}`}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <Text className="text-white font-bold text-lg">Create Account</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                    <View className="mt-8 flex-row justify-center">
-                        <Text className="text-text-muted">Already have an account? </Text>
+                    <View className="mt-8 flex-row justify-center space-x-1">
+                        <Text className="text-muted-foreground">Already have an account?</Text>
                         <Link href="/(auth)/login" asChild>
-                            <TouchableOpacity>
-                                <Text className="text-primary font-bold">Log In</Text>
-                            </TouchableOpacity>
+                            <Text className="text-primary font-bold">Log In</Text>
                         </Link>
                     </View>
                 </ScrollView>

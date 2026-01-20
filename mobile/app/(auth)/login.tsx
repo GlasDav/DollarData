@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, ActivityIndicator, Image } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -11,6 +15,7 @@ export default function Login() {
     const [error, setError] = useState('');
     const { signIn } = useAuth();
 
+    // Explicitly using type 'any' for error handling is temporary
     const handleLogin = async () => {
         setLoading(true);
         setError('');
@@ -25,66 +30,62 @@ export default function Login() {
 
     return (
         <SafeAreaView className="flex-1 bg-surface justify-center p-6">
-            <View className="items-center mb-10">
-                <View className="mb-4">
+            <View className="flex-1 justify-center max-w-md w-full mx-auto space-y-8">
+                <View className="items-center">
                     <Image
                         source={require('../../assets/images/logo.png')}
-                        style={{ width: 300, height: 80 }}
+                        style={{ width: 280, height: 70 }}
                         resizeMode="contain"
                     />
-                </View>
-                <Text className="text-text-muted text-base">Your Money, Mastery.</Text>
-            </View>
-
-            <View className="space-y-4">
-                {error ? (
-                    <View className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
-                        <Text className="text-red-600 dark:text-red-400 text-center">{error}</Text>
-                    </View>
-                ) : null}
-
-                <View>
-                    <Text className="text-text-primary mb-2 font-medium">Email</Text>
-                    <TextInput
-                        className="bg-card text-text-primary p-4 rounded-xl border border-border"
-                        placeholder="john@example.com"
-                        placeholderTextColor="#9CA3AF"
-                        autoCapitalize="none"
-                        value={email}
-                        onChangeText={(text) => { setEmail(text); setError(''); }}
-                    />
+                    <Text className="text-muted-foreground mt-2">Your Money, Mastery.</Text>
                 </View>
 
-                <View>
-                    <Text className="text-text-primary mb-2 font-medium">Password</Text>
-                    <TextInput
-                        className="bg-card text-text-primary p-4 rounded-xl border border-border"
-                        placeholder="********"
-                        placeholderTextColor="#9CA3AF"
-                        secureTextEntry
-                        value={password}
-                        onChangeText={(text) => { setPassword(text); setError(''); }}
-                    />
-                </View>
+                <Card className="w-full">
+                    <CardHeader>
+                        <CardTitle>Welcome Back</CardTitle>
+                        <CardDescription>Enter your credentials to access your account.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {error ? (
+                            <View className="bg-destructive/10 p-3 rounded-md border border-destructive/20">
+                                <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
+                            </View>
+                        ) : null}
 
-                <TouchableOpacity
-                    onPress={handleLogin}
-                    disabled={loading}
-                    className={`bg-primary p-4 rounded-xl items-center mt-4 ${loading ? 'opacity-70' : ''}`}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text className="text-white font-bold text-lg">Sign In</Text>
-                    )}
-                </TouchableOpacity>
+                        <View className="space-y-2">
+                            <Text className="text-sm font-medium">Email</Text>
+                            <Input
+                                placeholder="john@example.com"
+                                autoCapitalize="none"
+                                value={email}
+                                onChangeText={(text) => { setEmail(text); setError(''); }}
+                            />
+                        </View>
 
-                <View className="mt-6 flex-row justify-center">
-                    <Text className="text-text-muted">Don't have an account? </Text>
+                        <View className="space-y-2">
+                            <Text className="text-sm font-medium">Password</Text>
+                            <Input
+                                placeholder="••••••••"
+                                secureTextEntry
+                                value={password}
+                                onChangeText={(text) => { setPassword(text); setError(''); }}
+                            />
+                        </View>
+
+                        <Button
+                            className="mt-2 w-full"
+                            onPress={handleLogin}
+                            disabled={loading}
+                        >
+                            {loading ? <ActivityIndicator color="white" /> : <Text className="text-primary-foreground font-bold">Sign In</Text>}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <View className="flex-row justify-center space-x-1">
+                    <Text className="text-muted-foreground">Don't have an account?</Text>
                     <Link href="/(auth)/register" asChild>
-                        <TouchableOpacity>
-                            <Text className="text-primary font-bold">Sign Up</Text>
-                        </TouchableOpacity>
+                        <Text className="text-primary font-bold">Sign Up</Text>
                     </Link>
                 </View>
             </View>

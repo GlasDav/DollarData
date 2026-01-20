@@ -356,7 +356,23 @@ erDiagram
   - **Pending:** VPS folder rename (`/opt/principal` → `/opt/dollardata`) - completed during deployment.
   - **Pending:** Configure `dollardata.au` domain (awaiting GoDaddy ID verification).
 
+### **Mobile App Acceleration (Jan 2026)**
+- **UI Kit Implementation:**
+  - Implemented "Shadow Shadcn" UI kit using `react-native-reusables` pattern.
+  - Created core components: `Card`, `Button`, `Input`, `Text` (`mobile/components/ui/`).
+  - Added `cn` utility for Tailwind class merging (`mobile/lib/utils.ts`).
+- **Charting Engine:**
+  - Integrated `react-native-gifted-charts` for high-performance native charts.
+  - Implemented "Responsive Widget Strategy":
+    - **Portrait:** Shows Summary Cards (Net Worth, Income, Expenses).
+    - **Landscape:** Reveals detailed interactive Line Chart.
+  - **Fixes:** Resolved Web compatibility issues (split `.native.tsx` / `.web.tsx`), generic "Network Error" (updated `Config.ts` to use local IP), and `class-variance-authority` dependency mismatch.
+- **Refactoring:**
+  - Converted Login, Register, and Dashboard screens to use new UI components.
+- **Files:** `mobile/components/dashboard/NetWorthChart.native.tsx`, `mobile/app/(auth)/*.tsx`, `mobile/components/ui/*.tsx`.
+
 ## Known Issues
+- **Mobile App:** Landscape rotation on Dashboard can be finicky on some Android devices (requires "Auto-rotate" enabled).
 - **Asset Allocation:** Needs UI fixes and split between ETFs/Stocks.
 
 ---
