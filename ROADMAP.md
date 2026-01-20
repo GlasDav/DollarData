@@ -84,7 +84,15 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 📱 Mobile App
 
-- [ ] **Plan iOS and Android App:** Research and plan capabilities for native apps.
+- [x] **Plan iOS and Android App:** Research and plan capabilities for native apps.
+- [ ] **Mobile App Implementation**
+  - [x] **Phase 1: Setup & Backbone:** Init Expo, NativeWind, AuthContext, API Client.
+  - [x] **Phase 2: Core Screens:** Login Screen, Dashboard Stub.
+  - [ ] **Phase 3: Widgets & Data:**
+    - [ ] Safe-to-Spend Widget
+    - [ ] Recent Transactions List
+    - [ ] Net Worth Card
+  - [ ] **Phase 4: Optimization:** Native specific interactions, scroll views, safe areas.
 
 ## 📊 Data Enhancements
 

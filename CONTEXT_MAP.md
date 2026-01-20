@@ -599,6 +599,17 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Bug Fix:** Fixed 500 error caused by using `account_type` instead of `category` column in Account model query.
 - **Files:** `backend/routers/achievements.py`, `frontend/src/components/AchievementsTab.jsx`.
 
+### **Mobile App Foundation (Jan 2026)**
+- **Initialization:** Created React Native Expo project in `/mobile` directory.
+- **Architecture:** "Side-by-Side" Monorepo approach.
+- **Tech Stack:** Expo, NativeWind (Tailwind CSS), Expo Router, Supabase Auth (SecureStore).
+- **Design System:** Ported Enterprise Design Tokens (Electric Indigo) to `mobile/global.css` and `tailwind.config.js`.
+- **Features:**
+  - Unified `AuthContext` with persistent session management.
+  - Cross-platform API Client (`api.ts`) handling Web vs Native environments.
+  - Basic Dashboard & Login screens implemented.
+- **Files:** `mobile/`, `mobile/src/context/AuthContext.tsx`, `mobile/src/api/api.ts`.
+
 ### **Domain Setup (Jan 2026):**
   - Configured `dollardata.au` domain with GoDaddy and Binary Lane VPS.
   - Implemented Caddy for automatic SSL termination.
