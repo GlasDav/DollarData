@@ -67,7 +67,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (!user && !inAuthGroup) {
             router.replace('/(auth)/login');
         } else if (user && inAuthGroup) {
-            router.replace('/(tabs)');
+            router.replace('/(drawer)');
         }
     }, [user, segments, isLoading]);
 

@@ -89,10 +89,10 @@ This document outlines the planned features, improvements, and future direction 
   - [x] **Phase 1: Setup & Backbone:** Init Expo, NativeWind, AuthContext, API Client.
   - [x] **Phase 2: Core Screens:** Login & Register, 5-Tab Navigation, Real Dashboard Data.
   - [x] **Phase 3: Widgets & Data:**
-    - [/] Net Worth Widget (Responsive: Portrait Summary / Landscape Chart)
+    - [x] Net Worth Widget (Responsive: Portrait Summary / Landscape Chart)
     - [ ] Safe-to-Spend Widget
     - [ ] Recent Transactions List
-  - [ ] **Phase 4: Optimization & Polish:**
+  - [x] **Phase 4: Optimization & Polish:**
     - [ ] **Google Login:** Add Google Sign-In to mobile app.
     - [ ] **Branding:** Align mobile app brand guidelines with web app (fonts, exact colors).
     - [ ] **Logo:** Make logo bigger on sign-in page.

@@ -1,4 +1,4 @@
-import { View, RefreshControl, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, RefreshControl, ScrollView, ActivityIndicator, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -10,11 +10,15 @@ import { NetWorthChart } from '@/components/dashboard/NetWorthChart';
 
 export default function Dashboard() {
   const { signOut, user } = useAuth();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const { data: accounts, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['accounts'],
     queryFn: getAccounts,
   });
+
+  // ... (keeping existing netWorth calc)
 
   const netWorth = useMemo(() => {
     if (!accounts) return 0;
@@ -50,23 +54,16 @@ export default function Dashboard() {
 
         {/* Net Worth Card */}
         <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold uppercase text-muted-foreground tracking-wider">Net Worth</CardTitle>
+          <CardHeader className="pb-0">
+            <CardTitle className="text-sm font-bold uppercase text-muted-foreground tracking-wider">
+              {isLandscape ? 'Net Worth' : 'Summary'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <View className="h-10 w-40 bg-muted/20 rounded animate-pulse" />
-            ) : (
-              <View>
-                <Text variant="h1" className="text-3xl font-bold">{formattedNetWorth}</Text>
-                <View className="flex-row mt-2 space-x-2">
-                  <View className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
-                    <Text className="text-green-700 dark:text-green-400 text-xs font-bold">+2.4% this month</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-            <NetWorthChart />
+            ) : null}
+            <NetWorthChart netWorth={netWorth} />
           </CardContent>
         </Card>
 

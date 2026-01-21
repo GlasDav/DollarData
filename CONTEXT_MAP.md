@@ -369,7 +369,18 @@ erDiagram
   - **Fixes:** Resolved Web compatibility issues (split `.native.tsx` / `.web.tsx`), generic "Network Error" (updated `Config.ts` to use local IP), and `class-variance-authority` dependency mismatch.
 - **Refactoring:**
   - Converted Login, Register, and Dashboard screens to use new UI components.
-- **Files:** `mobile/components/dashboard/NetWorthChart.native.tsx`, `mobile/app/(auth)/*.tsx`, `mobile/components/ui/*.tsx`.
+- **Mobile App Refinements (Jan 2026):**
+  - **Navigation:** Switched from Tab Bar to Drawer Navigation for better scalability and cleaner UI.
+  - **Net Worth Chart:**
+    - **Y-Axis:** Implemented dynamic scaling (non-zero start) for better data visualization.
+    - **Layout:** Adaptive layout with summary cards in portrait and detailed chart in landscape.
+    - **Optimizations:** Reduced whitespace and fixed status bar overlap issues.
+  - **Dashboard:**
+    - **Landscape Mode:** Implemented "Floating Header" (hidden background) to maximize chart area.
+    - **Portrait Mode:** Renamed 'Net Worth' card to 'Summary'; optimized spacing.
+  - **Files:** `mobile/app/(drawer)/_layout.tsx`, `mobile/components/dashboard/NetWorthChart.native.tsx`.
+
+- **Files:** `mobile/`, `mobile/src/context/AuthContext.tsx`, `mobile/src/api/api.ts`.
 
 ## Known Issues
 - **Mobile App:** Landscape rotation on Dashboard can be finicky on some Android devices (requires "Auto-rotate" enabled).
