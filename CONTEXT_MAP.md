@@ -379,6 +379,10 @@ erDiagram
     - **Landscape Mode:** Implemented "Floating Header" (hidden background) to maximize chart area.
     - **Portrait Mode:** Renamed 'Net Worth' card to 'Summary'; optimized spacing.
   - **Files:** `mobile/app/(drawer)/_layout.tsx`, `mobile/components/dashboard/NetWorthChart.native.tsx`.
+- **Phase 3 Widgets (Jan 2026):**
+  - **Safe-to-Spend Widget:** Implemented "North Star" daily budget tracker with gradient UI.
+  - **Recent Transactions:** Added list widget showing last 5 transactions.
+  - **Networking Fix:** Updated Android Config to `10.0.2.2` and enabled `usesCleartextTraffic`.
 
 - **Files:** `mobile/`, `mobile/src/context/AuthContext.tsx`, `mobile/src/api/api.ts`.
 

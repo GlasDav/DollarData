@@ -32,15 +32,24 @@ api.interceptors.request.use(
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
+
+        console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, config.params);
         return config;
     },
-    (error) => Promise.reject(error)
+    (error) => {
+        console.error('[API Request Error]', error);
+        return Promise.reject(error);
+    }
 );
 
 // Response Interceptor
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        console.log(`[API Response] ${response.status} ${response.config.url}`);
+        return response;
+    },
     async (error) => {
+        console.error(`[API Error] ${error.message}`, error.response?.status, error.response?.data);
         if (error.response && error.response.status === 401) {
             console.warn("Session expired");
             // Supabase handles session, but we might want to trigger a logout action here
@@ -65,6 +74,7 @@ export const updateSubscription = async (id: string, data: any) => (await api.pu
 export const deleteSubscription = async (id: string) => (await api.delete(`/analytics/subscriptions/${id}`)).data;
 export const getDebtProjection = async (params: any) => (await api.get('/analytics/debt_projection', { params })).data;
 export const getAnomalies = async () => (await api.get('/analytics/anomalies')).data;
+export const getDashboardData = async (start: string, end: string, spender?: string) => (await api.get('/analytics/dashboard', { params: { start_date: start, end_date: end, spender } })).data;
 
 // Goals
 export const getGoals = async () => (await api.get('/goals/')).data;
@@ -98,6 +108,7 @@ export const deleteRule = async (id: string) => (await api.delete(`/settings/rul
 export const bulkDeleteRules = async (ids: string[]) => (await api.post('/settings/rules/bulk-delete', ids)).data;
 
 // Transactions
+export const getTransactions = async (params: any) => (await api.get('/transactions/', { params })).data;
 export const splitTransaction = async (id: string, items: any[]) => (await api.post(`/transactions/${id}/split`, { items })).data;
 export const deleteAllTransactions = async () => (await api.delete('/transactions/all')).data;
 

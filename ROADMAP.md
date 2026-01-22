@@ -90,8 +90,8 @@ This document outlines the planned features, improvements, and future direction 
   - [x] **Phase 2: Core Screens:** Login & Register, 5-Tab Navigation, Real Dashboard Data.
   - [x] **Phase 3: Widgets & Data:**
     - [x] Net Worth Widget (Responsive: Portrait Summary / Landscape Chart)
-    - [ ] Safe-to-Spend Widget
-    - [ ] Recent Transactions List
+    - [x] Safe-to-Spend Widget
+    - [x] Recent Transactions List
   - [x] **Phase 4: Optimization & Polish:**
     - [ ] **Google Login:** Add Google Sign-In to mobile app.
     - [ ] **Branding:** Align mobile app brand guidelines with web app (fonts, exact colors).
