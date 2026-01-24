@@ -58,11 +58,11 @@ DollarData works great for individuals and families alike.
 
 ### 1.3 Configuring Your Preferences
 
-Before diving in, take a moment to personalize your experience:
+Before diving in, take a moment to personalize your experience. Access these settings by clicking the **Menu icon** (top left) to open the navigation drawer.
 
 | Setting | Location | What It Does |
 |---------|----------|--------------|
-| Theme | Sidebar footer | Switch between light and dark mode |
+| Theme | Drawer footer | Switch between light and dark mode |
 | Notifications | Settings → Notifications | Control email and in-app alerts |
 
 ### 1.4 Managing Your Data

@@ -794,6 +794,13 @@ docker compose exec backend python /app/seed_demo_user.py
   - Disabled `disableScrollParentFix` in `react-joyride` config to prevent the body from getting stuck in `overflow: hidden` state.
 - **Files:** `frontend/src/components/OnboardingWizard.jsx`, `frontend/src/context/TutorialContext.jsx`, `frontend/src/constants/tourSteps.jsx`.
 
+### **Global Drawer Navigation (Jan 2026)**
+- **UI Overhaul:** Replaced static usually-visible sidebar with a collapsible Global Drawer for cleaner desktop tracking.
+  - **Component:** Created `Sidebar.jsx` (collapsible drawer) to replace hardcoded sidebar in `App.jsx`.
+  - **Interaction:** Added Hamburger Menu to Header for toggling navigation.
+  - **Settings Layout:** Fixed `Settings.jsx` internal sidebar positioning (`left-0` instead of `left-64`) to align with drawer logic.
+- **Files:** `frontend/src/App.jsx`, `frontend/src/components/Sidebar.jsx`, `frontend/src/pages/Settings.jsx`.
+
 ### **Landing Page Content Update (Jan 2026)**
 - **Text Update:** Changed hero description from "modern investor" to "modern professional".
 - **Files:** `frontend/src/pages/LandingPage.jsx`.
