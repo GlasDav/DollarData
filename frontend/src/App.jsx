@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users, BarChart3, MessageCircle, Briefcase } from 'lucide-react';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Menu } from 'lucide-react';
+import Sidebar from './components/Sidebar';
 import Settings from './pages/Settings';
 import DataManagement from './pages/DataManagement';
 import Transactions from './pages/Transactions';
@@ -62,31 +66,11 @@ const queryClient = new QueryClient({
   },
 });
 
+import Sidebar from './components/Sidebar';
+import { Menu } from 'lucide-react';
+
 // Enhanced NavItem component with left accent indicator
-function NavItem({ to, icon: Icon, children, end = false }) {
-  return (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) => `
-        group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200
-        ${isActive
-          ? 'bg-gradient-to-r from-primary/10 to-transparent dark:from-primary/20 dark:to-transparent text-primary dark:text-primary-light font-medium'
-          : 'text-text-muted dark:text-text-muted-dark hover:bg-surface dark:hover:bg-card-dark/50 hover:text-text-primary dark:hover:text-text-primary-dark'
-        }
-      `}
-    >
-      {({ isActive }) => (
-        <>
-          {/* Left accent indicator */}
-          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full transition-all duration-200 ${isActive ? 'h-5 bg-gradient-to-b from-primary to-primary-hover' : 'h-0 bg-transparent'}`}></div>
-          <Icon size={18} className={`transition-transform duration-200 ${isActive ? 'text-primary' : 'group-hover:scale-110'}`} />
-          <span className="transition-transform duration-200 group-hover:translate-x-1">{children}</span>
-        </>
-      )}
-    </NavLink>
-  );
-}
+// Note: NavItem is now internal to Sidebar.jsx, removing it from here.
 
 // Page title mapping
 const PAGE_TITLES = {
@@ -107,13 +91,21 @@ const PAGE_TITLES = {
 };
 
 // Header with page title
-function Header() {
+function Header({ onToggleDrawer }) {
   const location = useLocation();
   const title = PAGE_TITLES[location.pathname] || 'DollarData';
 
   return (
-    <header className="h-[72px] bg-card dark:bg-card-dark border-b border-border dark:border-border-dark flex items-center justify-between px-6 shadow-sm z-10">
-      <h1 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">{title}</h1>
+    <header className="h-[72px] bg-card dark:bg-card-dark border-b border-border dark:border-border-dark flex items-center justify-between px-6 shadow-sm z-10 sticky top-0">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onToggleDrawer}
+          className="p-2 -ml-2 rounded-md text-text-muted hover:text-text-primary hover:bg-surface dark:hover:bg-surface-dark transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+        <h1 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">{title}</h1>
+      </div>
       <NotificationBell />
     </header>
   );
@@ -123,6 +115,7 @@ function Header() {
 function Layout() {
   const { logout, user } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const location = useLocation();
   const { activeTour, stepIndex, setStepIndex, completeTour, closeTour } = useTutorial();
 
@@ -150,70 +143,27 @@ function Layout() {
   };
 
   return (
-    <div className="flex h-screen bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark font-sans">
-      {/* Sidebar */}
-      <div className="w-64 bg-card dark:bg-card-dark border-r border-border dark:border-border-dark flex flex-col">
-        {/* Logo */}
-        <div className="h-[72px] px-4 border-b border-border dark:border-border-dark flex items-center">
-          <div className="flex items-center">
-            <img src="/brand-logo.svg" alt="DollarData" className="h-10 w-auto dark:hidden" />
-            <img src="/brand-logo-dark.svg" alt="DollarData" className="h-10 w-auto hidden dark:block" />
-          </div>
-        </div>
+    <div className="flex h-screen bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark font-sans overflow-hidden">
 
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          {/* Overview */}
-          <div className="mb-4">
-            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted dark:text-text-muted-dark opacity-70">Overview</div>
-            <NavItem to="/dashboard" icon={LayoutDashboard}>Dashboard</NavItem>
-          </div>
+      {/* Drawer Sidebar */}
+      <Sidebar
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onLogout={logout}
+        onFeedback={() => setShowFeedback(true)}
+      />
 
-          {/* Money */}
-          <div className="mb-4">
-            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Money</div>
-            <NavItem to="/transactions" icon={List}>Transactions</NavItem>
-            <NavItem to="/subscriptions" icon={CreditCard}>Subscriptions</NavItem>
-            <NavItem to="/budget" icon={PiggyBank}>Budget</NavItem>
-
-            <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
-          </div>
-
-          {/* Planning */}
-          <div className="mb-4">
-            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Planning</div>
-            <NavItem to="/goals" icon={Target}>Goals & Achievements</NavItem>
-            <NavItem to="/reports" icon={BarChart3}>Reports</NavItem>
-          </div>
-
-          {/* System */}
-          <div>
-            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">System</div>
-            <NavItem to="/settings" icon={SettingsIcon}>Settings</NavItem>
-          </div>
-        </nav>
-
-        <div className="p-3 border-t border-border dark:border-border-dark">
-          <button
-            onClick={() => setShowFeedback(true)}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-muted dark:text-text-muted-dark hover:bg-surface dark:hover:bg-card-dark w-full transition-all duration-200 mb-1"
-          >
-            <MessageCircle size={18} />
-            Send Feedback
-          </button>
-          <button
-            onClick={logout}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-all duration-200"
-          >
-            <LogOut size={18} />
-            Sign Out
-          </button>
-        </div>
-      </div>
+      {/* Backdrop Overlay */}
+      {isDrawerOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
+          onClick={() => setIsDrawerOpen(false)}
+        />
+      )}
 
       {/* Main Content - wrapped in error boundary */}
-      {/* Main Content - wrapped in error boundary */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-surface dark:bg-surface-dark">
-        <Header />
+      <div className="flex-1 flex flex-col overflow-hidden bg-surface dark:bg-surface-dark w-full">
+        <Header onToggleDrawer={() => setIsDrawerOpen(true)} />
 
         <div className="flex-1 overflow-auto">
           <div className="min-h-full flex flex-col">
@@ -222,7 +172,7 @@ function Layout() {
                 <Outlet />
               </div>
             </ErrorBoundary>
-            {/* Hide footer on Settings page to keep sidebar fixed */}
+            {/* Hide footer on Settings page to keep sidebar fixed - footer is relevant for layout changes */}
             {location.pathname !== '/settings' && <Footer />}
           </div>
         </div>
