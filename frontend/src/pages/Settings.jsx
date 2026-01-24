@@ -38,8 +38,8 @@ export default function Settings() {
 
     return (
         <>
-            {/* Sidebar - fixed position starting at main sidebar width, top at header height */}
-            <aside className="fixed left-64 top-[72px] bottom-0 w-64 bg-card dark:bg-card-dark border-r border-border dark:border-border-dark flex flex-col z-10">
+            {/* Sidebar - fixed position starting at left edge (drawer is hidden) */}
+            <aside className="fixed left-0 top-[72px] bottom-0 w-64 bg-card dark:bg-card-dark border-r border-border dark:border-border-dark flex flex-col z-10">
                 {/* Header */}
                 <div className="p-4 border-b border-border dark:border-border-dark">
                     <h1 className="text-xl font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
@@ -81,7 +81,7 @@ export default function Settings() {
                 </div>
             </aside>
 
-            {/* Content Area - add left margin to account for fixed sidebar */}
+            {/* Content Area - add left margin to account for fixed settings sidebar */}
             <main className="ml-64 flex-1 p-6 md:p-8 bg-surface dark:bg-surface-dark min-h-[calc(100vh-72px)]">
                 <div className="max-w-4xl mx-auto">
                     <ActiveComponent />
