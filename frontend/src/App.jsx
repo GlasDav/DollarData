@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Settings from './pages/Settings';
@@ -66,8 +63,7 @@ const queryClient = new QueryClient({
   },
 });
 
-import Sidebar from './components/Sidebar';
-import { Menu } from 'lucide-react';
+
 
 // Enhanced NavItem component with left accent indicator
 // Note: NavItem is now internal to Sidebar.jsx, removing it from here.
