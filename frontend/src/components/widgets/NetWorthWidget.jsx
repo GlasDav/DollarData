@@ -54,10 +54,12 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
         return data;
     }, [safeAccounts]);
 
+    const totalAssets = allocationData.reduce((acc, curr) => acc + curr.value, 0);
+
     return (
         <Link
             to="/net-worth"
-            className="bg-card dark:bg-card-dark rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-all relative overflow-hidden group block flex flex-col h-[420px]"
+            className="bg-card dark:bg-card-dark rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-all relative overflow-hidden group block flex flex-col h-full min-h-[460px]"
         >
             {/* TOP SECTION: Net Worth Trend */}
             <div className="p-6 pb-2 flex-1 flex flex-col justify-between">
@@ -91,8 +93,21 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
                                     </linearGradient>
                                 </defs>
                                 <Tooltip
-                                    labelStyle={{ display: 'none' }}
-                                    contentStyle={{ display: 'none' }}
+                                    trigger="hover"
+                                    cursor={{ stroke: 'var(--color-text-muted)', strokeWidth: 1, strokeDasharray: '3 3' }}
+                                    content={({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className="bg-card dark:bg-card-dark p-3 border border-border dark:border-border-dark shadow-xl rounded-xl">
+                                                    <p className="text-xs text-text-muted mb-1">{new Date(label).toLocaleDateString()}</p>
+                                                    <p className="text-sm font-bold text-text-primary dark:text-text-primary-dark">
+                                                        {formatCurrency(payload[0].value)}
+                                                    </p>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
                                 />
                                 <Area
                                     type="monotone"
