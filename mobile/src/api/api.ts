@@ -7,30 +7,28 @@ const api = axios.create({
     baseURL: API_BASE_URL,
 });
 
+import { supabase } from '../lib/supabase';
+
 // Request Interceptor - Add Auth Token
 api.interceptors.request.use(
     async (config) => {
         let token;
-        if (Platform.OS === 'web') {
-            // Supabase stores the session in localStorage with a specific key pattern
-            // or we can let the Supabase client handle it. But since we need raw axios...
-            // For now, let's try getting it from where we stored it or Supabase default
-            token = typeof localStorage !== 'undefined' ? localStorage.getItem('sb-access-token') : null;
+        // Always try to get the fresh session from Supabase client first
+        // This handles token refresh automatically
+        const { data, error } = await supabase.auth.getSession();
 
-            // Fallback: Try to get from Supabase session directly (best effort)
-            if (!token) {
-                const sbKey = Object.keys(localStorage).find(k => k.endsWith('auth-token'));
-                if (sbKey) {
-                    const session = JSON.parse(localStorage.getItem(sbKey) || '{}');
-                    token = session.access_token;
-                }
-            }
-        } else {
-            token = await SecureStore.getItemAsync('sb-access-token');
-        }
+        if (error) console.error('[API Request] getSession Error:', error);
+        if (!data.session) console.warn('[API Request] getSession returned NO session');
+
+        token = data.session?.access_token;
 
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
+            console.log('[API Request] Token attached:', token.substring(0, 10) + '...');
+        } else {
+            console.warn('[API Request] No token found!');
+            // const legacy = await SecureStore.getItemAsync('sb-access-token');
+            // console.log('[Debug] Legacy check:', legacy);
         }
 
         console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, config.params);
@@ -108,6 +106,8 @@ export const deleteRule = async (id: string) => (await api.delete(`/settings/rul
 export const bulkDeleteRules = async (ids: string[]) => (await api.post('/settings/rules/bulk-delete', ids)).data;
 
 // Transactions
+// Analytics & History
+export const getTrendHistory = async (params: any) => (await api.get('/analytics/history', { params })).data;
 export const getTransactions = async (params: any) => (await api.get('/transactions/', { params })).data;
 export const splitTransaction = async (id: string, items: any[]) => (await api.post(`/transactions/${id}/split`, { items })).data;
 export const deleteAllTransactions = async () => (await api.delete('/transactions/all')).data;

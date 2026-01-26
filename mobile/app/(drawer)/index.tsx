@@ -9,6 +9,8 @@ import { Text } from '@/components/ui/text';
 import { NetWorthChart } from '@/components/dashboard/NetWorthChart';
 import { SafeToSpendWidget } from '@/components/dashboard/SafeToSpendWidget';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
+import { CashFlowWidget } from '@/components/dashboard/CashFlowWidget';
+import { BudgetPulseWidget } from '@/components/dashboard/BudgetPulseWidget';
 
 export default function Dashboard() {
   const { signOut, user } = useAuth();
@@ -69,10 +71,16 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Cash Flow Widget (New) */}
+        <CashFlowWidget />
+
         {/* Safe To Spend Widget */}
         <View className="mb-6">
           <SafeToSpendWidget />
         </View>
+
+        {/* Budget Pulse Widget (New) */}
+        <BudgetPulseWidget />
 
         {/* Recent Transactions Widget */}
         <RecentTransactions />

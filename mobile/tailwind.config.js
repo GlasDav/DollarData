@@ -26,7 +26,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["SpaceMono"], // Temporary until Inter is added
+        sans: ["Inter_400Regular"],
       }
     },
   },

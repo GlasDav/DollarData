@@ -68,6 +68,7 @@ This document outlines the planned features, improvements, and future direction 
     - [ ] **Logo:** Make logo bigger on sign-in page.
     - [ ] **Rotation:** Fix/Smooth out rotation behavior on dashboard.
     - [ ] Native specific interactions, scroll views, safe areas.
+    - [ ] **Bug:** Fix unresponsive Logout button and persistent 401 errors.
 
 ## 📊 Data Enhancements
 

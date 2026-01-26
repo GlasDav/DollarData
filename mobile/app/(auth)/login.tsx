@@ -34,10 +34,9 @@ export default function Login() {
                 <View className="items-center">
                     <Image
                         source={require('../../assets/images/logo.png')}
-                        style={{ width: 280, height: 70 }}
+                        style={{ width: 320, height: 80 }}
                         resizeMode="contain"
                     />
-                    <Text className="text-muted-foreground mt-2">Your Money, Mastery.</Text>
                 </View>
 
                 <Card className="w-full">
@@ -82,6 +81,21 @@ export default function Login() {
                     </CardContent>
                 </Card>
 
+                <View>
+                    <View className="relative my-4">
+                        <View className="absolute inset-0 flex items-center">
+                            <View className="w-full border-t border-border" />
+                        </View>
+                        <View className="relative flex justify-center text-center">
+                            <Text className="bg-surface px-2 text-muted-foreground text-xs">Or continue with</Text>
+                        </View>
+                    </View>
+
+                    <Button variant="outline" className="w-full flex-row gap-2" onPress={() => console.log('Google Sign In')}>
+                        <Text>Sign in with Google</Text>
+                    </Button>
+                </View>
+
                 <View className="flex-row justify-center space-x-1">
                     <Text className="text-muted-foreground">Don't have an account?</Text>
                     <Link href="/(auth)/register" asChild>
@@ -89,6 +103,6 @@ export default function Login() {
                     </Link>
                 </View>
             </View>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 }

@@ -266,6 +266,12 @@ erDiagram
     - **JSON Serialization:** Fixed `TypeError` by explicitly casting `UUID` objects to strings before storing in `JSON` columns.
     - **Files:** `backend/auto_migrate.py`, `backend/routers/ingestion.py`.
 
+- **Backend Environment Repair (Jan 2026):**
+  - **Dependency Fix:** Reinstalled missing Python dependencies (`slowapi`, `httpx`, `pdfplumber`, `pandas`, `numpy`) after virtual environment corruption.
+  - **Process Cleanup:** Killed zombie `python` and `node` processes causing port conflicts.
+  - **Configuration:** Created missing `backend/.env` file using credentials from `mobile/.env`, fixing "401 Unauthorized" errors due to missing JWT secrets.
+  - **Helper Script:** Created `start_backend.ps1` for reliable 1-click server startup on Windows.
+
 - **Auth & Registration Overhaul (Jan 2026):**
   - **Account Deletion:** Fixed "Zombie Account" bug where deleted users could respawn. Added Supabase Admin API deletion to `delete_account` endpoint.
   - **Registration Fixes:** Resolved 504 Gateway Timeouts by optimizing JIT provisioning and identifying SMTP blockers.
@@ -393,6 +399,7 @@ erDiagram
 - **Files:** `mobile/`, `mobile/src/context/AuthContext.tsx`, `mobile/src/api/api.ts`.
 
 ## Known Issues
+- **Mobile Auth:** Logout button in Settings is unresponsive. User receives "401 Unauthorized" ("Could not validate credentials") even after restarting app, likely due to stale token persistence or race condition in `SecureStore` logic.
 - **Mobile App:** Landscape rotation on Dashboard can be finicky on some Android devices (requires "Auto-rotate" enabled).
 - **Asset Allocation:** Needs UI fixes and split between ETFs/Stocks.
 
