@@ -82,7 +82,7 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
                 </div>
 
                 {/* Line Chart Area (Expanded) */}
-                <div className="h-32 w-full mt-6">
+                <div className="h-28 w-full mt-1">
                     {chartData.length >= 1 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData.length === 1 ? [chartData[0], chartData[0]] : chartData}>
