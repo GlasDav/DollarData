@@ -662,25 +662,25 @@ export default function Reports() {
             <DrilldownModal />
 
             {/* Cash Flow Forecast - 12 Month Budget-Based */}
-            <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+            <div className="bg-card dark:bg-card-dark rounded-2xl shadow-sm border border-border dark:border-border-dark overflow-hidden">
                 {/* Header */}
-                <div className="p-6 border-b border-border">
+                <div className="p-6 border-b border-border dark:border-border-dark">
                     <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                         <div>
-                            <h2 className="text-lg font-bold text-text-primary mb-1">12-Month Cash Flow Forecast</h2>
-                            <p className="text-sm text-text-secondary">
+                            <h2 className="text-lg font-bold text-text-primary dark:text-text-primary-dark mb-1">12-Month Cash Flow Forecast</h2>
+                            <p className="text-sm text-text-secondary dark:text-text-secondary-dark">
                                 Projected balance based on budgeted income minus budgeted expenses
                             </p>
                         </div>
                         <div className="flex items-center gap-6">
                             <div className="text-right">
-                                <p className="text-xs text-text-secondary uppercase tracking-wider">Available Cash</p>
-                                <p className="text-2xl font-bold text-text-primary">
+                                <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wider">Available Cash</p>
+                                <p className="text-2xl font-bold text-text-primary dark:text-text-primary-dark">
                                     {formatCurrency(forecastResult?.current_balance || 0)}
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs text-text-secondary uppercase tracking-wider">Net Monthly</p>
+                                <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wider">Net Monthly</p>
                                 <p className={`text-xl font-bold ${(forecastResult?.net_monthly || 0) >= 0 ? 'text-accent-success' : 'text-accent-error'}`}>
                                     {(forecastResult?.net_monthly || 0) >= 0 ? '+' : ''}{formatCurrency(forecastResult?.net_monthly || 0)}
                                 </p>
@@ -690,22 +690,22 @@ export default function Reports() {
                 </div>
 
                 {/* Budget Summary */}
-                <div className="grid grid-cols-3 gap-4 p-6 border-b border-border bg-surface">
+                <div className="grid grid-cols-3 gap-4 p-6 border-b border-border dark:border-border-dark bg-surface dark:bg-surface-dark">
                     <div className="text-center">
-                        <p className="text-xs text-text-secondary uppercase tracking-wide">Monthly Income</p>
+                        <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wide">Monthly Income</p>
                         <p className="text-lg font-bold text-accent-success mt-1">
                             +{formatCurrency(forecastResult?.monthly_income || 0)}
                         </p>
                     </div>
                     <div className="text-center">
-                        <p className="text-xs text-text-secondary uppercase tracking-wide">Monthly Expenses</p>
-                        <p className="text-lg font-bold text-text-primary mt-1">
+                        <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wide">Monthly Expenses</p>
+                        <p className="text-lg font-bold text-text-primary dark:text-text-primary-dark mt-1">
                             {formatCurrency(forecastResult?.monthly_expenses || 0)}
                         </p>
                     </div>
                     <div className="text-center">
-                        <p className="text-xs text-text-secondary uppercase tracking-wide">12-Month End</p>
-                        <p className="text-lg font-bold text-text-primary mt-1">
+                        <p className="text-xs text-text-secondary dark:text-text-secondary-dark uppercase tracking-wide">12-Month End</p>
+                        <p className="text-lg font-bold text-text-primary dark:text-text-primary-dark mt-1">
                             {formatCurrency(forecastResult?.insights?.projected_end_balance || 0)}
                         </p>
                     </div>
@@ -728,16 +728,16 @@ export default function Reports() {
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={cashFlowData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border dark:stroke-border-dark" />
                                 <XAxis
                                     dataKey="label"
-                                    className="fill-text-secondary"
+                                    className="fill-text-secondary dark:fill-text-secondary-dark"
                                     fontSize={11}
                                     tickLine={false}
                                     axisLine={false}
                                 />
                                 <YAxis
-                                    className="fill-text-secondary"
+                                    className="fill-text-secondary dark:fill-text-secondary-dark"
                                     fontSize={11}
                                     tickLine={false}
                                     axisLine={false}
@@ -771,11 +771,11 @@ export default function Reports() {
                     {/* Income Sources */}
                     {forecastResult?.income_breakdown && forecastResult.income_breakdown.length > 0 && (
                         <div>
-                            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Income Sources</p>
+                            <p className="text-xs font-semibold text-text-secondary dark:text-text-secondary-dark uppercase tracking-wider mb-3">Income Sources</p>
                             <div className="space-y-2">
                                 {forecastResult.income_breakdown.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center py-2 border-b border-border/50">
-                                        <p className="text-sm text-text-primary">{item.name}</p>
+                                    <div key={idx} className="flex justify-between items-center py-2 border-b border-border dark:border-border-dark">
+                                        <p className="text-sm text-text-primary dark:text-text-primary-dark">{item.name}</p>
                                         <p className="text-sm font-semibold text-accent-success">+{formatCurrency(item.monthly_budget)}/mo</p>
                                     </div>
                                 ))}
@@ -786,15 +786,15 @@ export default function Reports() {
                     {/* Top Expense Categories */}
                     {forecastResult?.expense_breakdown && forecastResult.expense_breakdown.length > 0 && (
                         <div>
-                            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Top Expense Categories</p>
+                            <p className="text-xs font-semibold text-text-secondary dark:text-text-secondary-dark uppercase tracking-wider mb-3">Top Expense Categories</p>
                             <div className="space-y-2">
                                 {forecastResult.expense_breakdown.slice(0, 5).map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center py-2 border-b border-border/50">
+                                    <div key={idx} className="flex justify-between items-center py-2 border-b border-border dark:border-border-dark">
                                         <div>
-                                            <p className="text-sm text-text-primary">{item.name}</p>
-                                            <p className="text-xs text-text-secondary">{item.group}</p>
+                                            <p className="text-sm text-text-primary dark:text-text-primary-dark">{item.name}</p>
+                                            <p className="text-xs text-text-secondary dark:text-text-secondary-dark">{item.group}</p>
                                         </div>
-                                        <p className="text-sm font-semibold text-text-primary">{formatCurrency(item.monthly_budget)}/mo</p>
+                                        <p className="text-sm font-semibold text-text-primary dark:text-text-primary-dark">{formatCurrency(item.monthly_budget)}/mo</p>
                                     </div>
                                 ))}
                             </div>
