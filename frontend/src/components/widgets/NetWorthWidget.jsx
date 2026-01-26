@@ -62,7 +62,7 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
             className="bg-card dark:bg-card-dark rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-all relative overflow-hidden group block flex flex-col h-full min-h-[460px]"
         >
             {/* TOP SECTION: Net Worth Trend */}
-            <div className="p-6 pb-2 flex-1 flex flex-col justify-between">
+            <div className="p-6 pb-2 flex-1 flex flex-col">
                 <div>
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -82,7 +82,7 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
                 </div>
 
                 {/* Line Chart Area (Expanded) */}
-                <div className="h-32 w-full mt-2">
+                <div className="h-32 w-full mt-6">
                     {chartData.length >= 1 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData.length === 1 ? [chartData[0], chartData[0]] : chartData}>
