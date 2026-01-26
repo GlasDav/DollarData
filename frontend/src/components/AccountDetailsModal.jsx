@@ -39,6 +39,7 @@ const AccountDetailsModal = ({ isOpen, onClose, account }) => {
         onSuccess: () => {
             queryClient.invalidateQueries(['accounts']);
             queryClient.invalidateQueries(['netWorthHistory']);
+            queryClient.invalidateQueries(['accountsHistory']);
             onClose();
         }
     });
@@ -50,6 +51,7 @@ const AccountDetailsModal = ({ isOpen, onClose, account }) => {
         onSuccess: () => {
             queryClient.invalidateQueries(['accounts']);
             queryClient.invalidateQueries(['netWorthHistory']);
+            queryClient.invalidateQueries(['accountsHistory']);
             onClose();
         }
     });

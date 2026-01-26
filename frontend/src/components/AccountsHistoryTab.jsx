@@ -83,16 +83,19 @@ function EditableCell({ value, onSave, isLiability, date }) {
 /**
  * AccountRow component for individual account rows
  */
-function AccountRow({ account, months, dates, isLiability, onUpdateBalance }) {
+function AccountRow({ account, months, dates, isLiability, onUpdateBalance, onSelectAccount }) {
     return (
         <tr className="border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             {/* Account Name - FROZEN COLUMN */}
             <td className="sticky left-0 z-10 px-3 py-2.5 whitespace-nowrap border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                <div className="flex flex-col">
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                <div
+                    className="flex flex-col cursor-pointer group"
+                    onClick={() => onSelectAccount && onSelectAccount(account)}
+                >
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
                         {account.name}
                     </span>
-                    <span className="text-xs text-slate-400">{account.category}</span>
+                    <span className="text-xs text-slate-400 group-hover:text-slate-500 transition-colors">{account.category}</span>
                 </div>
             </td>
 
@@ -140,7 +143,7 @@ function TotalRow({ label, values, colorClass, isBold = false }) {
 /**
  * AccountsHistoryTab - Spreadsheet view of account balance history
  */
-export default function AccountsHistoryTab({ onAddAccount }) {
+export default function AccountsHistoryTab({ onAddAccount, onSelectAccount }) {
     const queryClient = useQueryClient();
 
     // FETCH DATA
@@ -157,6 +160,7 @@ export default function AccountsHistoryTab({ onAddAccount }) {
         onSuccess: () => {
             queryClient.invalidateQueries(['accountsHistory']);
             queryClient.invalidateQueries(['netWorthHistory']); // Also update overview
+            queryClient.invalidateQueries(['accounts']); // Update generic accounts list if used
         }
     });
 
@@ -288,6 +292,7 @@ export default function AccountsHistoryTab({ onAddAccount }) {
                                             dates={dates}
                                             isLiability={false}
                                             onUpdateBalance={handleUpdateBalance}
+                                            onSelectAccount={onSelectAccount}
                                         />
                                     ))}
                                     <TotalRow
@@ -317,6 +322,7 @@ export default function AccountsHistoryTab({ onAddAccount }) {
                                             dates={dates}
                                             isLiability={true}
                                             onUpdateBalance={handleUpdateBalance}
+                                            onSelectAccount={onSelectAccount}
                                         />
                                     ))}
                                     <TotalRow

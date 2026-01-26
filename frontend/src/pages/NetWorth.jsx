@@ -654,7 +654,13 @@ export default function NetWorth() {
                     />
                 </>
             ) : activeTab === 'accounts' ? (
-                <AccountsHistoryTab onAddAccount={() => setIsAddAccountOpen(true)} />
+                <AccountsHistoryTab
+                    onAddAccount={() => setIsAddAccountOpen(true)}
+                    onSelectAccount={(account) => {
+                        setSelectedAccount(account);
+                        setIsDetailsOpen(true);
+                    }}
+                />
             ) : (
                 <InvestmentsTab />
             )
