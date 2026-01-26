@@ -73,3 +73,8 @@ This document outlines the planned features, improvements, and future direction 
 
 - [ ] **Link Transactions to Accounts:** Capture `account_id` during CSV/bank imports to enable account-based filtering in Reports.
 - [ ] **Tag Management:** Build UI for creating and managing transaction tags.
+
+## 🔮 Future Ideas / Someday
+
+- [ ] **Research Vector Memory (Pinecone):** Investigate using vector embeddings for long-term AI memory, enabling semantic search over transaction history and smarter "few-shot" categorization based on past user behavior.
+

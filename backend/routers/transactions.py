@@ -70,10 +70,11 @@ def get_transactions(
         query = query.filter(models.Transaction.is_verified == verified)
     
     # Amount range filters
+    # Amount range filters (Absolute value / Magnitude)
     if min_amount is not None:
-        query = query.filter(models.Transaction.amount >= min_amount)
+        query = query.filter(func.abs(models.Transaction.amount) >= min_amount)
     if max_amount is not None:
-        query = query.filter(models.Transaction.amount <= max_amount)
+        query = query.filter(func.abs(models.Transaction.amount) <= max_amount)
         
     # Date filtering
     if month is not None:
