@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Pencil, Split, StickyNote, BookPlus, UserCheck, ChevronDown } from 'lucide-react';
-import CategorySelectOptions from './CategorySelectOptions';
+import CategorySelectOptions from './filters/CategorySelectOptions';
 
 const TransactionRow = memo(({
     txn,
