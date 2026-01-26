@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, YAxis } from 'recharts';
 import { ASSET_COLOR, LIABILITY_COLOR, CHART_COLORS } from '../../constants/chartColors';
 
 /**
@@ -92,6 +92,7 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
                                         <stop offset="95%" stopColor={isPositive ? ASSET_COLOR : LIABILITY_COLOR} stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
+                                <YAxis domain={['dataMin', 'dataMax']} hide />
                                 <Tooltip
                                     trigger="hover"
                                     cursor={{ stroke: 'var(--color-text-muted)', strokeWidth: 1, strokeDasharray: '3 3' }}
@@ -116,6 +117,7 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
                                     strokeWidth={3}
                                     fill="url(#netWorthWidgetGradient)"
                                     isAnimationActive={false}
+                                    baseValue="dataMin"
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
