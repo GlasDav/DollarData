@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import { ASSET_COLOR, LIABILITY_COLOR, CHART_COLORS } from '../../constants/chartColors';
 
 /**
@@ -45,11 +45,11 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
 
-        // Limit to top 4 categories + Others to keep widget clean
-        if (data.length > 5) {
-            const top4 = data.slice(0, 4);
-            const others = data.slice(4).reduce((sum, item) => sum + item.value, 0);
-            return [...top4, { name: 'Others', value: others }];
+        // Limit to top 5 categories for the widget to ensuring it fits
+        if (data.length > 6) {
+            const top5 = data.slice(0, 5);
+            const others = data.slice(5).reduce((sum, item) => sum + item.value, 0);
+            return [...top5, { name: 'Others', value: others }];
         }
         return data;
     }, [safeAccounts]);
@@ -115,6 +115,7 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
                                     stroke={isPositive ? ASSET_COLOR : LIABILITY_COLOR}
                                     strokeWidth={3}
                                     fill="url(#netWorthWidgetGradient)"
+                                    isAnimationActive={false}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -130,21 +131,21 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
             <div className="h-px bg-border dark:bg-border-dark mx-6" />
 
             {/* BOTTOM SECTION: Asset Allocation */}
-            <div className="p-5 h-40 bg-surface/30 dark:bg-surface-dark/30">
-                <p className="text-[10px] font-bold text-text-muted dark:text-text-muted-dark uppercase tracking-wider mb-2">Asset Allocation</p>
+            <div className="p-5 h-48 bg-surface/30 dark:bg-surface-dark/30">
+                <p className="text-[10px] font-bold text-text-muted dark:text-text-muted-dark uppercase tracking-wider mb-3">Asset Allocation</p>
                 <div className="h-full flex items-center">
                     {allocationData.length > 0 ? (
-                        <div className="w-full h-full flex items-center justify-between gap-2">
+                        <div className="w-full h-full flex items-center justify-between gap-4">
                             {/* Donut Chart */}
-                            <div className="h-28 w-28 shrink-0 relative">
+                            <div className="h-32 w-32 shrink-0 relative">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={allocationData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={30}
-                                            outerRadius={45}
+                                            innerRadius={35}
+                                            outerRadius={55}
                                             paddingAngle={2}
                                             dataKey="value"
                                             stroke="none"
@@ -153,26 +154,44 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
                                                 <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                             ))}
                                         </Pie>
+                                        <Tooltip
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    const data = payload[0].payload;
+                                                    return (
+                                                        <div className="bg-card dark:bg-card-dark p-2.5 border border-border dark:border-border-dark shadow-xl rounded-lg z-50">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.fill }}></div>
+                                                                <p className="text-xs font-semibold text-text-primary dark:text-text-primary-dark">{data.name}</p>
+                                                            </div>
+                                                            <p className="text-sm font-bold text-text-primary dark:text-text-primary-dark">
+                                                                {formatCurrency(data.value)}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
                                     </PieChart>
                                 </ResponsiveContainer>
-                                {/* Center Text (Total Assets) - Optional, keeping empty for now to avoid clutter */}
                             </div>
 
-                            {/* Detailed Legend */}
-                            <div className="flex-1 flex flex-col gap-1.5 overflow-auto max-h-28 scrollbar-hide pl-2">
-                                {allocationData.slice(0, 4).map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between text-xs group/item">
-                                        <div className="flex items-center gap-2 overflow-hidden">
+                            {/* Detailed Legend - Expanded Width */}
+                            <div className="flex-1 flex flex-col gap-2 overflow-auto max-h-36 scrollbar-hide py-1">
+                                {allocationData.slice(0, 5).map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between text-xs group/item w-full">
+                                        <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
                                             <div
-                                                className="w-2 h-2 rounded-full shrink-0"
+                                                className="w-2.5 h-2.5 rounded-full shrink-0"
                                                 style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
                                             />
-                                            <span className="text-text-primary dark:text-text-primary-dark truncate font-medium max-w-[90px]" title={item.name}>
+                                            <span className="text-text-primary dark:text-text-primary-dark truncate font-medium text-sm" title={item.name}>
                                                 {item.name}
                                             </span>
                                         </div>
-                                        <span className="text-text-muted dark:text-text-muted-dark font-mono text-[10px] group-hover/item:text-text-primary dark:group-hover/item:text-text-primary-dark transition-colors">
-                                            {Math.round((item.value / allocationData.reduce((a, b) => a + b.value, 0)) * 100)}%
+                                        <span className="text-text-muted dark:text-text-muted-dark font-mono text-xs font-bold group-hover/item:text-text-primary dark:group-hover/item:text-text-primary-dark transition-colors ml-2">
+                                            {totalAssets > 0 ? Math.round((item.value / totalAssets) * 100) : 0}%
                                         </span>
                                     </div>
                                 ))}
