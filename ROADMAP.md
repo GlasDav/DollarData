@@ -19,7 +19,6 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 📊 Reports & Analytics
 - [ ] **Filtered Reports:** Advanced filtering (tags, dates, categories, accounts) for custom reports.
-- [ ] **Monthly Expense Breakdown:** Clickable monthly totals to drill down into expense specifics.
 - [x] **Fix Calendar:** Restore functionality showing total daily spend and upcoming bills.
   - [x] **Legend Refinement:** Group by parent category, deduplicate entries, and fix HTML decoding.
 - [x] **Dark Mode Forecast:** Fix 12-month cash flow forecast in Reports to support dark mode (currently white background).

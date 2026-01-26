@@ -248,6 +248,12 @@ erDiagram
 ---
 
 ## Recent Changes & Fixes
+- **Budget Cards Monthly Average Fix (Jan 2026):**
+  - **Display Fix:** Budget cards now show monthly averages (with "/mo avg" label) when viewing multi-month periods instead of aggregate totals.
+  - **Trend Fix:** "% vs avg" metric now compares current period's monthly average against historical monthly average, giving meaningful comparisons regardless of period length.
+  - **Backend:** Added `num_months` to `/budget-progress` response; fixed trend calculation in `analytics.py`.
+  - **Frontend:** Updated `CategoryProgressCard.jsx` to calculate and display averaged values.
+  - **Files:** `backend/routers/analytics.py`, `frontend/src/components/BudgetProgressTab.jsx`, `frontend/src/components/CategoryProgressCard.jsx`.
 - **Import Handling Fixes (Jan 2026):**
   - **Job Persistence:** Moved background job content from memory to DB (`background_jobs` table) to support multi-worker Gunicorn deployments.
   - **Schema Fix:** Added UUID validation to `Transaction` schema to prevent 502/500 errors during confirm.
