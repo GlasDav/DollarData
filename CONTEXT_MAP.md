@@ -798,6 +798,16 @@ docker compose exec backend python /app/seed_demo_user.py
 - **Files:** `frontend/src/App.jsx`.
 
 ### **Onboarding Tutorial Logic Refinement (Jan 2026)**
+- **Feature:** Improved logic for tutorial flow and user completion tracking.
+
+### **Net Worth Assets & HECS Calculator (Jan 2026)**
+- **Frontend Refactor:** Split `NetWorth.jsx` into tabs ("Overview", "Accounts history", "Holdings").
+- **Asset Accounts:** Added "Asset" account type (Vehicles, Property, Collectibles) alongside Investment/Liability.
+  - **Clickable Rows:** Account names in history table are now clickable to open details/edit modal.
+  - **HECS Integration:** Added specialized HECS Debt calculator logic for Australian student loans including indexation and repayment rates.
+  - **Visual Distinction:** HECS accounts feature amber styling and unique Calculator icon in the list.
+- **Backend:** Updated `net_worth.py` to return current balance in history endpoint to fix modal data syncing.
+- **Files:** `frontend/src/pages/NetWorth.jsx`, `frontend/src/components/AccountsHistoryTab.jsx`, `frontend/src/components/HECSCalculator.jsx`, `backend/routers/net_worth.py`.
 - **Auto-Start Loop Fix:**
   - Resolved invalid `ReferenceError` crash by importing `getMembers` in `OnboardingWizard.jsx`.
   - Fixed logic preventing tutorial from auto-starting for new users (scoped localStorage key to user ID).

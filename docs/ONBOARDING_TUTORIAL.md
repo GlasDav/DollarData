@@ -357,6 +357,12 @@ Account balances don't update automatically (except bank-connected accounts). Up
 3. Enter the new balance
 4. The change is logged in your history
 
+**Using the Spreadsheet View:**
+You can also update balances directly in the **History** tab:
+- Click firmly on any amount cell to edit it inline
+- Click on an account name to open the details modal
+- **HECS/HELP Debt:** HECS accounts have a special calculator icon. Click the account name to access the indexation and repayment calculator.
+
 **💡 Tip:** Set a monthly reminder to update all account balances on the same day (e.g., the 1st of each month) for consistent tracking.
 
 ### 5.4 Investment Accounts & Trades
