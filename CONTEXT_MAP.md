@@ -390,6 +390,15 @@ erDiagram
 - **Mobile App:** Landscape rotation on Dashboard can be finicky on some Android devices (requires "Auto-rotate" enabled).
 - **Asset Allocation:** Needs UI fixes and split between ETFs/Stocks.
 
+### **Net Worth Widget Redesign (Jan 2026)**
+- **Visual Overhaul:** Complete redesign featuring a Sparkline Chart (Trend) and Asset Allocation Donut Chart in a single widget.
+- **Dynamic Scaling:** Implemented dynamic Y-axis scaling for the trend chart to better visualize net worth changes for high-value accounts.
+- **Interactive Tooltips:** Added rich hover tooltips for both the line chart (date/value) and donut chart (category/amount).
+- **Responsive Layout:**
+  - **Height Match:** Aligned height with Achievements widget (460px) for consistent dashboard grid.
+  - **Adaptive Spacing:** Optimized flex layout to maximize vertical space utilization.
+- **Files:** `frontend/src/components/widgets/NetWorthWidget.jsx`.
+
 ---
 
 ## Crucial Files (High Complexity)

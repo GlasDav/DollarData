@@ -38,7 +38,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Asset Split (Overview):** Distinguish between ETFs and stocks in Asset Allocation chart.
 - [ ] **Asset Split (Investments):** Distinguish between stocks and ETFs in Investments tab.
 - [ ] **HECS Debt:** Add HECS debt account type/calculator.
-- [ ] **Dashboard Widget:** Add asset allocation breakdown to the Net Worth widget on the dashboard.
+- [x] **Dashboard Widget:** Add asset allocation breakdown to the Net Worth widget on the dashboard.
 
 ## ⚙️ Account & Settings
 

@@ -423,7 +423,7 @@ The Dashboard uses a two-column layout:
 | **Safe to Spend** | Money available after bills | Budget for discretionary spending |
 | **Cash Flow Trend** | Income vs. expenses over time | Spot spending patterns |
 | **Budget Progress** | Category spending vs. limits | Stay within budgets |
-| **Net Worth** | Current net worth + trend | Track wealth growth |
+| **Net Worth** | Current net worth + trend + asset split | Track wealth growth and allocation |
 | **Recent Transactions** | Latest 5 transactions | Quick review of activity |
 | **Upcoming Bills** | Bills due this month | Avoid missed payments |
 | **Smart Insights** | AI-generated observations | Actionable recommendations |
