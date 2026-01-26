@@ -74,11 +74,152 @@ export default function Transactions() {
         return find(buckets);
     };
 
-    // ... fetch logic (useQuery)
+    // Fetch Transactions with filters
+    const { data: transactionData, isLoading } = useQuery({
+        queryKey: ['transactions', debouncedSearch, categoryFilter, spenderFilter, monthParam, yearParam, sortBy, sortDir],
+        queryFn: async () => {
+            const params = { limit: 500 }; // Increase limit for better search coverage
+            if (debouncedSearch) params.search = debouncedSearch;
+            if (categoryFilter) params.bucket_id = categoryFilter;
+            if (spenderFilter) params.spender = spenderFilter;
+            if (monthParam) params.month = monthParam;
+            if (yearParam) params.year = yearParam;
+            if (sortBy) params.sort_by = sortBy;
+            if (sortDir) params.sort_dir = sortDir;
 
-    // ... mutations (update, delete)
+            const res = await api.get('/transactions/', { params });
+            return res.data;
+        }
+    });
 
-    // ... handlers (selection, sort)
+    const transactions = transactionData?.items || [];
+    const totalCount = transactionData?.total || 0;
+
+    // Fetch Buckets Tree
+    const { data: buckets = [] } = useQuery({
+        queryKey: ['bucketsTree'],
+        queryFn: getBucketsTree
+    });
+
+    // Fetch User Settings
+    const { data: userSettings } = useQuery({
+        queryKey: ['userSettings'],
+        queryFn: getSettings
+    });
+
+
+    // Fetch Goals
+    const { data: goals = [] } = useQuery({
+        queryKey: ['goals'],
+        queryFn: getGoals
+    });
+
+    // Fetch Household Members
+    const { data: members = [] } = useQuery({
+        queryKey: ['members'],
+        queryFn: getMembers
+    });
+
+    // Update Transaction
+    const updateMutation = useMutation({
+        mutationFn: async ({ id, bucket_id, description, date, amount, spender, goal_id, assigned_to, is_verified }) => {
+            const payload = {};
+            if (bucket_id !== undefined) payload.bucket_id = bucket_id;
+            if (description !== undefined) payload.description = description;
+            if (date !== undefined) payload.date = date;
+            if (amount !== undefined) payload.amount = amount;
+            if (spender !== undefined) payload.spender = spender;
+            if (goal_id !== undefined) payload.goal_id = goal_id;
+            if (assigned_to !== undefined) payload.assigned_to = assigned_to;
+            if (is_verified !== undefined) payload.is_verified = is_verified;
+
+            await api.put(`/transactions/${id}`, payload);
+        },
+        onSuccess: (data, variables) => {
+            console.log('Update success:', variables);
+            queryClient.invalidateQueries(['transactions']);
+            queryClient.invalidateQueries(['recentTransactions']);
+        },
+        onError: (error) => {
+            console.error('Update failed:', error);
+            alert(`Update failed: ${error.message}`);
+        }
+    });
+
+    // Batch Delete
+    const deleteBatchMutation = useMutation({
+        mutationFn: async (ids) => {
+            // Backend expects a raw array in the body: [1, 2, 3]
+            await api.post('/transactions/batch-delete', ids);
+        },
+        onSuccess: () => {
+            setSelectedIds(new Set());
+            queryClient.invalidateQueries(['transactions']);
+        },
+        onError: (err) => {
+            console.error('Delete failed:', err);
+            alert(`Failed to delete: ${err.response?.data?.detail || err.message}`);
+        }
+    });
+
+    // Delete ALL Transactions
+    const deleteAllMutation = useMutation({
+        mutationFn: deleteAllTransactions,
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['transactions']);
+            queryClient.invalidateQueries(['recentTransactions']);
+            alert(`Successfully deleted ${data.count} transactions.`);
+        },
+        onError: (err) => {
+            console.error('Delete all failed:', err);
+            alert(`Failed to delete all: ${err.response?.data?.detail || err.message}`);
+        }
+    });
+
+    // Batch Update Transactions
+    const batchUpdateMutation = useMutation({
+        mutationFn: async (data) => {
+            const res = await api.post('/transactions/batch-update', data);
+            return res.data;
+        },
+        onSuccess: (data) => {
+            setSelectedIds(new Set());
+            queryClient.invalidateQueries(['transactions']);
+        },
+        onError: (err) => {
+            console.error('Batch update failed:', err);
+            alert(`Failed to update: ${err.response?.data?.detail || err.message}`);
+        }
+    });
+
+    // Selection Handlers
+    const toggleSelectAll = () => {
+        if (selectedIds.size === transactions.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(transactions.map(t => t.id)));
+        }
+    };
+
+    const toggleSelect = (id) => {
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
+        setSelectedIds(newSet);
+    };
+
+    // Sort handler
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            setSortDir(sortDir === "asc" ? "desc" : "asc");
+        } else {
+            setSortBy(column);
+            setSortDir("desc");
+        }
+    };
 
     const activeFiltersCount = [categoryFilter, spenderFilter, debouncedSearch].filter(Boolean).length;
 
