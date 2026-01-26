@@ -116,6 +116,7 @@ export default function BudgetProgressTab({ userSettings }) {
     }
 
     const { period = {}, score = 0, summary = {}, categories = [] } = progress || {};
+    const numMonths = period.num_months || 1;
 
     // Group categories
     const needsCategories = categories.filter(c => c.group === 'Non-Discretionary');
@@ -197,8 +198,8 @@ export default function BudgetProgressTab({ userSettings }) {
                                     <div className="flex-1 h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden cursor-help" title={comp.description}>
                                         <div
                                             className={`h-full rounded-full transition-all duration-500 ${isGood ? 'bg-emerald-500' :
-                                                    isWarning ? 'bg-amber-500' :
-                                                        'bg-red-500'
+                                                isWarning ? 'bg-amber-500' :
+                                                    'bg-red-500'
                                                 }`}
                                             style={{ width: `${Math.min(100, pct)}%` }}
                                         />
@@ -262,6 +263,7 @@ export default function BudgetProgressTab({ userSettings }) {
                                 category={cat}
                                 formatCurrency={formatCurrency}
                                 showMembers={selectedMember === 'Combined'}
+                                numMonths={numMonths}
                             />
                         ))}
                     </div>
@@ -285,6 +287,7 @@ export default function BudgetProgressTab({ userSettings }) {
                                 category={cat}
                                 formatCurrency={formatCurrency}
                                 showMembers={selectedMember === 'Combined'}
+                                numMonths={numMonths}
                             />
                         ))}
                     </div>

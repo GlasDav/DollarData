@@ -2236,7 +2236,8 @@ def get_budget_progress(
         "period": {
             "start": current_start.isoformat(),
             "end": current_end.isoformat(),
-            "label": period_label
+            "label": period_label,
+            "num_months": delta_months
         },
         "score": score,
         "score_breakdown": {

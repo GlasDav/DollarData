@@ -10,11 +10,18 @@ import SparklineChart from './SparklineChart';
 export default function CategoryProgressCard({
     category,
     formatCurrency = (v) => `$${v?.toLocaleString() || 0}`,
-    showMembers = true
+    showMembers = true,
+    numMonths = 1
 }) {
     const [showChildren, setShowChildren] = useState(false);
     const Icon = ICON_MAP[category.icon] || Wallet;
     const hasChildren = category.children && category.children.length > 0;
+
+    // Calculate display values - show monthly average if multi-month period
+    const showAverage = numMonths > 1;
+    const displaySpent = showAverage ? category.spent / numMonths : category.spent;
+    const displayLimit = showAverage ? category.limit / numMonths : category.limit;
+    const displayRemaining = showAverage ? category.remaining / numMonths : category.remaining;
 
     // Progress bar color based on status
     const getBarColor = () => {
@@ -68,10 +75,11 @@ export default function CategoryProgressCard({
             <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1.5">
                     <span className="text-slate-600 dark:text-slate-300 font-medium">
-                        {formatCurrency(category.spent)}
+                        {formatCurrency(displaySpent)}
+                        {showAverage && <span className="text-xs text-slate-400 ml-1">/mo avg</span>}
                     </span>
                     <span className="text-slate-400 dark:text-slate-500">
-                        of {formatCurrency(category.limit)}
+                        of {formatCurrency(displayLimit)}{showAverage && '/mo'}
                     </span>
                 </div>
 
@@ -105,10 +113,10 @@ export default function CategoryProgressCard({
                         {Math.round(category.percent)}%
                     </span>
                     <span className="text-xs text-slate-500">
-                        {category.remaining > 0
-                            ? `${formatCurrency(category.remaining)} left`
+                        {displayRemaining > 0
+                            ? `${formatCurrency(displayRemaining)} left${showAverage ? '/mo' : ''}`
                             : category.status === 'over'
-                                ? `${formatCurrency(category.spent - category.limit)} over`
+                                ? `${formatCurrency((category.spent - category.limit) / (showAverage ? numMonths : 1))} over${showAverage ? '/mo' : ''}`
                                 : 'No limit set'
                         }
                     </span>

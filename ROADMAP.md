@@ -30,7 +30,7 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **Global Drawer Navigation:** Implemented collapsible drawer for cleaner desktop UI.
 
 - [ ] **Household vs Individual:** Explore options to have some goals and achievements at household level, and some for individual members.
-- [ ] **Fix Budget Cards:** Ensure budget cards show monthly average instead of aggregate total when viewing periods > 1 month.
+- [x] **Fix Budget Cards:** Ensure budget cards show monthly average instead of aggregate total when viewing periods > 1 month.
 - [x] **Default Categories:** Change 'Childcare' from 'Needs' to 'Wants' in default setup.
 
 ## 🏦 Net Worth & Assets
