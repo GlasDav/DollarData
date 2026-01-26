@@ -88,9 +88,8 @@ function AccountRow({ account, months, dates, isLiability, onUpdateBalance, onSe
         <tr className="border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             {/* Account Name - FROZEN COLUMN */}
             <td
-                className="sticky left-0 z-10 relative px-3 py-2.5 whitespace-nowrap border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700"
+                className="sticky left-0 z-10 relative px-3 py-2.5 whitespace-nowrap border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 group"
                 onClick={() => {
-                    console.log('Clicked account row:', account.name, account.id);
                     if (onSelectAccount) {
                         onSelectAccount(account);
                     } else {
@@ -98,11 +97,18 @@ function AccountRow({ account, months, dates, isLiability, onUpdateBalance, onSe
                     }
                 }}
             >
-                <div className="flex flex-col">
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
-                        {account.name}
-                    </span>
-                    <span className="text-xs text-slate-400 group-hover:text-slate-500 transition-colors">{account.category}</span>
+                <div className="flex justify-between items-center group-hover:pr-1 transition-all">
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
+                            {account.name}
+                        </span>
+                        <span className="text-xs text-slate-400 group-hover:text-slate-500 transition-colors">{account.category}</span>
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-primary dark:text-primary-light">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                        </svg>
+                    </div>
                 </div>
             </td>
 
