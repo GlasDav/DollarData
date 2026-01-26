@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { TrendingUp, TrendingDown, Plus, RefreshCw, AlertCircle, Save, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, RefreshCw, AlertCircle, Save, X, Calculator, Pencil } from 'lucide-react';
 import api from '../services/api';
 
 /**
@@ -84,11 +84,16 @@ function EditableCell({ value, onSave, isLiability, date }) {
  * AccountRow component for individual account rows
  */
 function AccountRow({ account, months, dates, isLiability, onUpdateBalance, onSelectAccount }) {
+    const isHECS = account.category === 'HECS';
+
     return (
         <tr className="border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             {/* Account Name - FROZEN COLUMN */}
             <td
-                className="sticky left-0 z-10 relative px-3 py-2.5 whitespace-nowrap border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 group"
+                className={`sticky left-0 z-10 relative px-3 py-2.5 whitespace-nowrap border-r border-slate-200 dark:border-slate-600 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer group transition-colors ${isHECS
+                    ? 'bg-amber-50/50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20'
+                    : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
                 onClick={() => {
                     if (onSelectAccount) {
                         onSelectAccount(account);
@@ -99,15 +104,17 @@ function AccountRow({ account, months, dates, isLiability, onUpdateBalance, onSe
             >
                 <div className="flex justify-between items-center group-hover:pr-1 transition-all">
                     <div className="flex flex-col">
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
+                        <span className={`text-sm font-medium transition-colors ${isHECS
+                            ? 'text-amber-700 dark:text-amber-500 group-hover:text-amber-800 dark:group-hover:text-amber-400'
+                            : 'text-slate-700 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-primary-light'
+                            }`}>
                             {account.name}
                         </span>
                         <span className="text-xs text-slate-400 group-hover:text-slate-500 transition-colors">{account.category}</span>
                     </div>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-primary dark:text-primary-light">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                        </svg>
+                    <div className={`opacity-0 group-hover:opacity-100 transition-opacity ${isHECS ? 'text-amber-600 dark:text-amber-500' : 'text-primary dark:text-primary-light'
+                        }`}>
+                        {isHECS ? <Calculator size={14} /> : <Pencil size={14} />}
                     </div>
                 </div>
             </td>
