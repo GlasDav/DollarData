@@ -937,7 +937,8 @@ def create_trade(
                 cost_basis=(trade.quantity * trade.price) + trade.fees,
                 currency=trade.currency,
                 exchange_rate=exchange_rate,
-                value=trade.quantity * trade.price * exchange_rate
+                value=trade.quantity * trade.price * exchange_rate,
+                asset_type=getattr(trade, 'asset_type', 'Stock')
             )
             db.add(new_holding)
     
@@ -987,7 +988,8 @@ def create_trade(
                 cost_basis=trade.quantity * trade.price,  # DRIP cost basis = dividend value
                 currency=trade.currency,
                 exchange_rate=exchange_rate,
-                value=trade.quantity * trade.price * exchange_rate
+                value=trade.quantity * trade.price * exchange_rate,
+                asset_type=getattr(trade, 'asset_type', 'Stock')
             )
             db.add(new_holding)
 

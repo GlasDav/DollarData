@@ -4,15 +4,20 @@ import { X, Save, Trash2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import HoldingsTable from './HoldingsTable';
+import HECSCalculator from './HECSCalculator';
+
 
 /**
  * AccountDetailsModal - Shows details for an account.
  * For Investment accounts, displays the HoldingsTable component.
+ * For HECS accounts, displays the HECSCalculator.
  * For other accounts, allows editing specific details.
  */
 const AccountDetailsModal = ({ isOpen, onClose, account }) => {
     const queryClient = useQueryClient();
     const isInvestment = account?.category === 'Investment';
+    const isHECS = account?.category === 'HECS';
+
 
     // Local state for editing
     const [name, setName] = useState('');
@@ -87,7 +92,59 @@ const AccountDetailsModal = ({ isOpen, onClose, account }) => {
 
                     {/* Content */}
                     <div className="flex-1 overflow-auto p-6">
-                        {!isInvestment ? (
+                        {isInvestment ? (
+                            <HoldingsTable accountId={account.id} />
+                        ) : isHECS ? (
+                            /* HECS Account: Show edit form and calculator side by side */
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Edit Form */}
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Account Name</label>
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="w-full px-3 py-2 border border-input dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Current HECS Balance ($)</label>
+                                        <input
+                                            type="number"
+                                            value={balance}
+                                            onChange={(e) => setBalance(e.target.value)}
+                                            step="0.01"
+                                            className="w-full px-3 py-2 border border-input dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
+                                        />
+                                    </div>
+
+                                    <div className="pt-4 flex items-center justify-between">
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={deleteAccountMutation.isPending}
+                                            className="text-accent-error hover:text-accent-error/80 text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent-error/10 dark:hover:bg-accent-error/20 transition"
+                                        >
+                                            <Trash2 size={16} />
+                                            Delete
+                                        </button>
+
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={updateAccountMutation.isPending}
+                                            className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-medium shadow-sm flex items-center gap-2 transition disabled:opacity-50"
+                                        >
+                                            <Save size={18} />
+                                            {updateAccountMutation.isPending ? 'Saving...' : 'Save'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* HECS Calculator */}
+                                <HECSCalculator hecsBalance={parseFloat(balance) || 0} />
+                            </div>
+                        ) : (
+                            /* Standard Account Edit Form */
                             <div className="max-w-lg mx-auto space-y-6">
                                 <div>
                                     <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Account Name</label>
@@ -129,10 +186,9 @@ const AccountDetailsModal = ({ isOpen, onClose, account }) => {
                                     </button>
                                 </div>
                             </div>
-                        ) : (
-                            <HoldingsTable accountId={account.id} />
                         )}
                     </div>
+
                 </Dialog.Panel>
             </div>
         </Dialog>

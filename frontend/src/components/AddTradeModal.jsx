@@ -25,6 +25,7 @@ export default function AddTradeModal({ isOpen, onClose, tradeToEdit = null }) {
     const [form, setForm] = useState({
         ticker: '',
         name: '',
+        asset_type: 'Stock', // Stock, ETF, Crypto, Fund
         trade_type: 'BUY',
         trade_date: new Date().toISOString().split('T')[0], // Today's date
         quantity: '',
@@ -42,6 +43,7 @@ export default function AddTradeModal({ isOpen, onClose, tradeToEdit = null }) {
             setForm({
                 ticker: tradeToEdit.ticker,
                 name: tradeToEdit.name,
+                asset_type: tradeToEdit.asset_type || 'Stock',
                 trade_type: tradeToEdit.trade_type,
                 trade_date: tradeToEdit.trade_date, // Assumes YYYY-MM-DD
                 quantity: tradeToEdit.quantity,
@@ -132,6 +134,7 @@ export default function AddTradeModal({ isOpen, onClose, tradeToEdit = null }) {
         setForm({
             ticker: '',
             name: '',
+            asset_type: 'Stock',
             trade_type: 'BUY',
             trade_date: new Date().toISOString().split('T')[0],
             quantity: '',
@@ -162,6 +165,7 @@ export default function AddTradeModal({ isOpen, onClose, tradeToEdit = null }) {
         const payload = {
             ticker: form.ticker,
             name: form.name,
+            asset_type: form.asset_type,
             trade_type: form.trade_type,
             trade_date: form.trade_date,
             quantity: parseFloat(form.quantity),
@@ -346,6 +350,24 @@ export default function AddTradeModal({ isOpen, onClose, tradeToEdit = null }) {
                                                 placeholder="Auto-filled from ticker..."
                                             />
                                         </div>
+
+                                        {/* Asset Type */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
+                                                Asset Type
+                                            </label>
+                                            <select
+                                                value={form.asset_type}
+                                                onChange={(e) => setForm(prev => ({ ...prev, asset_type: e.target.value }))}
+                                                className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-input dark:border-border-dark rounded-lg text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
+                                            >
+                                                <option value="Stock">Stock</option>
+                                                <option value="ETF">ETF</option>
+                                                <option value="Crypto">Crypto</option>
+                                                <option value="Fund">Fund</option>
+                                            </select>
+                                        </div>
+
 
                                         {/* Trade Date */}
                                         <div>

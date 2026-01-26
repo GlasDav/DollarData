@@ -352,6 +352,8 @@ class TradeBase(BaseModel):
     exchange_rate: float = 1.0
     fees: float = 0.0
     notes: Optional[str] = None
+    asset_type: str = "Stock"  # Stock, ETF, Crypto, Fund
+
     
     @field_validator('trade_type')
     @classmethod

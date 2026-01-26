@@ -8,10 +8,11 @@ import { ASSET_COLOR, LIABILITY_COLOR, CHART_COLORS } from '../../constants/char
  * NetWorthWidget - Dashboard Widget
  * Displays total Net Worth with a sparkline trend and an asset allocation donut chart.
  */
-export default function NetWorthWidget({ history: historyProp = [], accounts = [], formatCurrency }) {
+export default function NetWorthWidget({ history: historyProp = [], accounts = [], investmentAllocation = [], formatCurrency }) {
     // Defensive checks
     const history = Array.isArray(historyProp) ? historyProp : [];
     const safeAccounts = Array.isArray(accounts) ? accounts : [];
+    const safeInvestmentAllocation = Array.isArray(investmentAllocation) ? investmentAllocation : [];
 
     // --- Stats & Trend Logic ---
     const latestSnapshot = history.length > 0 ? history[history.length - 1] : null;
@@ -32,12 +33,25 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
     }, [history]);
 
     // --- Asset Allocation Logic ---
+    // Merge account categories with investment asset_type breakdown
     const allocationData = useMemo(() => {
         const map = {};
+
         safeAccounts.forEach(acc => {
             // Only count assets with positive balance
             if (acc.type === 'Asset' && (acc.balance || 0) > 0) {
+                // Skip "Investment" category - we'll use the detailed breakdown instead
+                if (acc.category === 'Investment' && safeInvestmentAllocation.length > 0) {
+                    return; // Skip, will add ETF/Stock breakdown below
+                }
                 map[acc.category] = (map[acc.category] || 0) + acc.balance;
+            }
+        });
+
+        // Add investment breakdown by asset_type (ETF, Stock, Crypto, etc.)
+        safeInvestmentAllocation.forEach(item => {
+            if (item.value > 0) {
+                map[item.name] = (map[item.name] || 0) + item.value;
             }
         });
 
@@ -52,7 +66,8 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
             return [...top5, { name: 'Others', value: others }];
         }
         return data;
-    }, [safeAccounts]);
+    }, [safeAccounts, safeInvestmentAllocation]);
+
 
     const totalAssets = allocationData.reduce((acc, curr) => acc + curr.value, 0);
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api, { getMembers, getUpcomingBills } from '../services/api';
+import api, { getMembers, getUpcomingBills, getInvestmentAllocation } from '../services/api';
 import { LayoutDashboard } from 'lucide-react';
 
 // Widget imports
@@ -95,6 +95,15 @@ export default function Dashboard() {
         queryFn: async () => (await api.get('/net-worth/accounts')).data
     });
     const accounts = Array.isArray(accountsRaw) ? accountsRaw : [];
+
+    // Investment allocation for ETF/Stock breakdown in dashboard widget
+    const { data: investmentAllocationRaw } = useQuery({
+        queryKey: ['investmentAllocation'],
+        queryFn: getInvestmentAllocation,
+        staleTime: 60000 // 1 minute
+    });
+    const investmentAllocation = investmentAllocationRaw?.by_type || [];
+
 
     const { data: trendHistoryRaw = [] } = useQuery({
         queryKey: ['trendHistory', start, end, trendOption, selectedBuckets, interval, spenderMode, excludeBucketIds],
@@ -219,7 +228,7 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <AchievementsWidget dashboardData={dashboardData} netWorth={netWorth} goals={[]} />
-                        <NetWorthWidget history={netWorthHistory} accounts={accounts} formatCurrency={formatCurrency} />
+                        <NetWorthWidget history={netWorthHistory} accounts={accounts} investmentAllocation={investmentAllocation} formatCurrency={formatCurrency} />
                     </div>
 
                 </div>

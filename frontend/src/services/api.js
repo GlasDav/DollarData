@@ -205,6 +205,8 @@ export const updateHolding = async (holdingId, holding) => (await api.put(`/net-
 export const deleteHolding = async (holdingId) => (await api.delete(`/net-worth/holdings/${holdingId}`)).data;
 export const refreshHoldingPrices = async () => (await api.post(`/net-worth/holdings/refresh-prices`)).data;
 export const getInvestmentHistory = async () => (await api.get('/investments/history')).data;
+export const getInvestmentAllocation = async () => (await api.get('/investments/allocation')).data;
+
 
 // Market
 export const searchTicker = async (query) => (await api.get(`/market/search?q=${query}`)).data;
