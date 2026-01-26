@@ -2072,12 +2072,14 @@ def get_budget_progress(
             if amt > 0:
                 hist_amounts.append(amt)
         
-        # Calculate trend vs average (or vs last month)
+        # Calculate trend: compare current period's monthly average vs historical monthly average
+        # This gives meaningful comparison regardless of period length
         trend = 0
         if hist_amounts:
             avg_hist = sum(hist_amounts) / len(hist_amounts)
+            current_monthly_avg = spent / delta_months  # Monthly avg for selected period
             if avg_hist > 0:
-                trend = round(((spent - avg_hist) / avg_hist) * 100, 1)
+                trend = round(((current_monthly_avg - avg_hist) / avg_hist) * 100, 1)
         
         # Member breakdown - aggregate from parent + children
         by_member = []
