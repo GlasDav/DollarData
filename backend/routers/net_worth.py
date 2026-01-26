@@ -375,7 +375,7 @@ def get_accounts_history(db: Session = Depends(get_db), current_user: models.Use
     ).order_by(models.Account.type, models.Account.category, models.Account.name).all()
     
     # Build account balance matrix
-    account_data = []
+    accounts_list = []
     for account in accounts:
         balances = []
         for snapshot in unique_snapshots:
@@ -387,13 +387,21 @@ def get_accounts_history(db: Session = Depends(get_db), current_user: models.Use
             
             balances.append(balance_record.balance if balance_record else None)
         
-        account_data.append({
-            "id": account.id,
-            "name": account.name,
-            "type": account.type,
-            "category": account.category,
-            "balances_by_month": balances
-        })
+        # Determine if this row is entirely empty (no balances ever)
+        # But we might want to show it if it is active
+        has_data = any(b is not None for b in balances)
+        
+        if has_data or account.is_active:
+            row = {
+                "id": account.id,
+                "name": account.name,
+                "type": account.type,
+                "category": account.category,
+                "is_active": account.is_active,
+                "balance": account.balance,  # Current balance for modal
+                "balances_by_month": balances
+            }
+            accounts_list.append(row)
     
     # Calculate totals by month
     assets_by_month = []
@@ -408,7 +416,7 @@ def get_accounts_history(db: Session = Depends(get_db), current_user: models.Use
     return {
         "months": months,
         "dates": dates,
-        "accounts": account_data,
+        "accounts": accounts_list,
         "totals": {
             "assets_by_month": assets_by_month,
             "liabilities_by_month": liabilities_by_month,

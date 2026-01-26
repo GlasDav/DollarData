@@ -87,11 +87,11 @@ function AccountRow({ account, months, dates, isLiability, onUpdateBalance, onSe
     return (
         <tr className="border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             {/* Account Name - FROZEN COLUMN */}
-            <td className="sticky left-0 z-10 px-3 py-2.5 whitespace-nowrap border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                <div
-                    className="flex flex-col cursor-pointer group"
-                    onClick={() => onSelectAccount && onSelectAccount(account)}
-                >
+            <td
+                className="sticky left-0 z-10 relative px-3 py-2.5 whitespace-nowrap border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700"
+                onClick={() => onSelectAccount && onSelectAccount(account)}
+            >
+                <div className="flex flex-col">
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
                         {account.name}
                     </span>
