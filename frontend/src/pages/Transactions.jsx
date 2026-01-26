@@ -24,6 +24,8 @@ import FilterPill from '../components/ui/FilterPill';
 import CategoryFilterContent from '../components/filters/CategoryFilterContent';
 import SpenderFilterContent from '../components/filters/SpenderFilterContent';
 import CategorySelectOptions from '../components/filters/CategorySelectOptions';
+import DateFilterContent from '../components/filters/DateFilterContent';
+import AmountFilterContent from '../components/filters/AmountFilterContent';
 import SortHeader from '../components/ui/SortHeader';
 import TransactionRow from '../components/TransactionRow';
 
@@ -54,6 +56,8 @@ export default function Transactions() {
     // Filters
     const [categoryFilter, setCategoryFilter] = useState(bucketIdParam ? parseInt(bucketIdParam) : null);
     const [spenderFilter, setSpenderFilter] = useState(null);
+    const [dateRange, setDateRange] = useState(null);
+    const [amountRange, setAmountRange] = useState(null);
     const [sortBy, setSortBy] = useState("date");
     const [sortDir, setSortDir] = useState("desc");
 
@@ -78,7 +82,7 @@ export default function Transactions() {
 
     // Fetch Transactions with filters
     const { data: transactionData, isLoading } = useQuery({
-        queryKey: ['transactions', debouncedSearch, categoryFilter, spenderFilter, monthParam, yearParam, sortBy, sortDir],
+        queryKey: ['transactions', debouncedSearch, categoryFilter, spenderFilter, monthParam, yearParam, sortBy, sortDir, dateRange, amountRange],
         queryFn: async () => {
             const params = { limit: 100 }; // Reduce limit to improve initial load performance
             if (debouncedSearch) params.search = debouncedSearch;
@@ -88,6 +92,10 @@ export default function Transactions() {
             if (yearParam) params.year = yearParam;
             if (sortBy) params.sort_by = sortBy;
             if (sortDir) params.sort_dir = sortDir;
+            if (dateRange?.start) params.start_date = dateRange.start;
+            if (dateRange?.end) params.end_date = dateRange.end;
+            if (amountRange?.min !== null && amountRange?.min !== undefined) params.min_amount = amountRange.min;
+            if (amountRange?.max !== null && amountRange?.max !== undefined) params.max_amount = amountRange.max;
 
             const res = await api.get('/transactions/', { params });
             return res.data;
@@ -222,12 +230,31 @@ export default function Transactions() {
         }
     };
 
-    const activeFiltersCount = [categoryFilter, spenderFilter, debouncedSearch].filter(Boolean).length;
+    const getDateLabel = () => {
+        if (!dateRange) return null;
+        if (dateRange.start && dateRange.end) return `${dateRange.start} - ${dateRange.end}`;
+        if (dateRange.start) return `After ${dateRange.start}`;
+        if (dateRange.end) return `Before ${dateRange.end}`;
+        return null;
+    };
+
+    const getAmountLabel = () => {
+        if (!amountRange) return null;
+        const { min, max } = amountRange;
+        if (min !== null && max !== null) return `$${min} - $${max}`;
+        if (min !== null) return `> $${min}`;
+        if (max !== null) return `< $${max}`;
+        return null;
+    };
+
+    const activeFiltersCount = [categoryFilter, spenderFilter, debouncedSearch, dateRange, amountRange].filter(Boolean).length;
 
     const clearAllFilters = () => {
         setSearch("");
         setCategoryFilter(null);
         setSpenderFilter(null);
+        setDateRange(null);
+        setAmountRange(null);
         setSearchParams({});
     };
 
@@ -303,6 +330,38 @@ export default function Transactions() {
                                 members={members}
                                 selectedSpender={spenderFilter}
                                 onChange={setSpenderFilter}
+                                close={close}
+                            />
+                        )}
+                    </FilterPill>
+
+                    <FilterPill
+                        label="Date"
+                        value={getDateLabel()}
+                        isActive={!!dateRange}
+                        onClear={() => setDateRange(null)}
+                    >
+                        {({ close }) => (
+                            <DateFilterContent
+                                startDate={dateRange?.start}
+                                endDate={dateRange?.end}
+                                onChange={setDateRange}
+                                close={close}
+                            />
+                        )}
+                    </FilterPill>
+
+                    <FilterPill
+                        label="Amount"
+                        value={getAmountLabel()}
+                        isActive={!!amountRange}
+                        onClear={() => setAmountRange(null)}
+                    >
+                        {({ close }) => (
+                            <AmountFilterContent
+                                minAmount={amountRange?.min}
+                                maxAmount={amountRange?.max}
+                                onChange={setAmountRange}
                                 close={close}
                             />
                         )}
