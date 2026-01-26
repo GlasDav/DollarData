@@ -657,6 +657,7 @@ export default function NetWorth() {
                 <AccountsHistoryTab
                     onAddAccount={() => setIsAddAccountOpen(true)}
                     onSelectAccount={(account) => {
+                        console.log('NetWorth: Account selected', account);
                         setSelectedAccount(account);
                         setIsDetailsOpen(true);
                     }}

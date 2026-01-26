@@ -89,7 +89,14 @@ function AccountRow({ account, months, dates, isLiability, onUpdateBalance, onSe
             {/* Account Name - FROZEN COLUMN */}
             <td
                 className="sticky left-0 z-10 relative px-3 py-2.5 whitespace-nowrap border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700"
-                onClick={() => onSelectAccount && onSelectAccount(account)}
+                onClick={() => {
+                    console.log('Clicked account row:', account.name, account.id);
+                    if (onSelectAccount) {
+                        onSelectAccount(account);
+                    } else {
+                        console.warn('onSelectAccount prop is missing!');
+                    }
+                }}
             >
                 <div className="flex flex-col">
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
