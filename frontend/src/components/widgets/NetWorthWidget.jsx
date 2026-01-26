@@ -57,11 +57,10 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
     return (
         <Link
             to="/net-worth"
-            className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-all relative overflow-hidden group block"
+            className="bg-card dark:bg-card-dark rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-all relative overflow-hidden group block flex flex-col h-[420px]"
         >
-            <div className="flex flex-col h-full justify-between gap-6">
-
-                {/* Header Section */}
+            {/* TOP SECTION: Net Worth Trend */}
+            <div className="p-6 pb-2 flex-1 flex flex-col justify-between">
                 <div>
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -80,86 +79,95 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
                     </p>
                 </div>
 
-                {/* Content Grid: Sparkline (Left) vs Allocation (Right) */}
-                <div className="grid grid-cols-2 gap-4 flex-1 items-end">
+                {/* Line Chart Area (Expanded) */}
+                <div className="h-32 w-full mt-2">
+                    {chartData.length >= 1 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData.length === 1 ? [chartData[0], chartData[0]] : chartData}>
+                                <defs>
+                                    <linearGradient id="netWorthWidgetGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={isPositive ? ASSET_COLOR : LIABILITY_COLOR} stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor={isPositive ? ASSET_COLOR : LIABILITY_COLOR} stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <Tooltip
+                                    labelStyle={{ display: 'none' }}
+                                    contentStyle={{ display: 'none' }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="value"
+                                    stroke={isPositive ? ASSET_COLOR : LIABILITY_COLOR}
+                                    strokeWidth={3}
+                                    fill="url(#netWorthWidgetGradient)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-full flex items-center justify-center border-t border-border dark:border-border-dark">
+                            <span className="text-xs text-text-muted">No history</span>
+                        </div>
+                    )}
+                </div>
+            </div>
 
-                    {/* Left: Trend Sparkline */}
-                    <div className="h-24 w-full">
-                        {chartData.length >= 1 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={chartData.length === 1 ? [chartData[0], chartData[0]] : chartData}>
-                                    <defs>
-                                        <linearGradient id="netWorthWidgetGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor={isPositive ? ASSET_COLOR : LIABILITY_COLOR} stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor={isPositive ? ASSET_COLOR : LIABILITY_COLOR} stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <Tooltip
-                                        labelStyle={{ display: 'none' }}
-                                        contentStyle={{ display: 'none' }} // Hide tooltip for cleaner widget look
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="value"
-                                        stroke={isPositive ? ASSET_COLOR : LIABILITY_COLOR}
-                                        strokeWidth={2}
-                                        fill="url(#netWorthWidgetGradient)"
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-full flex items-center justify-center border-t border-border dark:border-border-dark">
-                                <span className="text-xs text-text-muted">No history</span>
+            {/* SEPARATOR */}
+            <div className="h-px bg-border dark:bg-border-dark mx-6" />
+
+            {/* BOTTOM SECTION: Asset Allocation */}
+            <div className="p-5 h-40 bg-surface/30 dark:bg-surface-dark/30">
+                <p className="text-[10px] font-bold text-text-muted dark:text-text-muted-dark uppercase tracking-wider mb-2">Asset Allocation</p>
+                <div className="h-full flex items-center">
+                    {allocationData.length > 0 ? (
+                        <div className="w-full h-full flex items-center justify-between gap-2">
+                            {/* Donut Chart */}
+                            <div className="h-28 w-28 shrink-0 relative">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={allocationData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={30}
+                                            outerRadius={45}
+                                            paddingAngle={2}
+                                            dataKey="value"
+                                            stroke="none"
+                                        >
+                                            {allocationData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                {/* Center Text (Total Assets) - Optional, keeping empty for now to avoid clutter */}
                             </div>
-                        )}
-                    </div>
 
-                    {/* Right: Allocation Legend/Donut */}
-                    <div className="h-24 w-full relative">
-                        {allocationData.length > 0 ? (
-                            <div className="flex items-center gap-2 h-full">
-                                <div className="h-20 w-20 shrink-0">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={allocationData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={25}
-                                                outerRadius={35}
-                                                paddingAngle={2}
-                                                dataKey="value"
-                                                stroke="none"
-                                            >
-                                                {allocationData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                {/* Mini Legend */}
-                                <div className="flex flex-col gap-1 overflow-auto max-h-24 scrollbar-hide">
-                                    {allocationData.slice(0, 3).map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-1.5 min-w-0">
+                            {/* Detailed Legend */}
+                            <div className="flex-1 flex flex-col gap-1.5 overflow-auto max-h-28 scrollbar-hide pl-2">
+                                {allocationData.slice(0, 4).map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between text-xs group/item">
+                                        <div className="flex items-center gap-2 overflow-hidden">
                                             <div
                                                 className="w-2 h-2 rounded-full shrink-0"
                                                 style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
                                             />
-                                            <span className="text-[10px] text-text-muted dark:text-text-muted-dark truncate font-medium">
+                                            <span className="text-text-primary dark:text-text-primary-dark truncate font-medium max-w-[90px]" title={item.name}>
                                                 {item.name}
                                             </span>
                                         </div>
-                                    ))}
-                                </div>
+                                        <span className="text-text-muted dark:text-text-muted-dark font-mono text-[10px] group-hover/item:text-text-primary dark:group-hover/item:text-text-primary-dark transition-colors">
+                                            {Math.round((item.value / allocationData.reduce((a, b) => a + b.value, 0)) * 100)}%
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-xs text-text-muted">
-                                No assets
-                            </div>
-                        )}
-                    </div>
-
+                        </div>
+                    ) : (
+                        <div className="h-20 w-full flex items-center justify-center text-xs text-text-muted">
+                            No asset data found
+                        </div>
+                    )}
                 </div>
             </div>
         </Link>
