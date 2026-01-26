@@ -90,6 +90,12 @@ export default function Dashboard() {
     });
     const netWorthHistory = Array.isArray(netWorthHistoryRaw) ? netWorthHistoryRaw : [];
 
+    const { data: accountsRaw = [] } = useQuery({
+        queryKey: ['accounts'],
+        queryFn: async () => (await api.get('/net-worth/accounts')).data
+    });
+    const accounts = Array.isArray(accountsRaw) ? accountsRaw : [];
+
     const { data: trendHistoryRaw = [] } = useQuery({
         queryKey: ['trendHistory', start, end, trendOption, selectedBuckets, interval, spenderMode, excludeBucketIds],
         queryFn: async () => {
@@ -213,7 +219,7 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <AchievementsWidget dashboardData={dashboardData} netWorth={netWorth} goals={[]} />
-                        <NetWorthWidget history={netWorthHistory} formatCurrency={formatCurrency} />
+                        <NetWorthWidget history={netWorthHistory} accounts={accounts} formatCurrency={formatCurrency} />
                     </div>
 
                 </div>
