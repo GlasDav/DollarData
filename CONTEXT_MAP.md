@@ -851,3 +851,8 @@ docker compose exec backend python /app/seed_demo_user.py
 ---
 
 *Generated for AI context. Do not commit to version control.*
+- **Date & Amount Filters:**
+  - Added Date Range and Amount Range filters to Transactions page.
+  - Implemented backend logic for `min_amount`/`max_amount` (using absolute value for magnitude) and `start_date`/`end_date`.
+  - Created `DateFilterContent.jsx` and `AmountFilterContent.jsx`.
+  - Key files: `frontend/src/pages/Transactions.jsx`, `backend/routers/transactions.py`.

@@ -289,7 +289,11 @@ After importing, you should review your transactions:
 1. Go to **Transactions** page
 2. Look for transactions marked as "Uncategorized" (highlighted)
 3. Click on a transaction to assign a category
-4. Use the filter dropdown to show only uncategorized items
+3. Click on a transaction to assign a category
+4. Use the filters to refine your view:
+   - **Date:** Filter by specific date range
+   - **Amount:** Find transactions within a price range (matches both income and expenses)
+   - **Category/Spender:** Standard filters
 
 **Bulk Actions:**
 - Select multiple transactions with checkboxes
