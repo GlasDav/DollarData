@@ -62,7 +62,7 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
             className="bg-card dark:bg-card-dark rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-all relative overflow-hidden group block flex flex-col h-full min-h-[460px]"
         >
             {/* TOP SECTION: Net Worth Trend */}
-            <div className="p-6 pb-2 flex-1 flex flex-col">
+            <div className="p-6 pb-6">
                 <div>
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export default function NetWorthWidget({ history: historyProp = [], accounts = [
             <div className="h-px bg-border dark:bg-border-dark mx-6" />
 
             {/* BOTTOM SECTION: Asset Allocation */}
-            <div className="p-5 h-48 bg-surface/30 dark:bg-surface-dark/30">
+            <div className="p-5 flex-1 bg-surface/30 dark:bg-surface-dark/30">
                 <p className="text-[10px] font-bold text-text-muted dark:text-text-muted-dark uppercase tracking-wider mb-3">Asset Allocation</p>
                 <div className="h-full flex items-center">
                     {allocationData.length > 0 ? (
