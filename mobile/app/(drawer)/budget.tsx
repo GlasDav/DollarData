@@ -1,22 +1,19 @@
 import React from 'react';
-import { View, SafeAreaView } from 'react-native';
-import { TransactionList } from '~/components/transactions/TransactionList';
-import { Text } from '~/components/ui/text';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
+import { BudgetList } from '~/components/budget/BudgetList';
 
-export default function TransactionsScreen() {
+export default function BudgetScreen() {
     return (
         <>
             <Stack.Screen options={{
-                title: 'Transactions',
+                title: 'Budget',
                 headerShadowVisible: false,
                 headerStyle: { backgroundColor: 'transparent' },
                 headerTitleStyle: { fontSize: 20, fontWeight: 'bold' }
             }} />
             <View className="flex-1 bg-background">
-                <TransactionList
-                    onTransactionPress={(tx) => console.log('View transaction', tx.id)}
-                />
+                <BudgetList />
             </View>
         </>
     );

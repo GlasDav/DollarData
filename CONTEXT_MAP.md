@@ -398,6 +398,33 @@ erDiagram
 
 - **Files:** `mobile/`, `mobile/src/context/AuthContext.tsx`, `mobile/src/api/api.ts`.
 
+### **Mobile Development Pattern: UI-First with Strict Mocks (Jan 2026)**
+- **Rationale:** Backend is already mature (powering production web app). Building UI first eliminates variables when debugging layout/styling issues.
+- **Workflow:**
+  1. **Mock it:** Create widgets/pages using hardcoded local data with strict TypeScript interfaces.
+  2. **Nail the UI:** Perfect animations, touch states, and layout across iOS and Android simulators.
+  3. **Wire it Up:** Replace mock data with `useQuery` hooks calling existing backend endpoints.
+- **Exception:** "Hero" features with complex logic (e.g., Safe-to-Spend calculations) should verify backend data first.
+- **Applies to:** Remaining screens (Budget, Goals, Settings, Transactions list).
+
+### **Mobile Frontend Build-out (Phase 5 - UI-First) - Jan 2026**
+- **Transactions Screen:**
+  - Implemented `TransactionList` with section headers grouping by date (Today, Yesterday, Date).
+  - Used strict mock data (`MOCK_TRANSACTIONS`) for rapid UI iteration.
+- **Budget Screen:**
+  - Visual progress bars for Needs/Wants/Savings buckets.
+  - Color-coded status (Green/Amber/Red) based on spending vs limit.
+- **Goals Screen:**
+  - `GoalCard` visualization with progress tracking towards target amount.
+- **Settings & Navigation:**
+  - Created Settings screen with profile mock and functional Logout.
+  - Reordered Drawer navigation (Dashboard -> Transactions -> Net Worth -> Budget).
+  - Wired up all routes in `app/(drawer)/_layout.tsx`.
+- **Dashboard Expansion:**
+  - Added `GoalsSnapshotWidget` (Top 3 goals).
+  - Added `AssetAllocationWidget` (Donut chart).
+  - Completed widget suite: Net Worth, Cash Flow, Safe-to-Spend, Budget Pulse, Goals, Assets.
+
 ## Known Issues
 - **Mobile Auth:** Logout button in Settings is unresponsive. User receives "401 Unauthorized" ("Could not validate credentials") even after restarting app, likely due to stale token persistence or race condition in `SecureStore` logic.
 - **Mobile App:** Landscape rotation on Dashboard can be finicky on some Android devices (requires "Auto-rotate" enabled).

@@ -69,6 +69,17 @@ This document outlines the planned features, improvements, and future direction 
     - [ ] **Rotation:** Fix/Smooth out rotation behavior on dashboard.
     - [ ] Native specific interactions, scroll views, safe areas.
     - [ ] **Bug:** Fix unresponsive Logout button and persistent 401 errors.
+  - [x] **Phase 5: Additional Screens (UI-First Approach)**
+    > Build UI with strict TypeScript mocks first, then wire up backend.
+    - [x] Budget screen (categories, limits, progress bars)
+    - [x] Goals screen (savings goals, progress tracking)
+    - [x] Settings screen (profile, preferences, logout)
+    - [x] Transactions list screen (Grouped by date)
+    - [x] Dashboard Expansion (Goals & Asset Allocation widgets)
+  - [ ] **Phase 6: Wiring Up (Backend Integration)**
+    - [ ] Replace Transaction mocks with `useQuery`
+    - [ ] Replace Budget/Goals mocks with `useQuery`
+    - [ ] Implement `AssetAllocation` real data logic
 
 ## 📊 Data Enhancements
 

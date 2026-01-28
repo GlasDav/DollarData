@@ -11,6 +11,8 @@ import { SafeToSpendWidget } from '@/components/dashboard/SafeToSpendWidget';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { CashFlowWidget } from '@/components/dashboard/CashFlowWidget';
 import { BudgetPulseWidget } from '@/components/dashboard/BudgetPulseWidget';
+import { GoalsSnapshotWidget } from '@/components/dashboard/GoalsSnapshotWidget';
+import { AssetAllocationWidget } from '@/components/dashboard/AssetAllocationWidget';
 
 export default function Dashboard() {
   const { signOut, user } = useAuth();
@@ -81,6 +83,12 @@ export default function Dashboard() {
 
         {/* Budget Pulse Widget (New) */}
         <BudgetPulseWidget />
+
+        {/* Goals Snapshot Widget */}
+        <GoalsSnapshotWidget />
+
+        {/* Asset Allocation Widget */}
+        <AssetAllocationWidget />
 
         {/* Recent Transactions Widget */}
         <RecentTransactions />

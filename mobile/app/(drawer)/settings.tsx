@@ -1,60 +1,108 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../src/context/AuthContext';
-import { LogOut, User, ChevronRight, HelpCircle, Shield, FileText } from 'lucide-react-native';
+import React from 'react';
+import { View, Switch, Alert, TouchableOpacity } from 'react-native';
+import { Stack, router } from 'expo-router';
+import { Card } from '~/components/ui/card';
+import { Text } from '~/components/ui/text';
+import { Button } from '~/components/ui/button';
+import { useAuth } from '~/src/context/AuthContext';
+import { User, Bell, Shield, LogOut, ChevronRight } from 'lucide-react-native';
 
 export default function SettingsScreen() {
-    const { signOut, user } = useAuth();
+    const { logout, user } = useAuth();
+    const [isDark, setIsDark] = React.useState(false);
+    const [notifications, setNotifications] = React.useState(true);
 
-    const menuItems = [
-        { icon: HelpCircle, label: 'Help & Support', danger: false },
-        { icon: Shield, label: 'Privacy Policy', danger: false },
-        { icon: FileText, label: 'Terms of Service', danger: false },
-    ];
+    const handleLogout = async () => {
+        try {
+            await logout();
+            // Router replace is handled by AuthContext usually, but safety check:
+            router.replace('/(auth)/login');
+        } catch (e) {
+            Alert.alert('Error', 'Failed to log out');
+        }
+    };
+
+    const SettingRow = ({ icon: Icon, label, value, onPress, isDestructive = false }: any) => (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={onPress ? 0.7 : 1}
+            className="flex-row items-center justify-between py-3 border-b border-border/40 last:border-0"
+        >
+            <View className="flex-row items-center gap-3">
+                <Icon size={20} color={isDestructive ? '#ef4444' : '#6b7280'} />
+                <Text className={isDestructive ? "text-destructive font-medium" : "text-foreground font-medium"}>
+                    {label}
+                </Text>
+            </View>
+            {value}
+        </TouchableOpacity>
+    );
 
     return (
-        <SafeAreaView className="flex-1 bg-surface">
-            <ScrollView contentContainerStyle={{ padding: 24 }}>
-                <Text className="text-3xl font-bold text-text-primary mb-8">Settings</Text>
+        <>
+            <Stack.Screen options={{
+                title: 'Settings',
+                headerShadowVisible: false,
+                headerStyle: { backgroundColor: 'transparent' },
+                headerTitleStyle: { fontSize: 20, fontWeight: 'bold' }
+            }} />
 
-                {/* Profile Section */}
-                <View className="bg-card rounded-2xl border border-border p-4 mb-6 flex-row items-center">
-                    <View className="w-12 h-12 bg-primary/10 rounded-full items-center justify-center mr-4">
-                        <Text className="text-primary font-bold text-xl">
-                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            <View className="flex-1 bg-background px-4 pt-2">
+                {/* Profile Card */}
+                <Card className="p-4 mb-6 bg-card flex-row items-center gap-4">
+                    <View className="w-16 h-16 bg-primary/20 rounded-full items-center justify-center">
+                        <Text className="text-2xl font-bold text-primary">
+                            {user?.email?.charAt(0).toUpperCase() || 'U'}
                         </Text>
                     </View>
-                    <View className="flex-1">
-                        <Text className="text-lg font-bold text-text-primary">{user?.name || 'User'}</Text>
-                        <Text className="text-text-muted">{user?.email}</Text>
+                    <View>
+                        <Text className="text-lg font-bold text-foreground">
+                            {user?.user_metadata?.first_name || 'User'}
+                        </Text>
+                        <Text className="text-muted-foreground">{user?.email}</Text>
                     </View>
-                </View>
+                </Card>
 
-                {/* Menu Items */}
-                <View className="bg-card rounded-2xl border border-border overflow-hidden mb-8">
-                    {menuItems.map((item, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            className={`flex-row items-center p-4 ${index !== menuItems.length - 1 ? 'border-b border-border' : ''}`}
-                        >
-                            <item.icon size={20} color="#6B7280" className="mr-3" />
-                            <Text className="flex-1 text-text-primary text-base">{item.label}</Text>
-                            <ChevronRight size={20} color="#D1D5DB" />
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                <Text className="text-sm font-bold text-muted-foreground uppercase mb-2 ml-1">Preferences</Text>
+                <Card className="p-4 mb-6 bg-card">
+                    <SettingRow
+                        icon={User}
+                        label="Account Details"
+                        value={<ChevronRight size={20} color="#9ca3af" />}
+                        onPress={() => { }}
+                    />
+                    <SettingRow
+                        icon={Bell}
+                        label="Notifications"
+                        value={
+                            <Switch
+                                value={notifications}
+                                onValueChange={setNotifications}
+                                trackColor={{ false: '#767577', true: '#5D5DFF' }} // brand color
+                            />
+                        }
+                    />
+                    <SettingRow
+                        icon={Shield}
+                        label="Security"
+                        value={<ChevronRight size={20} color="#9ca3af" />}
+                        onPress={() => { }}
+                    />
+                </Card>
 
-                {/* Logout Button */}
-                <TouchableOpacity
-                    onPress={() => signOut()}
-                    className="flex-row items-center justify-center bg-white border border-accent-error p-4 rounded-xl"
+                <Button
+                    variant="destructive"
+                    className="w-full flex-row items-center justify-center gap-2 mt-4"
+                    onPress={handleLogout}
                 >
-                    <LogOut size={20} color="#EF4444" className="mr-2" />
-                    <Text className="text-accent-error font-bold text-lg">Log Out</Text>
-                </TouchableOpacity>
+                    <LogOut size={20} color="white" />
+                    <Text className="text-white font-bold">Log Out</Text>
+                </Button>
 
-                <Text className="text-center text-text-muted mt-8 text-sm">Version 1.0.0</Text>
-            </ScrollView>
-        </SafeAreaView>
+                <Text className="text-center text-xs text-muted-foreground mt-8">
+                    Version 1.0.0 (Build 142)
+                </Text>
+            </View>
+        </>
     );
 }

@@ -2,7 +2,7 @@ import { Drawer } from 'expo-router/drawer';
 import React from 'react';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import { LayoutDashboard, List, PlusCircle, PieChart, Settings } from 'lucide-react-native';
+import { LayoutDashboard, List, PlusCircle, PieChart, Settings, Wallet, Target } from 'lucide-react-native';
 import { View, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -107,11 +107,38 @@ export default function DrawerLayout() {
       />
 
       <Drawer.Screen
+        name="budget"
+        options={{
+          drawerLabel: 'Budget',
+          title: 'Budget',
+          drawerIcon: ({ color, size }) => <Wallet size={size} color={color} />,
+        }}
+      />
+
+      <Drawer.Screen
+        name="goals"
+        options={{
+          drawerLabel: 'Goals',
+          title: 'Goals',
+          drawerIcon: ({ color, size }) => <Target size={size} color={color} />,
+        }}
+      />
+
+      <Drawer.Screen
         name="settings"
         options={{
           drawerLabel: 'Settings',
           title: 'Settings',
           drawerIcon: ({ color, size }) => <Settings size={size} color={color} />,
+        }}
+      />
+
+      <Drawer.Screen
+        name="budget"
+        options={{
+          drawerLabel: 'Budget',
+          title: 'Budget',
+          drawerIcon: ({ color, size }) => <Wallet size={size} color={color} />,
         }}
       />
 
